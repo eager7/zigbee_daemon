@@ -6,13 +6,13 @@
  *
  * REVISION:           $Revision: 43420 $
  *
- * DATED:              $Date: 2015-10-01 15:13:17 +0100 (Mon, 18 Jun 2012) $
+ * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
  *
  * AUTHOR:             PCT
  *
  ****************************************************************************
  *
- * Copyright Tonly B.V. 2015. All rights reserved
+ * Copyright panchangtao@gmail.com 2016. All rights reserved
  *
  ***************************************************************************/
 
@@ -45,7 +45,7 @@ extern "C" {
 
 /* Default network configuration */
 #define CONFIG_DEFAULT_START_MODE       E_START_COORDINATOR
-#define CONFIG_DEFAULT_CHANNEL          15
+#define CONFIG_DEFAULT_CHANNEL          25
 #define CONFIG_DEFAULT_PANID            0x1234567812345678ll
 
 #define MAC_CAP_PAN_COOR        (1<<0)

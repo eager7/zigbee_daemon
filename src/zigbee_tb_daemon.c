@@ -1,21 +1,24 @@
 /****************************************************************************
  *
- * MODULE:             Zigbee - JIP daemon
+ * MODULE:             main
  *
- * COMPONENT:          main
+ * COMPONENT:          main function
  *
- * REVISION:           $Revision: 43420 $
+ * REVISION:           $Revision:  1.0 $
  *
- * DATED:              $Date: 2015-10-01 15:13:17 +0100 (Mon, 18 Jun 2012) $
+ * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
  *
  * AUTHOR:             PCT
  *
  ****************************************************************************
  *
- * Copyright Tonly B.V. 2015. All rights reserved
+ * Copyright panchangtao@gmail.com 2016. All rights reserved
  *
  ***************************************************************************/
-
+ 
+/****************************************************************************/
+/***        Include files                                                 ***/
+/****************************************************************************/
 #include <getopt.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -33,29 +36,35 @@
 #include "zigbee_devices.h"
 #include "zigbee_socket_server.h"
 #include "zigbee_sqlite.h"
-/***********************************************************************************/
-const char *Version = "3.0";
+/****************************************************************************/
+/***        Macro Definitions                                             ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/***        Local Variables                                               ***/
+/****************************************************************************/
+const char *Version = "1.0";
 int verbosity = 0;
-/** Main loop running flag */
-pthread_mutex_t mutex_running;
-volatile sig_atomic_t   bRunning            = 1;
-/** Map of supported Zigbee and JIP devices */
-tsDeviceIDMap asDeviceIDMap[] = 
+
+pthread_mutex_t mutex_running   /** Main loop running flag */;
+volatile sig_atomic_t bRunning = 1;
+
+tsDeviceIDMap asDeviceIDMap[] = /** Map of supported Zigbee and JIP devices */ 
 {
     { 0x0840, 0x08010010, eControlBridgeInitalise },
-    { 0x0100, 0x08011175, eOnOffLightInitalise }, /* ZLL mono lamp / HA on/off lamp */
-    { 0x0101, 0x08011175, eDimmerLightInitalise }, /* HA dimmable lamp */
-    { 0x0102, 0x08011750, eColourLightInitalise }, /* HA dimmable colour lamp */
-    { 0x0200, 0x08011750, eColourLightInitalise }, /* ZLL dimmable colour lamp */
-    { 0x0210, 0x08011750, eColourLightInitalise }, /* ZLL extended colour lamp */
-    { 0x0220, 0x08011750, eColourLightInitalise }, /* ZLL colour temperature lamp */
-    { 0x0108, 0x08011755, eWarmColdLigthInitalise}, /* PCT Cold & Warm Light*/
-    { 0x0302, 0x80011178, eTemperatureSensorInitalise }, /* Temp Humidity sensor */
-    { 0x0106, 0x80011179, eLightSensorInitalise }, /* Light sensor */
-    { 0x000c, 0x80011180, eSimpleSensorInitalise }, /* Simple sensor */
-    { 0x0051, 0x08011181, eColourLightInitalise }, /* Smart Plug */
+    { 0x0100, 0x08011175, eOnOffLightInitalise },       /* ZLL mono lamp / HA on/off lamp */
+    { 0x0101, 0x08011175, eDimmerLightInitalise },      /* HA dimmable lamp */
+    { 0x0102, 0x08011750, eColourLightInitalise },      /* HA dimmable colour lamp */
+    { 0x0200, 0x08011750, eColourLightInitalise },      /* ZLL dimmable colour lamp */
+    { 0x0210, 0x08011750, eColourLightInitalise },      /* ZLL extended colour lamp */
+    { 0x0220, 0x08011750, eColourLightInitalise },      /* ZLL colour temperature lamp */
+    { 0x0108, 0x08011755, eWarmColdLigthInitalise},     /* PCT Cold & Warm Light*/
+    { 0x0302, 0x80011178, eTemperatureSensorInitalise },/* Temp Humidity sensor */
+    { 0x0106, 0x80011179, eLightSensorInitalise },      /* Light sensor */
+    { 0x000c, 0x80011180, eSimpleSensorInitalise },     /* Simple sensor */
+    { 0x0051, 0x08011181, eColourLightInitalise },      /* Smart Plug */
 #ifdef SWITCH
-    { 0x0104, 0x08011194, eDimmerSwitchInitalise }, /* eDimmer Switch */
+    { 0x0104, 0x08011194, eDimmerSwitchInitalise },     /* eDimmer Switch */
 #endif        
     { 0x0000, 0x00000000},
 };
@@ -67,39 +76,41 @@ static uint16 au16Cluster[] = {
                             E_ZB_CLUSTERID_ILLUMINANCE              /*light sensor*/
                             };
 
-/***********************************************************************************/
-#define CONFIG_DEFAULT_CHANNEL 15
 
-/***********************************************************************************/
+/****************************************************************************/
+/***        Local Function Prototypes                                     ***/
+/****************************************************************************/
 static void print_usage_exit(char *argv[]);
 static void vQuitSignalHandler (int sig);
 static void daemonize_init(const char *cmd);
 
-/***********************************************************************************/
-
+/****************************************************************************/
+/***        Locate   Functions                                            ***/
+/****************************************************************************/
 int main(int argc, char *argv[])
 {
     signed char opt = 0;
     int option_index = 0;
     int daemonize = 1;
-    uint32 u32BaudRate = 230400;
-    uint32 eChannel = 0;
-    char *cpSerialDevice = "/dev/ttyS0";
-    char *pZigbeeSqlitePath = "/etc/config/ZigbeeDaemon.DB";
+    uint32 u32BaudRate = 1000000;
+    uint32 eChannel = CONFIG_DEFAULT_CHANNEL;
+    char *cpSerialDevice = "/dev/ttyUSB0";
+    char *pZigbeeSqlitePath = "/tmp/ZigbeeDaemon.DB";
 
-    printf("This is zigbee daemon program\n");
+    DBG_vPrintf(T_TRUE, "This is zigbee daemon program...\n");
 
-    static struct option long_options[] =
-    {
+    static struct option long_options[] = {
         {"serial",                  required_argument,  NULL, 's'},
         {"help",                    no_argument,        NULL, 'h'},
+        {"front",                   no_argument,        NULL, 'f'},
         {"verbosity",               required_argument,  NULL, 'v'},
         {"baud",                    required_argument,  NULL, 'B'},
         {"channel",                 required_argument,  NULL, 'c'},
+        {"datebase",                required_argument,  NULL, 'D'},
         { NULL, 0, NULL, 0}
     };
 
-    while ((opt = getopt_long(argc, argv, "s:hfv:B:I:P:m:nc:p:D:", long_options, &option_index)) != -1) 
+    while ((opt = getopt_long(argc, argv, "s:hfv:B:c:D:", long_options, &option_index)) != -1) 
     {
         switch (opt) 
         {
@@ -117,13 +128,11 @@ int main(int argc, char *argv[])
                 char *pcEnd;
                 errno = 0;
                 u32BaudRate = strtoul(optarg, &pcEnd, 0);
-                if (errno)
-                {
+                if (errno){
                     printf("Baud rate '%s' cannot be converted to 32 bit integer (%s)\n", optarg, strerror(errno));
                     print_usage_exit(argv);
                 }
-                if (*pcEnd != '\0')
-                {
+                if (*pcEnd != '\0'){
                     printf("Baud rate '%s' contains invalid characters\n", optarg);
                     print_usage_exit(argv);
                 }
@@ -141,13 +150,11 @@ int main(int argc, char *argv[])
                 uint32 u32Channel;
                 errno = 0;
                 u32Channel = strtoul(optarg, &pcEnd, 0);
-                if (errno)
-                {
+                if (errno){
                     printf("Channel '%s' cannot be converted to 32 bit integer (%s)\n", optarg, strerror(errno));
                     print_usage_exit(argv);
                 }
-                if (*pcEnd != '\0')
-                {
+                if (*pcEnd != '\0'){
                     printf("Channel '%s' contains invalid characters\n", optarg);
                     print_usage_exit(argv);
                 }
@@ -161,14 +168,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    if ((!cpSerialDevice) || (0 == u32BaudRate))
-    {
+    if ((!cpSerialDevice) || (0 == u32BaudRate)){
         print_usage_exit(argv);
     }
     
-    if (daemonize)
-    {
-        printf("Enter Daemon Mode...\n");
+    if (daemonize){
+        WAR_vPrintf(T_TRUE, "Enter Daemon Mode...\n");
         daemonize_init("ZigbeeDaemon");
     }
 
@@ -271,7 +276,7 @@ finish:
 static void print_usage_exit(char *argv[])
 {
     fprintf(stderr, "\t******************************************************\n");
-    fprintf(stderr, "\t*         zigbee-jip-daemon Version: %s            *\n", Version);
+    fprintf(stderr, "\t*         zigbee-tb-daemon Version: %s            *\n", Version);
     fprintf(stderr, "\t******************************************************\n");
     fprintf(stderr, "\t************************Release***********************\n");
     
@@ -280,11 +285,13 @@ static void print_usage_exit(char *argv[])
     fprintf(stderr, "    -s --serial        <serial device>     Serial device for 15.4 module, e.g. /dev/tts/1\n");
     fprintf(stderr, "  Options:\n");
     fprintf(stderr, "    -h --help                              Print this help.\n");
+    fprintf(stderr, "    -f --front                             Run in front.\n");
     fprintf(stderr, "    -v --verbosity     <verbosity>         Verbosity level. Increases amount of debug information. Default off.\n");
     fprintf(stderr, "    -B --baud          <baud rate>         Baud rate to communicate with border router node at. Default 230400\n");
+    fprintf(stderr, "    -D --datebase      <sqlite>            Datebase of sqlite3. Default None\n");
 
     fprintf(stderr, "  Zigbee Network options:\n");
-    fprintf(stderr, "    -c --channel       <channel>           802.15.4 channel to run on. Default 15.\n");
+    fprintf(stderr, "    -c --channel       <channel>           802.15.4 channel to run on. Default %d.\n", CONFIG_DEFAULT_CHANNEL);
     exit(0);
 }
 

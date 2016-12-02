@@ -4,11 +4,11 @@
  *
  * COMPONENT:          mthreads.h
  *
- * REVISION:           $Revision: 52723 $
+ * REVISION:           $Revision: 1.0 $
  *
- * DATED:              $Date: 2016-01-04 17:04:13 $
+ * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
  *
- * AUTHOR:             panchangtao
+ * AUTHOR:             PCT
  *
  ****************************************************************************
  *

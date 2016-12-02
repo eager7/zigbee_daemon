@@ -6,13 +6,13 @@
  *
  * REVISION:           $Revision: 43420 $
  *
- * DATED:              $Date: 2015-10-01 15:13:17 +0100 (Mon, 18 Jun 2012) $
+ * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
  *
  * AUTHOR:             PCT
  *
  ****************************************************************************
  *
- * Copyright Tonly B.V. 2015. All rights reserved
+ * Copyright panchangtao@gmail.com 2016. All rights reserved
  *
  ***************************************************************************/
 

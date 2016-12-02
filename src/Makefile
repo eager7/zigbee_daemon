@@ -13,7 +13,7 @@
 # Copyright Tonly B.V. 2015. All rights reserved
 #
 ###########################################################################
-TARGET := zigbee-tcl-daemon
+TARGET := zigbee-tb-daemon
 
 SRC_DIR := .
 SOURCE := $(wildcard $(SRC_DIR)/*.c)

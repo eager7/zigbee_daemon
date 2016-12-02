@@ -1,16 +1,20 @@
-/*
- * Doubly-linked list
- * Copyright (c) 2009, Jouni Malinen <j@w1.fi>
+/****************************************************************************
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
+ * MODULE:             list.h
  *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
+ * COMPONENT:          list interface
  *
- * See README and COPYING for more details.
- */
+ * REVISION:           $Revision: 1.0 $
+ *
+ * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
+ *
+ * AUTHOR:             PCT
+ *
+ ****************************************************************************
+ *
+ * Copyright panchangtao@gmail.com 2016. All rights reserved
+ *
+ ***************************************************************************/
 
 #ifndef LIST_H
 #define LIST_H

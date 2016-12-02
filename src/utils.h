@@ -4,15 +4,15 @@
  *
  * COMPONENT:          Utils interface
  *
- * REVISION:           $Revision:  0$
+ * REVISION:           $Revision:  1.0$
  *
- * DATED:              $Date: 2015-10-21 15:13:17 +0100 (Thu, 21 Oct 2015 $
+ * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
  *
  * AUTHOR:             PCT
  *
  ****************************************************************************
  *
- * Copyright panchangtao@gmail.com B.V. 2015. All rights reserved
+ * Copyright panchangtao@gmail.com 2016. All rights reserved
  *
  ***************************************************************************/
 
@@ -46,16 +46,11 @@ extern "C" {
 #define UI_CYAN(x)      "\e[36;1m"x"\e[0m"
 #define UI_WHITE(x)     "\e[37;1m"x"\e[0m"
 
-#define DBG_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_BLUE	("[%s_%d]") b, __FILE__, __LINE__, ## ARGS);} \
-    /*else {syslog(LOG_DEBUG, "[IOT_%d]" b, __LINE__, ## ARGS);}*/} while(0)
-#define INF_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_YELLOW("[%s_%d]") b, __FILE__, __LINE__, ## ARGS);} \
-    /*else {syslog(LOG_INFO,  "[IOT_%d]" b, __LINE__, ## ARGS);}*/} while(0)
-#define NOT_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_GREEN	("[%s_%d]") b, __FILE__, __LINE__, ## ARGS);} \
-    /*else {syslog(LOG_NOTICE,"[IOT_%d]" b, __LINE__, ## ARGS);}*/} while(0)
-#define WAR_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_PURPLE("[%s_%d]") b, __FILE__, __LINE__, ## ARGS);} \
-    /*else {syslog(LOG_WARNING, "[IOT_%d]" b, __LINE__, ## ARGS);}*/} while(0)
-#define ERR_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_RED	("[%s:%d]") b, __FILE__, __LINE__, ## ARGS);} \
-    /*syslog(LOG_ERR,  "[IOT_%s:%d]" b, __FILE__, __LINE__, ## ARGS);*/} while(0)
+#define DBG_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_BLUE	("[%d]" b), __LINE__, ## ARGS);} } while(0)
+#define INF_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_YELLOW("[%d]" b), __LINE__, ## ARGS);} } while(0)
+#define NOT_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_GREEN	("[%d]" b), __LINE__, ## ARGS);} } while(0)
+#define WAR_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_PURPLE("[%d]" b), __LINE__, ## ARGS);} } while(0)
+#define ERR_vPrintf(a,b,ARGS...)  do {  if (a) {printf(UI_RED	("[%s:%d]" b), __FILE__, __LINE__, ## ARGS);} } while(0)
 
 #define MIBF    256
 #define MDBF    1024
