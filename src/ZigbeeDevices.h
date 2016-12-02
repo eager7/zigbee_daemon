@@ -1,0 +1,86 @@
+/****************************************************************************
+ *
+ * MODULE:             Linux Zigbee - JIP Daemon
+ *
+ * COMPONENT:          JIP Interface to control bridge
+ *
+ * REVISION:           $Revision: 37346 $
+ *
+ * DATED:              $Date: 2015-10-01 15:13:17 +0100 (Mon, 18 Jun 2012) $
+ *
+ * AUTHOR:             PCT
+ *
+ ****************************************************************************
+ *
+ * Copyright Tonly B.V. 2015. All rights reserved
+ *
+ ***************************************************************************/
+
+
+#ifndef  ZIGBEE_DEVICES_H_INCLUDED
+#define  ZIGBEE_DEVICES_H_INCLUDED
+
+#if defined __cplusplus
+extern "C" {
+#endif
+
+/****************************************************************************/
+/***        Include files                                                 ***/
+/****************************************************************************/
+
+#include "Utils.h"
+
+/****************************************************************************/
+/***        Macro Definitions                                             ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/***        Type Definitions                                              ***/
+/****************************************************************************/
+typedef enum
+{
+    S_COOR_OK = 0,
+    S_COOR_ERROR,
+}tsCoor_Status;
+/****************************************************************************/
+/***        Local Function Prototypes                                     ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/***        Exported Variables                                            ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/***        Local Variables                                               ***/
+/****************************************************************************/
+
+/****************************************************************************/
+/***        Exported Functions                                            ***/
+/****************************************************************************/
+
+/** Initialisation function for the Control bridge JIP device. */
+teZbStatus eControlBridgeInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eOnOffLightInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eDimmerLightInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eWarmColdLigthInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eColourLightInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eTemperatureSensorInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eLightSensorInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eSimpleSensorInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eSmartPlugInitalise(tsZigbee_Node *psZigbeeNode);
+teZbStatus eDimmerSwitchInitalise(tsZigbee_Node *psZigbeeNode);
+
+/****************************************************************************/
+/***        Local Functions                                               ***/
+/****************************************************************************/
+
+#if defined __cplusplus
+}
+#endif
+
+#endif  /* JIP_CONTROLBRIDGE_H_INCLUDED */
+
+/****************************************************************************/
+/***        END OF FILE                                                   ***/
+/****************************************************************************/
+

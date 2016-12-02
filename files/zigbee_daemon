@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 NXP Semiconductor
+
+START=97
+
+PROG=zigbee-tcl-daemon
+
+
+start () {
+    $PROG -s /dev/ttyS0 -B 230400 -D /etc/config/Zigbee.DB
+}
+
+
+stop () {
+    killall $PROG
+}
+
