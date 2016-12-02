@@ -437,10 +437,10 @@ static void *pvSocketCallbackHandlerThread(void *psThreadInfoVoid)
         if(NULL != (psJsonMessage = json_tokener_parse((const char*)psCallbackData->au8Message)))
         {
             struct json_object *psJsonTemp  = NULL;
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"command")))
+            if(json_object_object_get_ex(psJsonMessage,"command", &psJsonTemp))
             {
                 eSocketCommand = json_object_get_int(psJsonTemp);
-                if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"sequence")))
+                if(json_object_object_get_ex(psJsonMessage,"sequence", &psJsonTemp))
                 {
                     iSequenceNumber = json_object_get_int(psJsonTemp);
                     MessageHandlePacket(psCallbackData->iSocketClientfd, eSocketCommand, psJsonMessage);
@@ -526,7 +526,7 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_PREMITJOIN):
         {
             INF_vPrintf(verbosity, "Client request open zigbee network\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"time")))
+            if(json_object_object_get_ex(psJsonMessage,"time", &psJsonTemp))
             {
                 uint8 uiPermitjoinTime = json_object_get_int(psJsonTemp);
                 if(E_SS_OK != MessageHandlePermitjoin(uiPermitjoinTime))
@@ -552,11 +552,11 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_LIGHT_ON):
         {
             INF_vPrintf(verbosity, "Client request open light on\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 
-                if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"group_id")))
+                if(json_object_object_get_ex(psJsonMessage,"group_id", &psJsonTemp))
                 {
                     uint16 u16GroupID = json_object_get_int(psJsonTemp);
                     if(E_SS_OK != MessageHandleLightOnOff(u64DeviceAddress, u16GroupID, 1))
@@ -580,11 +580,11 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_LIGHT_OFF):
         {
             INF_vPrintf(verbosity, "Client request set light off\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 
-                if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"group_id")))
+                if(json_object_object_get_ex(psJsonMessage,"group_id", &psJsonTemp))
                 {
                     uint16 u16GroupID = json_object_get_int(psJsonTemp);
                     if(E_SS_OK != MessageHandleLightOnOff(u64DeviceAddress, u16GroupID, 0))
@@ -608,14 +608,14 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_LIGHT_SET_LEVEL):
         {
             INF_vPrintf(verbosity, "Client request set light level\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 
-                if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"group_id")))
+                if(json_object_object_get_ex(psJsonMessage,"group_id", &psJsonTemp))
                 {
                     uint16 u16GroupID = json_object_get_int(psJsonTemp);
-                    if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"light_level")))
+                    if(json_object_object_get_ex(psJsonMessage,"light_level", &psJsonTemp))
                     {
                         uint8 u8Level = json_object_get_int(psJsonTemp);
                         if(E_SS_OK != MessageHandleSetLightLevel(u64DeviceAddress, u16GroupID, u8Level))
@@ -640,7 +640,7 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_LIGHT_GET_LEVEL):
         {
             INF_vPrintf(verbosity, "Client request get light level\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 if(NULL == (psJsonReturn = MessageHandleGetLightLevel(u64DeviceAddress)))
@@ -670,7 +670,7 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_LIGHT_GET_STATUS):
         {
             INF_vPrintf(verbosity, "Client request get light status\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 
@@ -701,15 +701,15 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_LIGHT_SET_RGB):
         {
             INF_vPrintf(verbosity, "Client request set light rgb\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 
-                if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"group_id")))
+                if(json_object_object_get_ex(psJsonMessage,"group_id", &psJsonTemp))
                 {
                     uint16 u16GroupID = json_object_get_int(psJsonTemp);
 
-                    if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"rgb_value")))
+                    if(json_object_object_get_ex(psJsonMessage,"rgb_value", &psJsonTemp))
                     {
                         uint32 u32RgbValue = json_object_get_int(psJsonTemp);
                         if(E_SS_OK != MessageHandleSetLightRGB(u64DeviceAddress, u16GroupID, u32RgbValue))
@@ -734,7 +734,7 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_LIGHT_GET_RGB):
         {
             INF_vPrintf(verbosity, "Client request get light rgb\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 if(NULL == (psJsonReturn = MessageHandleGetLightRGB(u64DeviceAddress)))
@@ -766,10 +766,10 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_SENSOR_GET_ILLU):
         {
             INF_vPrintf(verbosity, "Client request get sensor value\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
-                if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"sensor_type")))
+                if(json_object_object_get_ex(psJsonMessage,"sensor_type", &psJsonTemp))
                 {
                     teSensorType SensorType = json_object_get_int(psJsonTemp);
 
@@ -798,10 +798,10 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         case(E_SS_COMMAND_SENSOR_GET_ALARM):
         {
             INF_vPrintf(verbosity, "Client request get sensor alarm\n");
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
-                if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"sensor_type")))
+                if(json_object_object_get_ex(psJsonMessage,"sensor_type", &psJsonTemp))
                 {
                     teSensorType SensorType = json_object_get_int(psJsonTemp);
 
@@ -855,7 +855,7 @@ static void MessageHandlePacket(int iSocketfd, uint8 u8Command, struct json_obje
         {
             INF_vPrintf(verbosity, "Client request leave a device\n");
             
-            if(NULL != (psJsonTemp = json_object_object_get(psJsonMessage,"device_address")))
+            if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp))
             {
                 uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
                 if(E_SS_OK != MessageHandleLeaveNetwork(u64DeviceAddress))
@@ -1555,4 +1555,3 @@ static teSS_Status MessageHandleLeaveNetwork(uint64 u64Address)
 /****************************************************************************/
 /***        END OF FILE                                                   ***/
 /****************************************************************************/
-

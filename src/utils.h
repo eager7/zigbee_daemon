@@ -33,19 +33,7 @@ extern "C" {
 #include <malloc.h>
 #include <syslog.h>
 #include <json-c/json.h>
-
-/*
-#include "list.h"
-#include "serial.h"
-#include "serial_link.h"
-#include "threads.h"
-#include "zigbee_type.h"
-#include "zigbee_sqlite.h"
-#include "zigbee_network.h"
-#include "zigbee_devices.h"
-#include "zigbee_constant.h"
-#include "zigbee_socket_server.h"
-*/
+#include <sys/time.h>
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/

@@ -33,6 +33,7 @@ extern "C" {
 #include "utils.h"
 #include "list.h"
 #include "threads.h"
+#include "zigbee_network.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/

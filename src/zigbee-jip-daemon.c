@@ -25,7 +25,6 @@
 #include <signal.h>
 #include <syslog.h>
 #include <pthread.h>
-#include "zigbee_type.h"
 #include "utils.h"
 #include "serial.h"
 #include "zigbee_control_bridge.h"

@@ -30,7 +30,7 @@
 
 #include <syslog.h>
 
-#include "ZigbeeDevices.h"
+#include "zigbee_devices.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/

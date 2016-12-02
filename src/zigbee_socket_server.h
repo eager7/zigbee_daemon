@@ -31,6 +31,7 @@ extern "C" {
 #include <netinet/in.h>
 #include "utils.h"
 #include "threads.h"
+#include "zigbee_network.h"
 
 
 /****************************************************************************/
