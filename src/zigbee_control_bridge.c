@@ -71,19 +71,19 @@ static void ZCB_HandleOTARequest                (void *pvUser, uint16 u16Length,
 /***        Exported Variables                                            ***/
 /****************************************************************************/
 /** Mode */
-teStartMode      eStartMode         = CONFIG_DEFAULT_START_MODE;
-teChannel        eChannel           = CONFIG_DEFAULT_CHANNEL;
-uint64         u64PanID             = CONFIG_DEFAULT_PANID;
+uint64          u64PanID    = CONFIG_DEFAULT_PANID;
+teChannel       eChannel    = CONFIG_DEFAULT_CHANNEL;
+teStartMode     eStartMode  = CONFIG_DEFAULT_START_MODE;
 
 /* Network parameters in use */
-teChannel        eChannelInUse      = 0;
-uint64         u64PanIDInUse        = 0;
-uint16         u16PanIDInUse        = 0;
+uint64      u64PanIDInUse   = 0;
+uint16      u16PanIDInUse   = 0;
+teChannel   eChannelInUse   = 0;
 
 
 /* APS Ack enabled by default */
-int              bZCB_EnableAPSAck  = 1;
-//uint16 au16ProfileZLL = E_ZB_PROFILEID_ZLL;
+int bZCB_EnableAPSAck  = 1;
+uint16 au16ProfileZLL = E_ZB_PROFILEID_ZLL;
 static uint16 au16ProfileHA = E_ZB_PROFILEID_HA;
 static uint16 au16Cluster[] = {
                             E_ZB_CLUSTERID_ONOFF,                   /*Light*/
@@ -107,9 +107,7 @@ uint32 u32ZCB_SoftwareVersion = 0;
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 teZbStatus eZCB_Init()
-{
-    DBG_vPrintf(T_TRUE, "eZCB_Init\n");
-    
+{    
     memset(&sZigbee_Network, 0, sizeof(tsZigbee_Network));
     mLockCreate(&sZigbee_Network.mutex);
     mLockCreate(&sZigbee_Network.sNodes.mutex);
@@ -128,7 +126,7 @@ teZbStatus eZCB_Init()
     eSL_AddListener(E_SL_MSG_OTA_IMAGE_REQUEST,         ZCB_HandleOTARequest,               NULL);//PCT OTA fun
 #endif   
     
-    DBG_vPrintf(T_TRUE, "eZCB_Init END\n");
+    DBG_vPrintf(T_TRUE, "eZCB_Init OK\n");
     return E_ZB_OK;
 }
 
@@ -2065,7 +2063,7 @@ done:
 
 static void ZCB_HandleNodeClusterAttributeList(void *pvUser, uint16 u16Length, void *pvMessage)
 {
-    DBG_vPrintf(verbosity,"Handle 0x8004 message, ZCB_HandleNodeClusterAttributeList\n");
+    //DBG_vPrintf(verbosity,"Handle 0x8004 message, ZCB_HandleNodeClusterAttributeList\n");
     int iPosition;
     int iAttribute = 0;
     struct _tsClusterAttributeList
@@ -2074,7 +2072,7 @@ static void ZCB_HandleNodeClusterAttributeList(void *pvUser, uint16 u16Length, v
         uint16    u16ProfileID;
         uint16    u16ClusterID;
         uint16    au16AttributeList[255];
-    } __attribute__((__packed__)) *psClusterAttributeList = (struct _tsClusterAttributeList *)pvMessage;
+    } PACKED *psClusterAttributeList = (struct _tsClusterAttributeList *)pvMessage;
     
     psClusterAttributeList->u16ProfileID = ntohs(psClusterAttributeList->u16ProfileID);
     psClusterAttributeList->u16ClusterID = ntohs(psClusterAttributeList->u16ClusterID);
@@ -2107,7 +2105,7 @@ done:
 
 static void ZCB_HandleNodeCommandIDList(void *pvUser, uint16 u16Length, void *pvMessage)
 {
-    DBG_vPrintf(verbosity,"Handle 0x8005 message, ZCB_HandleNodeClusterAttributeList\n");
+    //DBG_vPrintf(verbosity,"Handle 0x8005 message, ZCB_HandleNodeCommandIDList\n");
     int iPosition;
     int iCommand = 0;
     struct _tsCommandIDList
@@ -2116,7 +2114,7 @@ static void ZCB_HandleNodeCommandIDList(void *pvUser, uint16 u16Length, void *pv
         uint16    u16ProfileID;
         uint16    u16ClusterID;
         uint8     au8CommandList[255];
-    } __attribute__((__packed__)) *psCommandIDList = (struct _tsCommandIDList *)pvMessage;
+    } PACKED *psCommandIDList = (struct _tsCommandIDList *)pvMessage;
     
     psCommandIDList->u16ProfileID = ntohs(psCommandIDList->u16ProfileID);
     psCommandIDList->u16ClusterID = ntohs(psCommandIDList->u16ClusterID);
@@ -2168,7 +2166,7 @@ static void ZCB_HandleRestartProvisioned(void *pvUser, uint16 u16Length, void *p
 #undef STATUS
         default: pcStatus = "Unknown";
     }
-    DBG_vPrintf(T_TRUE,  "Control bridge restarted, status %d (%s)\n", psWarmRestart->u8Status, pcStatus);
+    WAR_vPrintf(T_TRUE,  "Control bridge restarted, status %d (%s)\n", psWarmRestart->u8Status, pcStatus);
     return;
 }
 
@@ -2195,7 +2193,7 @@ static void ZCB_HandleRestartFactoryNew(void *pvUser, uint16 u16Length, void *pv
 #undef STATUS
         default: pcStatus = "Unknown";
     }
-    ERR_vPrintf(T_TRUE,  "Control bridge factory new restart, status %d (%s)", psWarmRestart->u8Status, pcStatus);
+    WAR_vPrintf(T_TRUE,  "Control bridge factory new restart, status %d (%s)", psWarmRestart->u8Status, pcStatus);
     
     eZCB_ConfigureControlBridge();
     return;

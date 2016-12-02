@@ -311,19 +311,18 @@ typedef struct
 /** Structure of data for the serial link */
 typedef struct
 {
-    int     iSerialFd;
-
-    pthread_mutex_t         mutex;
-    
+    int iSerialFd;
+    pthread_mutex_t mutex;
+    tsThread sSerialReader;
+    tsQueue  sCallbackQueue;
+    tsThread sCallbackThread; 
+    tsQueue  sMessageQueue;
+    tsThread sMessageQueueThread; 
     struct
     {
-        pthread_mutex_t         mutex;
+        pthread_mutex_t          mutex;
         tsSL_CallbackEntry      *psListHead;
     } sCallbacks;
-    
-    tsQueue sCallbackQueue;
-    tsThread sCallbackThread; 
-    
     struct 
     {
         uint16 u16Type;
@@ -332,9 +331,6 @@ typedef struct
         pthread_mutex_t mutex;
         pthread_cond_t cond_data_available;
     } asReaderMessageQueue[SL_MAX_MESSAGE_QUEUES];
-
-    
-    tsThread sSerialReader;
 } tsSerialLink;
 
 

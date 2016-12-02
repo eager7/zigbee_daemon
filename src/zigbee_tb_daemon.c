@@ -46,7 +46,6 @@
 const char *Version = "1.0";
 int verbosity = 0;
 
-pthread_mutex_t mutex_running   /** Main loop running flag */;
 volatile sig_atomic_t bRunning = 1;
 
 tsDeviceIDMap asDeviceIDMap[] = /** Map of supported Zigbee and JIP devices */ 
@@ -177,7 +176,6 @@ int main(int argc, char *argv[])
         daemonize_init("ZigbeeDaemon");
     }
 
-    pthread_mutex_init(&mutex_running, NULL);
     signal(SIGTERM, vQuitSignalHandler);/* Install signal handlers */
     signal(SIGINT,  vQuitSignalHandler);
     
@@ -187,23 +185,18 @@ int main(int argc, char *argv[])
 #ifdef ZIGBEE_SQLITE
         (eZigbeeSqliteInit(pZigbeeSqlitePath) != E_SQ_OK) ||
 #endif
-        (eSocketServer_Init() != E_SS_OK))
-    {
+        (eSocketServer_Init() != E_SS_OK)){
         ERR_vPrintf(T_TRUE, "Init compents failed \n");
-        
         goto finish;
     }
 
     while (bRunning)
     {
         /* Keep attempting to connect to the control bridge */
-        if (eZCB_EstablishComms() == E_ZB_OK)
-        {
+        if (eZCB_EstablishComms() == E_ZB_OK){
             sleep(2);
             break;
-        }
-        else
-        {
+        } else {
             ERR_vPrintf(T_TRUE, "can't connect with coordinator \n");
         }
     }
@@ -213,10 +206,8 @@ int main(int argc, char *argv[])
         static uint8 time_search = 0;
         static uint8 time_num = 1;
         ++time_search;
-        if(time_num*2 == time_search)
-        {
-            if(time_num < 5)
-            {
+        if(time_num*2 == time_search) {
+            if(time_num < 5) {
                 ++time_num;
             }
             mLockLock(&sZigbee_Network.mutex);
@@ -298,9 +289,7 @@ static void print_usage_exit(char *argv[])
 static void vQuitSignalHandler (int sig)
 {
     DBG_vPrintf(verbosity, "Got signal %d\n", sig); 
-    pthread_mutex_lock(&mutex_running);
     bRunning = 0;
-    pthread_mutex_unlock(&mutex_running);
     
     return;
 }

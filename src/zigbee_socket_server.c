@@ -93,9 +93,7 @@ static tsQueue  sQueueMsg;
 
 
 teSS_Status eSocketServer_Init(void)
-{ 
-    DBG_vPrintf(verbosity, "eScketServer_Init\n");
-    
+{     
     teSS_Status SStatus = E_SS_OK;
     signal(SIGPIPE, SIG_IGN);//ingnore signal interference
 
@@ -156,6 +154,7 @@ teSS_Status eSocketServer_Init(void)
         ERR_vPrintf(T_TRUE, "Failed to start handler thread\n");
         return E_SS_ERROR;
     }
+    DBG_vPrintf(verbosity, "eScketServer_Init OK\n");
     
     return E_SS_OK;
 }
