@@ -43,9 +43,7 @@
 #include <sys/un.h>
 
 
-#include "Utils.h"
-#include "ZigbeeSocketServer.h"
-#include "ZigbeeNetwork.h"
+#include "zigbee_socket_server.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/

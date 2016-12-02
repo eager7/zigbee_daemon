@@ -20,7 +20,7 @@
 #ifndef __THREADS_H__
 #define __THREADS_H__
 
-#include "Utils.h"
+#include "utils.h"
 /** Enumerated type of thread status's */
 typedef enum
 {

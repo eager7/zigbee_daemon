@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <sys/time.h>
 
-#include <Threads.h>
+#include <threads.h>
 
 #define DBG_THREADS 0
 #define DBG_LOCKS   0

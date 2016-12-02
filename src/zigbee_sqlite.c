@@ -43,9 +43,7 @@
 #include <sys/un.h>
 
 
-#include "Utils.h"
-#include "ZigbeeSqlite.h"
-#include "ZigbeeNetwork.h"
+#include "zigbee_sqlite.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/

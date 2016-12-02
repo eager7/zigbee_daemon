@@ -28,8 +28,9 @@ extern "C" {
 /***        Include files                                                 ***/
 /****************************************************************************/
 
-#include "Serial.h"
-#include "Threads.h"
+#include "serial.h"
+#include "threads.h"
+#include "utils.h"
 
 
 /****************************************************************************/

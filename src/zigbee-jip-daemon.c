@@ -26,14 +26,14 @@
 #include <syslog.h>
 #include <pthread.h>
 #include "zigbee_type.h"
-#include "Utils.h"
-#include "Serial.h"
-#include "ZigbeeControlBridge.h"
-#include "SerialLink.h"
-#include "ZigbeeNetwork.h"
-#include "ZigbeeDevices.h"
-#include "ZigbeeSocketServer.h"
-#include "ZigbeeSqlite.h"
+#include "utils.h"
+#include "serial.h"
+#include "zigbee_control_bridge.h"
+#include "serial_link.h"
+#include "zigbee_network.h"
+#include "zigbee_devices.h"
+#include "zigbee_socket_server.h"
+#include "zigbee_sqlite.h"
 /***********************************************************************************/
 const char *Version = "3.0";
 int verbosity = 0;

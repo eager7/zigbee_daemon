@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/package.mk
 
-TARGET := zigbee-tcl-daemon
+TARGET := zigbee-tb-daemon
 PKG_NAME:=zigbee_daemon
 PKG_RELEASE:=1.0
 
@@ -16,10 +16,10 @@ PKG_BUILD_DIR:= $(BUILD_DIR)/$(PKG_NAME)
 
 
 define Package/$(PKG_NAME)
-  SECTION:=nxp
-  CATEGORY:=NXP
-  TITLE:=zigbee_daemon -- new zigbee daemon for kiwi
-  DEPENDS:=+libjson-c +libdaemon +libpthread +libsqlite3
+  SECTION:=tb
+  CATEGORY:=TB
+  TITLE:=zigbee_daemon -- tb zigbee daemon for IOT gatway
+  DEPENDS:=+libjson-c +libpthread +libsqlite3
 endef
 
 define Build/Prepare
@@ -37,7 +37,7 @@ endef
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 # check if we are on real system
-echo "Enabling rc.d symlink for zigbee-jip-daemon"
+echo "Enabling rc.d symlink for zigbee-tb-daemon"
 [ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/zigbee_daemon enable || true
 endef
 

@@ -32,9 +32,7 @@
 #include <syslog.h>
 #include <arpa/inet.h>
 
-#include "SerialLink.h"
-#include "Serial.h"
-#include "Utils.h"
+#include "serial_link.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/

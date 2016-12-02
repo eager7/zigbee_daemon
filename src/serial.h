@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * MODULE:             Linux Zigbee - JIP Daemon
+ * MODULE:             Zigbee - JIP daemon
  *
- * COMPONENT:          JIP Interface to control bridge
+ * COMPONENT:          Serial interface
  *
- * REVISION:           $Revision: 37346 $
+ * REVISION:           $Revision: 43420 $
  *
  * DATED:              $Date: 2015-10-01 15:13:17 +0100 (Mon, 18 Jun 2012) $
  *
@@ -17,8 +17,10 @@
  ***************************************************************************/
 
 
-#ifndef  ZIGBEE_DEVICES_H_INCLUDED
-#define  ZIGBEE_DEVICES_H_INCLUDED
+#include <stdint.h>
+
+#ifndef __SERIAL_H__
+#define __SERIAL_H__
 
 #if defined __cplusplus
 extern "C" {
@@ -27,8 +29,7 @@ extern "C" {
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
-
-#include "Utils.h"
+#include "utils.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -37,11 +38,14 @@ extern "C" {
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
+
 typedef enum
 {
-    S_COOR_OK = 0,
-    S_COOR_ERROR,
-}tsCoor_Status;
+    E_SERIAL_OK,
+    E_SERIAL_ERROR,
+    E_SERIAL_NODATA,
+} teSerial_Status;
+
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
@@ -58,29 +62,22 @@ typedef enum
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 
-/** Initialisation function for the Control bridge JIP device. */
-teZbStatus eControlBridgeInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eOnOffLightInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eDimmerLightInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eWarmColdLigthInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eColourLightInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eTemperatureSensorInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eLightSensorInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eSimpleSensorInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eSmartPlugInitalise(tsZigbee_Node *psZigbeeNode);
-teZbStatus eDimmerSwitchInitalise(tsZigbee_Node *psZigbeeNode);
+teSerial_Status eSerial_Init(char *name, uint32 baud, int *piserial_fd);
+teSerial_Status eSerial_Read(uint8 *data);
+teSerial_Status eSerial_Write(const uint8 data);
+ 
+teSerial_Status eSerial_ReadBuffer(uint8 *data, uint32 *count);
+teSerial_Status eSerial_WriteBuffer(uint8 *data, uint32 count);  
 
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
 
+/****************************************************************************/
+/***        END OF FILE                                                   ***/
+/****************************************************************************/
 #if defined __cplusplus
 }
 #endif
 
-#endif  /* JIP_CONTROLBRIDGE_H_INCLUDED */
-
-/****************************************************************************/
-/***        END OF FILE                                                   ***/
-/****************************************************************************/
-
+#endif /* __SERIAL_H__ */

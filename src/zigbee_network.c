@@ -34,11 +34,7 @@
 
 #include <syslog.h>
 
-#include "ZigbeeControlBridge.h"
-#include "ZigbeeConstant.h"
-#include "ZigbeeNetwork.h"
-#include "Utils.h"
-#include "ZigbeeSqlite.h"
+#include "zigbee_network.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/

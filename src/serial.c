@@ -28,8 +28,7 @@
 #include <string.h>
 #include <termios.h>
 
-#include "Serial.h"
-#include "Utils.h"
+#include "serial.h"
 
 #define DGB_SERIAL 0
 //extern volatile sig_atomic_t bRunning;

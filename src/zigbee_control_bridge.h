@@ -24,11 +24,11 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 
-#include "Utils.h"
-#include "Threads.h"
-#include "SerialLink.h"
-#include "ZigbeeConstant.h"
-#include "ZigbeeNetwork.h"
+#include "utils.h"
+#include "threads.h"
+#include "serial_link.h"
+#include "zigbee_constant.h"
+#include "zigbee_network.h"
 
 #if defined __cplusplus
 extern "C" {
