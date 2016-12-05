@@ -784,6 +784,7 @@ static void *pvMessageQueueHandlerThread(void *psThreadInfoVoid)
                 WAR_vPrintf(DBG_SERIALLINK_QUEUE, "0x%04x", sStatus->u16MessageType);
             }
             printf("\n");
+            
             for(int i = 0; i < 5; i++){
                 // See if any threads are waiting for this message
                 teSL_Status eStatus = eSL_MessageQueue(psSerialLink, psMessageData->u16Type, psMessageData->u16Length, psMessageData->au8Message);
@@ -802,7 +803,6 @@ static void *pvMessageQueueHandlerThread(void *psThreadInfoVoid)
                     }
                     printf("\n");
                     usleep(20000);
-                    continue;
                 }
             }
             free(psMessageData);
