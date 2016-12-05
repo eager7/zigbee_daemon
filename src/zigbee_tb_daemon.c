@@ -67,14 +67,6 @@ tsDeviceIDMap asDeviceIDMap[] = /** Map of supported Zigbee and JIP devices */
 #endif        
     { 0x0000, 0x00000000},
 };
-static uint16 au16ProfileHA = E_ZB_PROFILEID_HA;
-static uint16 au16Cluster[] = {
-                            E_ZB_CLUSTERID_ONOFF,                   /*Light*/
-                            E_ZB_CLUSTERID_BINARY_INPUT_BASIC,      /*binary sensor*/
-                            E_ZB_CLUSTERID_TEMPERATURE,             /*tempertuare*/
-                            E_ZB_CLUSTERID_ILLUMINANCE              /*light sensor*/
-                            };
-
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -90,7 +82,7 @@ int main(int argc, char *argv[])
 {
     signed char opt = 0;
     int option_index = 0;
-    int daemonize = 1;
+    int daemonize = 0;
     uint32 u32BaudRate = 1000000;
     uint32 eChannel = CONFIG_DEFAULT_CHANNEL;
     char *cpSerialDevice = "/dev/ttyUSB0";
@@ -201,6 +193,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    int iStart= 0;
     while (bRunning)
     {
         static uint8 time_search = 0;
@@ -234,15 +227,9 @@ int main(int argc, char *argv[])
                 }
                 tempNodes = tempNodes->psNext;
             }
+            eZCB_NeighbourTableRequest(&iStart);
             mLockUnlock(&sZigbee_Network.mutex);                   
             
-            //retry search the device
-            if(eZCB_MatchDescriptorRequest(E_ZB_BROADCAST_ADDRESS_RXONWHENIDLE, au16ProfileHA,
-                                        sizeof(au16Cluster) / sizeof(uint16), au16Cluster, 
-                                        0, NULL, NULL) != E_ZB_OK)
-            {
-                ERR_vPrintf(DBG_PCT, "Error sending match descriptor request\n");
-            }
             time_search = 0;
         }
         sleep(3);

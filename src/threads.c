@@ -98,7 +98,7 @@ teThreadStatus mThreadStart(tprThreadFunction prThreadFunction, tsThread *psThre
             return E_THREAD_ERROR_FAILED;
         }
     }
-    DBG_vPrintf(T_TRUE, "Create Thread %p\n", psThreadInfo);
+    DBG_vPrintf(DBG_THREADS, "Create Thread %p\n", psThreadInfo);
     return  E_THREAD_OK;
 }
 

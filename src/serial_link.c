@@ -171,7 +171,7 @@ teSL_Status eSL_MessageWait(uint16 u16Type, uint32 u32WaitTimeout, uint16 *pu16L
             struct timeval sNow;
             struct timespec sTimeout;
                     
-            DBG_vPrintf(1, "Found free slot %d to message 0x%04X\n", i, u16Type);
+            DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Found free slot %d to message 0x%04X\n", i, u16Type);
             psSerialLink->asReaderMessageQueue[i].u16Type = u16Type;
             if (u16Type == E_SL_MSG_STATUS){
                 psSerialLink->asReaderMessageQueue[i].pu8Message = *ppvMessage;
@@ -575,7 +575,7 @@ static teSL_Status eSL_MessageQueue(tsSerialLink *psSerialLink, uint16 u16Type, 
 
         if (psSerialLink->asReaderMessageQueue[i].u16Type == u16Type)
         {        
-            DBG_vPrintf(1, "Found listener for message type 0x%04x in slot %d\n", u16Type, i);
+            DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Found listener for message type 0x%04x in slot %d\n", u16Type, i);
                 
             if (u16Type == E_SL_MSG_STATUS)
             {
@@ -702,7 +702,7 @@ static void *pvSerialReaderThread(void *psThreadInfoVoid)
                 if(pMessageQueue){
                     memcpy(pMessageQueue, &sMessage, sizeof(tsSL_Message));
                     if (mQueueEnqueue(&psSerialLink->sMessageQueue, pMessageQueue) == E_QUEUE_OK){
-                        WAR_vPrintf(1, "Set Queue Message:0x%04x to MessageHandleThread\n", pMessageQueue->u16Type);
+                        WAR_vPrintf(DBG_SERIALLINK_QUEUE, "Set Queue Message:0x%04x to MessageHandleThread\n", pMessageQueue->u16Type);
                         iHandled = 1;
                     }else{
                         ERR_vPrintf(T_TRUE, "Failed to queue message for callback\n");
@@ -749,7 +749,7 @@ static void *pvCallbackHandlerThread(void *psThreadInfoVoid)
         
         if (mQueueDequeue(&psSerialLink->sCallbackQueue, (void**)&psCallbackData) == E_QUEUE_OK)
         {
-            DBG_vPrintf(DBG_SERIALLINK_CB, "Calling callback %p for message 0x%04X\n", psCallbackData->prCallback, psCallbackData->sMessage.u16Type);
+            DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Calling callback %p for message 0x%04X\n", psCallbackData->prCallback, psCallbackData->sMessage.u16Type);
             psCallbackData->prCallback(psCallbackData->pvUser, psCallbackData->sMessage.u16Length, psCallbackData->sMessage.au8Message);
             free(psCallbackData);
         }
@@ -777,32 +777,35 @@ static void *pvMessageQueueHandlerThread(void *psThreadInfoVoid)
         DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Waiting Message from SerialLinkThread\n");
         if(mQueueDequeue(&psSerialLink->sMessageQueue, (void**)&psMessageData) == E_QUEUE_OK)
         {
-            WAR_vPrintf(1, "Get Queue Message:0x%04x from SerialLinkThread:", psMessageData->u16Type);
+            WAR_vPrintf(DBG_SERIALLINK_QUEUE, "Get Queue Message:0x%04x from SerialLinkThread:", psMessageData->u16Type);
             if(psMessageData->u16Type == E_SL_MSG_STATUS){
                 tsSL_Msg_Status *sStatus;
                 sStatus = (tsSL_Msg_Status *)psMessageData->au8Message;
-                WAR_vPrintf(1, "0x%04x", sStatus->u16MessageType);
+                WAR_vPrintf(DBG_SERIALLINK_QUEUE, "0x%04x", sStatus->u16MessageType);
             }
             printf("\n");
-            // See if any threads are waiting for this message
-            teSL_Status eStatus = eSL_MessageQueue(psSerialLink, psMessageData->u16Type, psMessageData->u16Length, psMessageData->au8Message);
-            if (eStatus == E_SL_OK)
-            {
-                DBG_vPrintf(1, "Message Brocast Successful\n");
-                free(psMessageData);
-            }
-            else //No Waiting or Error
-            {
-                WAR_vPrintf(1, "Set Queue Message:0x%04x To SerialLinkThread:", psMessageData->u16Type);
-                if(psMessageData->u16Type == E_SL_MSG_STATUS){
-                    tsSL_Msg_Status *sStatus;
-                    sStatus = (tsSL_Msg_Status *)psMessageData->au8Message;
-                    WAR_vPrintf(1, "0x%04x", sStatus->u16MessageType);
+            for(int i = 0; i < 5; i++){
+                // See if any threads are waiting for this message
+                teSL_Status eStatus = eSL_MessageQueue(psSerialLink, psMessageData->u16Type, psMessageData->u16Length, psMessageData->au8Message);
+                if (eStatus == E_SL_OK)
+                {
+                    DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Message Brocast Successful\n");
+                    break;
                 }
-                printf("\n");
-                usleep(20000);
-                mQueueEnqueue(&psSerialLink->sMessageQueue, psMessageData);
+                else //No Waiting or Error
+                {
+                    WAR_vPrintf(DBG_SERIALLINK_QUEUE, "No listeners for message type 0x%04X,:", psMessageData->u16Type);
+                    if(psMessageData->u16Type == E_SL_MSG_STATUS){
+                        tsSL_Msg_Status *sStatus;
+                        sStatus = (tsSL_Msg_Status *)psMessageData->au8Message;
+                        WAR_vPrintf(DBG_SERIALLINK_QUEUE, "0x%04x", sStatus->u16MessageType);
+                    }
+                    printf("\n");
+                    usleep(20000);
+                    continue;
+                }
             }
+            free(psMessageData);
         }
     }
     

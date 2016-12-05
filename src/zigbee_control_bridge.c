@@ -34,6 +34,7 @@
 
 #include <syslog.h>
 
+#include "zigbee_devices.h"
 #include "zigbee_control_bridge.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -519,7 +520,7 @@ teZbStatus eZCB_SendMatchDescriptorRequest(void)
     return E_ZB_OK;
 }
 
-teZbStatus eZCB_NeighbourTableRequest(tsZigbee_Node *psZigbeeNode)
+teZbStatus eZCB_NeighbourTableRequest(int *pStart)
 {
     struct _ManagementLQIRequest
     {
@@ -557,14 +558,10 @@ teZbStatus eZCB_NeighbourTableRequest(tsZigbee_Node *psZigbeeNode)
     teZbStatus eStatus = E_ZB_COMMS_FAILED;
     int i;
     
-    u16ShortAddress = psZigbeeNode->u16ShortAddress;
-    
-    /* Unlock the node during this process, because it can take time, and we don't want to be holding a node lock when 
-     * attempting to lock the list of nodes - that leads to deadlocks with the JIP server thread. */
-    //eUtils_LockUnlock(&psZigbeeNode->sLock);
-    
+    u16ShortAddress = 0x0000; //coordinator
+        
     sManagementLQIRequest.u16TargetAddress = htons(u16ShortAddress);
-    sManagementLQIRequest.u8StartIndex      = psZigbeeNode->u8LastNeighbourTableIndex;
+    sManagementLQIRequest.u8StartIndex     = *pStart;
     
     DBG_vPrintf(DBG_ZCB, "Send management LQI request to 0x%04X for entries starting at %d\n", 
                                                             u16ShortAddress, sManagementLQIRequest.u8StartIndex);
@@ -596,22 +593,34 @@ teZbStatus eZCB_NeighbourTableRequest(tsZigbee_Node *psZigbeeNode)
             psManagementLQIResponse = NULL;
         }
     }
-    if(NULL != psManagementLQIResponse)
+    if(psManagementLQIResponse->u8Status == CZD_NW_STATUS_SUCCESS)
     {
         DBG_vPrintf(DBG_ZCB, "Received management LQI response. Table size: %d, Entry count: %d, start index: %d\n",
                     psManagementLQIResponse->u8NeighbourTableSize,
                     psManagementLQIResponse->u8TableEntries,
                     psManagementLQIResponse->u8StartIndex);
     }
+    else
+    {
+        DBG_vPrintf(DBG_ZCB, "Received error status in management LQI response : 0x%02x\n",psManagementLQIResponse->u8Status);
+        goto done;
+    }
     
     for (i = 0; i < psManagementLQIResponse->u8TableEntries; i++)
     {
-        tsZigbee_Node *ZigbeeNodeTemp;
+        tsZigbee_Node *ZigbeeNodeTemp = NULL;
         //tsZcbEvent *psEvent;
         
         psManagementLQIResponse->asNeighbours[i].u16ShortAddress    = ntohs(psManagementLQIResponse->asNeighbours[i].u16ShortAddress);
         psManagementLQIResponse->asNeighbours[i].u64PanID           = be64toh(psManagementLQIResponse->asNeighbours[i].u64PanID);
         psManagementLQIResponse->asNeighbours[i].u64IEEEAddress     = be64toh(psManagementLQIResponse->asNeighbours[i].u64IEEEAddress);
+
+        if ((psManagementLQIResponse->asNeighbours[i].u16ShortAddress >= 0xFFFA) ||
+            (psManagementLQIResponse->asNeighbours[i].u64IEEEAddress  == 0))
+        {
+          /* Illegal short / IEEE address */
+          continue;
+        }
         
         DBG_vPrintf(DBG_ZCB, "  Entry %02d: Short Address 0x%04X, PAN ID: 0x%016llX, IEEE Address: 0x%016llX\n", i,
                     psManagementLQIResponse->asNeighbours[i].u16ShortAddress,
@@ -630,10 +639,8 @@ teZbStatus eZCB_NeighbourTableRequest(tsZigbee_Node *psZigbeeNode)
         
         ZigbeeNodeTemp = psZigbee_FindNodeByShortAddress(psManagementLQIResponse->asNeighbours[i].u16ShortAddress);
         
-        if (!ZigbeeNodeTemp)
+        if (NULL == ZigbeeNodeTemp)//New Nodes
         {
-            DBG_vPrintf(DBG_ZCB, "New Node 0x%04X in neighbour table\n", psManagementLQIResponse->asNeighbours[i].u16ShortAddress);
-
             if ((eStatus = eZigbee_AddNode(psManagementLQIResponse->asNeighbours[i].u16ShortAddress, 
                                         psManagementLQIResponse->asNeighbours[i].u64IEEEAddress, 
                                         0x0000, psManagementLQIResponse->asNeighbours[i].sBitmap.uMacCapability ? E_ZB_MAC_CAPABILITY_RXON_WHEN_IDLE : 0, NULL)) != E_ZB_OK)
@@ -641,26 +648,35 @@ teZbStatus eZCB_NeighbourTableRequest(tsZigbee_Node *psZigbeeNode)
                 DBG_vPrintf(DBG_ZCB, "Error adding node to network\n");
                 break;
             }
+            else
+            {
+                DBG_vPrintf(DBG_ZCB, "eZCB_MatchDescriptorRequest\n");
+                if(eZCB_MatchDescriptorRequest(psManagementLQIResponse->asNeighbours[i].u16ShortAddress, au16ProfileHA,
+                                            sizeof(au16Cluster) / sizeof(uint16), au16Cluster, 0, NULL, NULL) != E_ZB_OK)
+                {
+                    ERR_vPrintf(DBG_ZCB, "Error sending match descriptor request\n");
+                }
+            }
         }
     }
     
     if (psManagementLQIResponse->u8TableEntries > 0)
     {
         // We got some entries, so next time request the entries after these.
-        psZigbeeNode->u8LastNeighbourTableIndex += psManagementLQIResponse->u8TableEntries;
+        *pStart += psManagementLQIResponse->u8TableEntries;
+        if (*pStart >= psManagementLQIResponse->u8NeighbourTableSize)/* Make sure we're still in table boundaries */
+        {
+            *pStart = 0;
+        }
     }
     else
     {
         // No more valid entries.
-        psZigbeeNode->u8LastNeighbourTableIndex = 0;
+        *pStart = 0;
     }
 
     eStatus = E_ZB_OK;
 done:
-    psZigbeeNode = psZigbee_FindNodeByShortAddress(u16ShortAddress);
-    mLockLock(&psZigbeeNode->mutex);
-    vZigbee_NodeUpdateComms(psZigbeeNode, eStatus);
-    mLockUnlock(&psZigbeeNode->mutex);
     free(psManagementLQIResponse);
     return eStatus;
 }
@@ -2145,7 +2161,7 @@ done:
 
 static void ZCB_HandleRestartProvisioned(void *pvUser, uint16 u16Length, void *pvMessage)
 {
-    DBG_vPrintf(verbosity,"Handle 0x8006 message, ZCB_HandleRestartProvisioned\n");
+    DBG_vPrintf(verbosity,"****************Handle 0x8006 message, ZCB_HandleRestartProvisioned\n");
     const char *pcStatus = NULL;
     
     struct _tsWarmRestart
@@ -2203,7 +2219,7 @@ static void ZCB_HandleRestartFactoryNew(void *pvUser, uint16 u16Length, void *pv
 
 static void ZCB_HandleNetworkJoined(void *pvUser, uint16 u16Length, void *pvMessage)
 {
-    DBG_vPrintf(verbosity,"Handle 0x8024 message, ZCB_HandleNetworkJoined\n");
+    DBG_vPrintf(verbosity,"****************Handle 0x8024 message, ZCB_HandleNetworkJoined\n");
     struct _tsNetworkJoinedFormed
     {
         uint8     u8Status;
@@ -2240,12 +2256,12 @@ static void ZCB_HandleNetworkJoined(void *pvUser, uint16 u16Length, void *pvMess
 #endif
     asDeviceIDMap[0].prInitaliseRoutine(&sZigbee_Network.sNodes);
     iFlagAllowHandleReport = 1;
-    if(eZCB_MatchDescriptorRequest(E_ZB_BROADCAST_ADDRESS_RXONWHENIDLE, au16ProfileHA,
+    /*if(eZCB_MatchDescriptorRequest(E_ZB_BROADCAST_ADDRESS_RXONWHENIDLE, au16ProfileHA,
                                 sizeof(au16Cluster) / sizeof(uint16), au16Cluster, 
                                 0, NULL, NULL) != E_ZB_OK)
     {
         ERR_vPrintf(T_TRUE, "Error sending match descriptor request\n");
-    }
+    }*/
     mLockUnlock(&sZigbee_Network.sNodes.mutex);
     
     return;
@@ -2255,7 +2271,7 @@ static void ZCB_HandleNetworkJoined(void *pvUser, uint16 u16Length, void *pvMess
 
 static void ZCB_HandleDeviceAnnounce(void *pvUser, uint16 u16Length, void *pvMessage)
 {
-    DBG_vPrintf(verbosity,"Handle 0x004D message, ZCB_HandleDeviceAnnounce\n");
+    DBG_vPrintf(verbosity,"****************Handle 0x004D message, ZCB_HandleDeviceAnnounce\n");
     tsZigbee_Node *psZigbeeNode;
     struct _tsDeviceAnnounce
     {
@@ -2389,7 +2405,7 @@ static void eZCB_HandleDeviceJoin(tsZigbee_Node *ZigbeeMatchNode)
 
 static void ZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, void *pvMessage)
 {
-    DBG_vPrintf(verbosity,"Handle 0x8046 message, ZCB_HandleMatchDescriptorResponse\n");
+    DBG_vPrintf(verbosity,"******************Handle 0x8046 message, ZCB_HandleMatchDescriptorResponse\n");
     tsZigbee_Node *psZigbeeNode;
     struct _tMatchDescriptorResponse
     {
@@ -2398,7 +2414,7 @@ static void ZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, vo
         uint16    u16ShortAddress;
         uint8     u8NumEndpoints;
         uint8     au8Endpoints[255];
-    } __attribute__((__packed__)) *psMatchDescriptorResponse = (struct _tMatchDescriptorResponse *)pvMessage;
+    } PACKED *psMatchDescriptorResponse = (struct _tMatchDescriptorResponse *)pvMessage;
 
     psMatchDescriptorResponse->u16ShortAddress  = ntohs(psMatchDescriptorResponse->u16ShortAddress);
 //if (psMatchDescriptorResponse->u8NumEndpoints)

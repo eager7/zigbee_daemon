@@ -45,7 +45,7 @@ extern "C" {
 
 /* Default network configuration */
 #define CONFIG_DEFAULT_START_MODE       E_START_COORDINATOR
-#define CONFIG_DEFAULT_CHANNEL          25
+#define CONFIG_DEFAULT_CHANNEL          20
 #define CONFIG_DEFAULT_PANID            0x1234567812345678ll
 
 #define MAC_CAP_PAN_COOR        (1<<0)
@@ -175,8 +175,8 @@ extern int              bZCB_EnableAPSAck;
  */
 typedef struct
 {
-    uint16                u16ZigbeeDeviceID;      /**< Zigbee Deive ID */
-    uint32                u32JIPDeviceID;         /**< Corresponding JIP device ID */
+    uint16                  u16ZigbeeDeviceID;      /**< Zigbee Deive ID */
+    uint32                  u32JIPDeviceID;         /**< Corresponding JIP device ID */
     tpreDeviceInitialise    prInitaliseRoutine;     /**< Initialisation routine for the JIP device */
     //tprAttributeUpdate      prAttributeUpdateRoutine;   /**< Attribute update routine for the JIP device */
 } tsDeviceIDMap;
@@ -252,7 +252,7 @@ teZbStatus eZCB_SimpleDescriptorRequest(tsZigbee_Node *psZigbeeNode, uint8 u8End
 
 
 /** Send a request for the neighbour table to a node */
-teZbStatus eZCB_NeighbourTableRequest(tsZigbee_Node *psZigbeeNode);
+teZbStatus eZCB_NeighbourTableRequest(int *pStart);
 
 /** Request an attribute from a node. The data is requested, parsed, and passed back.
  *  \param psZigbeeNode            Pointer to node from which to read the attribute
