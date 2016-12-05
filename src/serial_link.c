@@ -40,7 +40,7 @@
 #define DBG_SERIALLINK 0
 #define DBG_SERIALLINK_CB 0
 #define DBG_SERIALLINK_COMMS 0
-#define DBG_SERIALLINK_QUEUE 1
+#define DBG_SERIALLINK_QUEUE 0
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -51,7 +51,7 @@ static int iSL_TxByte(bool_t bSpecialCharacter, uint8 u8Data);
 static bool_t bSL_RxByte(uint8 *pu8Data);
 static teSL_Status eSL_WriteMessage(uint16 u16Type, uint16 u16Length, uint8 *pu8Data);
 static teSL_Status eSL_ReadMessage(uint16 *pu16Type, uint16 *pu16Length, uint16 u16MaxLength, uint8 *pu8Message);
-static void *pvReaderThread(void *psThreadInfoVoid);
+static void *pvSerialReaderThread(void *psThreadInfoVoid);
 static void *pvCallbackHandlerThread(void *psThreadInfoVoid);
 static void *pvMessageQueueHandlerThread(void *psThreadInfoVoid);
 
@@ -73,55 +73,35 @@ static tsSerialLink sSerialLink;
 
 teSL_Status eSL_Init(char *cpSerialDevice, uint32 u32BaudRate)
 {
-    int i;
-    if (eSerial_Init(cpSerialDevice, u32BaudRate, &sSerialLink.iSerialFd) != E_SERIAL_OK)
-    {
+    memset(&sSerialLink, 0, sizeof(tsSerialLink));
+    if (eSerial_Init(cpSerialDevice, u32BaudRate, &sSerialLink.iSerialFd) != E_SERIAL_OK){
         ERR_vPrintf(T_TRUE,"can't init serial success\n");
         return E_SL_ERROR_SERIAL;
     }
     
-    /* Initialise serial link mutex */
-    pthread_mutex_init(&sSerialLink.mutex, NULL);
+    CHECK_RESULT(mLockCreate(&sSerialLink.mutex_write),E_LOCK_OK,E_SL_ERROR);
     
-    /* Initialise message callbacks */
-    pthread_mutex_init(&sSerialLink.sCallbacks.mutex, NULL);
-    sSerialLink.sCallbacks.psListHead = NULL;
-    
-    /* Initialise message wait queue */
+    int i;
     for (i = 0; i < SL_MAX_MESSAGE_QUEUES; i++){
         pthread_mutex_init(&sSerialLink.asReaderMessageQueue[i].mutex, NULL);
         pthread_cond_init(&sSerialLink.asReaderMessageQueue[i].cond_data_available, NULL);
         sSerialLink.asReaderMessageQueue[i].u16Type = 0;
     }
     
-    if (mQueueCreate(&sSerialLink.sCallbackQueue, SL_MAX_CALLBACK_QUEUES) != E_QUEUE_OK) {
-        ERR_vPrintf(T_TRUE, "Error creating callabck queue\n");
-        return E_SL_ERROR;
-    }  
     /* Start the callback handler thread */
-    sSerialLink.sCallbackThread.pvThreadData = &sSerialLink;
-    if (mThreadStart(pvCallbackHandlerThread, &sSerialLink.sCallbackThread, E_THREAD_JOINABLE) != E_THREAD_OK){
-        ERR_vPrintf(T_TRUE, "Failed to start callback handler thread\n");
-        return E_SL_ERROR;
-    }
+    sSerialLink.sCallbackHandleThread.pvThreadData = &sSerialLink;
+    CHECK_RESULT(mLockCreate(&sSerialLink.sCallbacks.mutex),E_LOCK_OK,E_SL_ERROR);
+    CHECK_RESULT(mQueueCreate(&sSerialLink.sCallbackQueue, SL_MAX_CALLBACK_QUEUES), E_QUEUE_OK, E_SL_ERROR);
+    CHECK_RESULT(mThreadStart(pvCallbackHandlerThread, &sSerialLink.sCallbackHandleThread, E_THREAD_DETACHED), E_THREAD_OK, E_SL_ERROR);
     
-    if (mQueueCreate(&sSerialLink.sMessageQueue, SL_MAX_MESSAGE_QUEUES) != E_QUEUE_OK){
-        ERR_vPrintf(T_TRUE, "Error creating message queue\n");
-        return E_SL_ERROR;
-    }  
     /* Start the message queue handler thread */
-    sSerialLink.sMessageQueueThread.pvThreadData = &sSerialLink;
-    if (mThreadStart(pvMessageQueueHandlerThread, &sSerialLink.sMessageQueueThread, E_THREAD_JOINABLE) != E_THREAD_OK){
-        ERR_vPrintf(T_TRUE, "Failed to start message queue handler thread\n");
-        return E_SL_ERROR;
-    }
+    sSerialLink.sMessageHandleThread.pvThreadData = &sSerialLink;
+    CHECK_RESULT(mQueueCreate(&sSerialLink.sMessageQueue, SL_MAX_MESSAGE_QUEUES + 2), E_QUEUE_OK, E_SL_ERROR);
+    CHECK_RESULT(mThreadStart(pvMessageQueueHandlerThread, &sSerialLink.sMessageHandleThread, E_THREAD_DETACHED), E_THREAD_OK, E_SL_ERROR);
 
     /* Start the Serial thread */
-    sSerialLink.sSerialReader.pvThreadData = &sSerialLink;
-    if (mThreadStart(pvReaderThread, &sSerialLink.sSerialReader, E_THREAD_DETACHED) != E_THREAD_OK){
-        ERR_vPrintf(T_TRUE, "Failed to start serial reader thread\n");
-        return E_SL_ERROR;
-    }
+    sSerialLink.sSerialReaderThread.pvThreadData = &sSerialLink;
+    CHECK_RESULT(mThreadStart(pvSerialReaderThread, &sSerialLink.sSerialReaderThread, E_THREAD_DETACHED), E_THREAD_OK, E_SL_ERROR);
     
     DBG_vPrintf(T_TRUE, "eSL_Init OK\n");
     return E_SL_OK;
@@ -130,13 +110,15 @@ teSL_Status eSL_Init(char *cpSerialDevice, uint32 u32BaudRate)
 
 teSL_Status eSL_Destroy(void)
 {
+    mThreadStop(&sSerialLink.sCallbackHandleThread);
     mQueueDestroy(&sSerialLink.sCallbackQueue);
+
+    mThreadStop(&sSerialLink.sMessageHandleThread);
     mQueueDestroy(&sSerialLink.sMessageQueue);
 
-    mThreadStop(&sSerialLink.sSerialReader);
+    mThreadStop(&sSerialLink.sSerialReaderThread);
  
-    while (sSerialLink.sCallbacks.psListHead)
-    {   
+    while (sSerialLink.sCallbacks.psListHead){   
         eSL_RemoveListener(sSerialLink.sCallbacks.psListHead->u16Type, sSerialLink.sCallbacks.psListHead->prCallback);
     }
     
@@ -149,38 +131,30 @@ teSL_Status eSL_SendMessage(uint16 u16Type, uint16 u16Length, void *pvMessage, u
     teSL_Status eStatus;
     
     /* Make sure there is only one thread sending messages to the node at a time. */
-    pthread_mutex_lock(&sSerialLink.mutex);
+    pthread_mutex_lock(&sSerialLink.mutex_write);
     
     eStatus = eSL_WriteMessage(u16Type, u16Length, (uint8 *)pvMessage);
-    
-    if (eStatus == E_SL_OK)
+    if (eStatus == E_SL_OK)/* Command sent successfully */
     {
-        /* Command sent successfully */
-
         uint16    u16Length;
         tsSL_Msg_Status sStatus;
         tsSL_Msg_Status *psStatus = &sStatus;
         
-        sStatus.u16MessageType = u16Type;
-
-        /* Expect a status response within 100ms */
-        eStatus = eSL_MessageWait(E_SL_MSG_STATUS, 150, &u16Length, (void**)&psStatus);
-        
+        psStatus->u16MessageType = u16Type;
+        eStatus = eSL_MessageWait(E_SL_MSG_STATUS, 100, &u16Length, (void**)&psStatus)/* Expect a status response within 100ms */;
         if (eStatus == E_SL_OK)
         {
             DBG_vPrintf(DBG_SERIALLINK, "Status: %d, Sequence %d\n", psStatus->eStatus, psStatus->u8SequenceNo);
             eStatus = psStatus->eStatus;
-            if (eStatus == E_SL_OK)
-            {
-                if (pu8SequenceNo)
-                {
+            if (eStatus == E_SL_OK){
+                if (pu8SequenceNo){
                     *pu8SequenceNo = psStatus->u8SequenceNo;
                 }
             }
             free(psStatus);//malloc in eSL_MessageQueue
         }
     }
-    pthread_mutex_unlock(&sSerialLink.mutex);
+    pthread_mutex_unlock(&sSerialLink.mutex_write);
     return eStatus;
 }
 
@@ -191,66 +165,59 @@ teSL_Status eSL_MessageWait(uint16 u16Type, uint32 u32WaitTimeout, uint16 *pu16L
     tsSerialLink *psSerialLink = &sSerialLink;
     
     for (i = 0; i < SL_MAX_MESSAGE_QUEUES; i++){
-        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Msg 0x%04x Locking queue %d mutex\n", u16Type, i);
         pthread_mutex_lock(&psSerialLink->asReaderMessageQueue[i].mutex);
-        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Msg 0x%04x Acquired queue %d mutex\n", u16Type, i);
 
         if (psSerialLink->asReaderMessageQueue[i].u16Type == 0){
-        struct timeval sNow;
-        struct timespec sTimeout;
+            struct timeval sNow;
+            struct timespec sTimeout;
                     
-            DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Found free slot %d to wait for message 0x%04X\n", i, u16Type);
-        
+            DBG_vPrintf(1, "Found free slot %d to message 0x%04X\n", i, u16Type);
             psSerialLink->asReaderMessageQueue[i].u16Type = u16Type;
-        
-        if (u16Type == E_SL_MSG_STATUS)
-        {
+            if (u16Type == E_SL_MSG_STATUS){
                 psSerialLink->asReaderMessageQueue[i].pu8Message = *ppvMessage;
-        }
+            }
 
-        memset(&sNow, 0, sizeof(struct timeval));
-        gettimeofday(&sNow, NULL);
-        sTimeout.tv_sec = sNow.tv_sec + (u32WaitTimeout/1000);
+            memset(&sNow, 0, sizeof(struct timeval));
+            gettimeofday(&sNow, NULL);
+            sTimeout.tv_sec = sNow.tv_sec + (u32WaitTimeout/1000);
             sTimeout.tv_nsec = (sNow.tv_usec + ((u32WaitTimeout % 1000) * 1000)) * 1000;
-        if (sTimeout.tv_nsec > 1000000000)
-        {
-            sTimeout.tv_sec++;
-            sTimeout.tv_nsec -= 1000000000;
-        }
-        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Time now    %lu s, %lu ns\n", sNow.tv_sec, sNow.tv_usec * 1000);
-        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Wait until  %lu s, %lu ns\n", sTimeout.tv_sec, sTimeout.tv_nsec);
-
-        switch (pthread_cond_timedwait(&psSerialLink->asReaderMessageQueue[i].cond_data_available, &psSerialLink->asReaderMessageQueue[i].mutex, &sTimeout))
-        {
-            case (0):
-                DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Got message type 0x%04x, length %d\n", 
-                                psSerialLink->asReaderMessageQueue[i].u16Type, 
-                                psSerialLink->asReaderMessageQueue[i].u16Length);
+            if (sTimeout.tv_nsec > 1000000000){
+                sTimeout.tv_sec++;
+                sTimeout.tv_nsec -= 1000000000;
+            }
+            DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Time now    %lu s, %lu ns\n", sNow.tv_sec, sNow.tv_usec * 1000);
+            DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Wait until  %lu s, %lu ns\n", sTimeout.tv_sec, sTimeout.tv_nsec);
+            //Waiting Msg Recv, this func will unlock asReaderMessageQueue[i].mutex!!!
+            switch (pthread_cond_timedwait(&psSerialLink->asReaderMessageQueue[i].cond_data_available, 
+                                                &psSerialLink->asReaderMessageQueue[i].mutex, &sTimeout))
+            {
+                case (0):
+                    DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Got message type 0x%04x, length %d\n", 
+                                    psSerialLink->asReaderMessageQueue[i].u16Type, 
+                                    psSerialLink->asReaderMessageQueue[i].u16Length);
                     *pu16Length = psSerialLink->asReaderMessageQueue[i].u16Length;
                     *ppvMessage = psSerialLink->asReaderMessageQueue[i].pu8Message;
+                    
+                    /* Reset queue for next user */
+                    psSerialLink->asReaderMessageQueue[i].u16Type = 0;
+                    pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
+                    return E_SL_OK;
                 
-                /* Reset queue for next user */
-                    psSerialLink->asReaderMessageQueue[i].u16Type = 0;
-                    pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
-                return E_SL_OK;
-            
-            case (ETIMEDOUT):
+                case (ETIMEDOUT):
                     ERR_vPrintf(T_TRUE, "Timed out for waiting msg:0x%04x\n", u16Type);
-                /* Reset queue for next user */
+                    /* Reset queue for next user */
                     psSerialLink->asReaderMessageQueue[i].u16Type = 0;
                     pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
-                return E_SL_NOMESSAGE;
-                break;
-            
-            default:
-                /* Reset queue for next user */
+                    return E_SL_NOMESSAGE;
+                    break;
+                
+                default:
+                    /* Reset queue for next user */
                     psSerialLink->asReaderMessageQueue[i].u16Type = 0;
                     pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
-                return E_SL_ERROR;
-        }
-    }
-    else
-    {
+                    return E_SL_ERROR;
+            }
+        }else{
             pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
         }
     }                   
@@ -608,12 +575,12 @@ static teSL_Status eSL_MessageQueue(tsSerialLink *psSerialLink, uint16 u16Type, 
 
         if (psSerialLink->asReaderMessageQueue[i].u16Type == u16Type)
         {        
-            DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Found listener for message type 0x%04x in slot %d\n", u16Type, i);
+            DBG_vPrintf(1, "Found listener for message type 0x%04x in slot %d\n", u16Type, i);
                 
             if (u16Type == E_SL_MSG_STATUS)
             {
                 tsSL_Msg_Status *psRxStatus = (tsSL_Msg_Status*)pu8Message;
-                    tsSL_Msg_Status *psWaitStatus = (tsSL_Msg_Status*)psSerialLink->asReaderMessageQueue[i].pu8Message;
+                tsSL_Msg_Status *psWaitStatus = (tsSL_Msg_Status*)psSerialLink->asReaderMessageQueue[i].pu8Message;
                 
                 /* Also check the type of the message that this is status to. */
                 if (psWaitStatus)
@@ -623,8 +590,8 @@ static teSL_Status eSL_MessageQueue(tsSerialLink *psSerialLink, uint16 u16Type, 
                     if (psWaitStatus->u16MessageType != ntohs(psRxStatus->u16MessageType))
                     {
                         DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Not the status listener for this message\n");
-                            pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
-                            continue;
+                        pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
+                        continue;
                     }
                 }
             }
@@ -637,15 +604,12 @@ static teSL_Status eSL_MessageQueue(tsSerialLink *psSerialLink, uint16 u16Type, 
                 return E_SL_ERROR_NOMEM;
             }
             memcpy(pu8MessageCopy, pu8Message, u16Length);
-            
-            
-                psSerialLink->asReaderMessageQueue[i].u16Length = u16Length;
-                psSerialLink->asReaderMessageQueue[i].pu8Message = pu8MessageCopy;
+            psSerialLink->asReaderMessageQueue[i].u16Length = u16Length;
+            psSerialLink->asReaderMessageQueue[i].pu8Message = pu8MessageCopy;
 
             /* Signal data available */
-                DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Unlocking queue %d mutex\n", i);
-                pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
-                pthread_cond_broadcast(&psSerialLink->asReaderMessageQueue[i].cond_data_available);
+            pthread_mutex_unlock(&psSerialLink->asReaderMessageQueue[i].mutex);
+            pthread_cond_broadcast(&psSerialLink->asReaderMessageQueue[i].cond_data_available);
             return E_SL_OK;
         }
         else
@@ -658,7 +622,7 @@ static teSL_Status eSL_MessageQueue(tsSerialLink *psSerialLink, uint16 u16Type, 
 }
 
 
-static void *pvReaderThread(void *psThreadInfoVoid)
+static void *pvSerialReaderThread(void *psThreadInfoVoid)
 {
     tsThread *psThreadInfo = (tsThread *)psThreadInfoVoid;
     tsSerialLink *psSerialLink = (tsSerialLink *)psThreadInfo->pvThreadData;
@@ -680,60 +644,20 @@ static void *pvReaderThread(void *psThreadInfoVoid)
         {
             iHandled = 0;
 
-            if (verbosity >= 10)
-            {
+            if (verbosity >= 10){
                 char acBuffer[4096];
                 int iPosition = 0, i;
 
                 iPosition = sprintf(&acBuffer[iPosition], "Node->Host 0x%04X (Length % 4d)", sMessage.u16Type, sMessage.u16Length);
-                for (i = 0; i < sMessage.u16Length; i++)
-                {
+                for (i = 0; i < sMessage.u16Length; i++){
                     iPosition += sprintf(&acBuffer[iPosition], " 0x%02X", sMessage.au8Message[i]);
                 }
                 NOT_vPrintf(T_TRUE, "%s\n", acBuffer);
             }
-
-            if (sMessage.u16Type == E_SL_MSG_LOG)//Log doesn't handle in thread
-            {
-                /* Log messages handled here first, and passsed to new thread in case user has added another handler */
-                uint8 u8LogLevel = sMessage.au8Message[0];
-                char *pcMessage = (char *)&sMessage.au8Message[1];
-                sMessage.au8Message[sMessage.u16Length] = '\0';
-                NOT_vPrintf(u8LogLevel, "Module: %s\n", pcMessage);
-                iHandled = 1; /* Message handled by logger */
-            }
-            else
-            {
-                // See if any threads are waiting for this message
-                int i;
-                for (i = 0; i < 2; i++)
-                {
-                    teSL_Status eStatus = eSL_MessageQueue(psSerialLink, sMessage.u16Type, sMessage.u16Length, sMessage.au8Message);
-                    if (eStatus == E_SL_OK)
-                    {
-                        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Message queued for listener\n");
-                        iHandled = 1;
-                        break;
-                    }
-                    else if (eStatus == E_SL_NOMESSAGE)
-                    {
-                        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "No listener waiting for message type 0x%04X\n", sMessage.u16Type);
-                        break;
-                    }
-                    else
-                    {
-                        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Error enqueueing message attempt %d\n", i);
-                        /* Wait 200ms before submitting again */
-                        usleep(200000);
-                    }
-                }
-            }
-
+            
             // Search for callback handlers foe this message type
             tsSL_CallbackEntry *psCurrentEntry;
-            /* Search through list of registered callbacks */
             pthread_mutex_lock(&psSerialLink->sCallbacks.mutex);
-
             for (psCurrentEntry = psSerialLink->sCallbacks.psListHead; psCurrentEntry; psCurrentEntry = psCurrentEntry->psNext)
             {
                 if (psCurrentEntry->u16Type == sMessage.u16Type)
@@ -743,22 +667,16 @@ static void *pvReaderThread(void *psThreadInfoVoid)
 
                     // Put the message into the queue for the callback handler thread
                     psCallbackData = malloc(sizeof(tsCallbackThreadData));
-                    if (!psCallbackData)
-                    {
+                    if (!psCallbackData){
                         ERR_vPrintf(T_TRUE, "Memory allocation error\n");
-                    }
-                    else
-                    {
+                    }else{
                         memcpy(&psCallbackData->sMessage, &sMessage, sizeof(tsSL_Message));
                         psCallbackData->prCallback = psCurrentEntry->prCallback;
                         psCallbackData->pvUser = psCurrentEntry->pvUser;
 
-                        if (mQueueEnqueue(&psSerialLink->sCallbackQueue, psCallbackData) == E_QUEUE_OK)
-                        {
+                        if (mQueueEnqueue(&psSerialLink->sCallbackQueue, psCallbackData) == E_QUEUE_OK){
                             iHandled = 1;
-                        }
-                        else
-                        {
+                        }else{
                             ERR_vPrintf(T_TRUE, "Failed to queue message for callback\n");
                             free(psCallbackData);
                         }
@@ -766,17 +684,43 @@ static void *pvReaderThread(void *psThreadInfoVoid)
                 }
             }
             pthread_mutex_unlock(&sSerialLink.sCallbacks.mutex);
+            if(iHandled){
+                continue;
+            }
+
+            if (sMessage.u16Type == E_SL_MSG_LOG){//Log doesn't handle in thread
+                /* Log messages handled here first, and passsed to new thread in case user has added another handler */
+                uint8 u8LogLevel = sMessage.au8Message[0];
+                char *pcMessage = (char *)&sMessage.au8Message[1];
+                sMessage.au8Message[sMessage.u16Length] = '\0';
+                NOT_vPrintf(u8LogLevel, "Module: %s\n", pcMessage);
+                iHandled = 1; /* Message handled by logger */
+            }else{
+                //Send Queue to Handler
+                tsSL_Message *pMessageQueue;
+                pMessageQueue = (tsSL_Message *)malloc(sizeof(tsSL_Message));
+                if(pMessageQueue){
+                    memcpy(pMessageQueue, &sMessage, sizeof(tsSL_Message));
+                    if (mQueueEnqueue(&psSerialLink->sMessageQueue, pMessageQueue) == E_QUEUE_OK){
+                        WAR_vPrintf(1, "Set Queue Message:0x%04x to MessageHandleThread\n", pMessageQueue->u16Type);
+                        iHandled = 1;
+                    }else{
+                        ERR_vPrintf(T_TRUE, "Failed to queue message for callback\n");
+                        free(pMessageQueue);
+                    }
+                }else{
+                    ERR_vPrintf(T_TRUE, "Memory allocation error\n");
+                }
+            }
         
-            if (!iHandled)
-            {
+            if (!iHandled){
                 ERR_vPrintf(T_TRUE, "Message 0x%04X was not handled\n", sMessage.u16Type);
             }
         }
     }
 
     int i;
-    for (i = 0; i < SL_MAX_MESSAGE_QUEUES; i++)
-    {
+    for (i = 0; i < SL_MAX_MESSAGE_QUEUES; i++){
         psSerialLink->asReaderMessageQueue[i].u16Length  = 0;
         psSerialLink->asReaderMessageQueue[i].pu8Message = NULL;
         pthread_cond_broadcast(&psSerialLink->asReaderMessageQueue[i].cond_data_available);
@@ -806,13 +750,10 @@ static void *pvCallbackHandlerThread(void *psThreadInfoVoid)
         if (mQueueDequeue(&psSerialLink->sCallbackQueue, (void**)&psCallbackData) == E_QUEUE_OK)
         {
             DBG_vPrintf(DBG_SERIALLINK_CB, "Calling callback %p for message 0x%04X\n", psCallbackData->prCallback, psCallbackData->sMessage.u16Type);
-            
             psCallbackData->prCallback(psCallbackData->pvUser, psCallbackData->sMessage.u16Length, psCallbackData->sMessage.au8Message);
-    
             free(psCallbackData);
         }
     }
-    
     DBG_vPrintf(DBG_SERIALLINK, "Exit\n");
     
     /* Return from thread clearing resources */
@@ -831,15 +772,37 @@ static void *pvMessageQueueHandlerThread(void *psThreadInfoVoid)
     
     while (psThreadInfo->eState == E_THREAD_RUNNING)
     {
-        tsCallbackThreadData *psCallbackData;
+        tsSL_Message *psMessageData;
         
-        if (mQueueDequeue(&psSerialLink->sCallbackQueue, (void**)&psCallbackData) == E_QUEUE_OK)
+        DBG_vPrintf(DBG_SERIALLINK_QUEUE, "Waiting Message from SerialLinkThread\n");
+        if(mQueueDequeue(&psSerialLink->sMessageQueue, (void**)&psMessageData) == E_QUEUE_OK)
         {
-            DBG_vPrintf(DBG_SERIALLINK_CB, "Calling callback %p for message 0x%04X\n", psCallbackData->prCallback, psCallbackData->sMessage.u16Type);
-            
-            psCallbackData->prCallback(psCallbackData->pvUser, psCallbackData->sMessage.u16Length, psCallbackData->sMessage.au8Message);
-    
-            free(psCallbackData);
+            WAR_vPrintf(1, "Get Queue Message:0x%04x from SerialLinkThread:", psMessageData->u16Type);
+            if(psMessageData->u16Type == E_SL_MSG_STATUS){
+                tsSL_Msg_Status *sStatus;
+                sStatus = (tsSL_Msg_Status *)psMessageData->au8Message;
+                WAR_vPrintf(1, "0x%04x", sStatus->u16MessageType);
+            }
+            printf("\n");
+            // See if any threads are waiting for this message
+            teSL_Status eStatus = eSL_MessageQueue(psSerialLink, psMessageData->u16Type, psMessageData->u16Length, psMessageData->au8Message);
+            if (eStatus == E_SL_OK)
+            {
+                DBG_vPrintf(1, "Message Brocast Successful\n");
+                free(psMessageData);
+            }
+            else //No Waiting or Error
+            {
+                WAR_vPrintf(1, "Set Queue Message:0x%04x To SerialLinkThread:", psMessageData->u16Type);
+                if(psMessageData->u16Type == E_SL_MSG_STATUS){
+                    tsSL_Msg_Status *sStatus;
+                    sStatus = (tsSL_Msg_Status *)psMessageData->au8Message;
+                    WAR_vPrintf(1, "0x%04x", sStatus->u16MessageType);
+                }
+                printf("\n");
+                usleep(20000);
+                mQueueEnqueue(&psSerialLink->sMessageQueue, psMessageData);
+            }
         }
     }
     

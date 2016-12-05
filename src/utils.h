@@ -57,7 +57,7 @@ extern "C" {
 #define MABF    2048
 #define PACKED __attribute__((__packed__))
 
-
+#define CHECK_RESULT(fun,value,ret) do{ if(value!=fun)return ret;}while(0)
 //User Define
 #define PCT_DBG_CONTROL 
 #define DBG_PCT  1

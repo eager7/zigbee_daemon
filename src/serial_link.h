@@ -261,7 +261,7 @@ typedef struct
     } PACKED eStatus;
     uint8             u8SequenceNo;           /**< Sequence number of outgoing message */
     uint16            u16MessageType;         /**< Type of message that this is status to */
-    char                acMessage[];            /**< Optional message */
+    char              acMessage[];            /**< Optional message */
 } PACKED tsSL_Msg_Status;
 
 
@@ -307,30 +307,33 @@ typedef struct
     uint8  au8Message[SL_MAX_MESSAGE_LENGTH];
 } tsSL_Message;
 
+typedef struct 
+{
+    uint16 u16Type;
+    uint16 u16Length;
+    uint8 *pu8Message;
+    pthread_mutex_t mutex;
+    pthread_cond_t cond_data_available;
+} tsReaderMessageQueue;
+
+typedef struct
+{
+    pthread_mutex_t          mutex;
+    tsSL_CallbackEntry      *psListHead;
+} tsCallbacks;
 
 /** Structure of data for the serial link */
 typedef struct
 {
     int iSerialFd;
-    pthread_mutex_t mutex;
-    tsThread sSerialReader;
+    pthread_mutex_t mutex_write;
+    tsThread sSerialReaderThread;
     tsQueue  sCallbackQueue;
-    tsThread sCallbackThread; 
+    tsCallbacks sCallbacks;
+    tsThread sCallbackHandleThread; 
     tsQueue  sMessageQueue;
-    tsThread sMessageQueueThread; 
-    struct
-    {
-        pthread_mutex_t          mutex;
-        tsSL_CallbackEntry      *psListHead;
-    } sCallbacks;
-    struct 
-    {
-        uint16 u16Type;
-        uint16 u16Length;
-        uint8 *pu8Message;
-        pthread_mutex_t mutex;
-        pthread_cond_t cond_data_available;
-    } asReaderMessageQueue[SL_MAX_MESSAGE_QUEUES];
+    tsThread sMessageHandleThread; 
+    tsReaderMessageQueue asReaderMessageQueue[SL_MAX_MESSAGE_QUEUES];
 } tsSerialLink;
 
 

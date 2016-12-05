@@ -140,15 +140,13 @@ teSerial_Status eSerial_Init(char *name, uint32 baud, int *piserial_fd)
     }
     
     fd = open(name, O_RDWR | O_NOCTTY);
-    if (fd < 0)
-    {
+    if (fd < 0){
         ERR_vPrintf(T_TRUE, "Couldn't open serial device \"%s\"(%s)\n", name, strerror(errno));
         return E_SERIAL_ERROR;
     }
     DBG_vPrintf(DGB_SERIAL, "open serial device %s (%d) success\n", name, baud);
 
-    if (tcgetattr(fd,&options) == -1)
-    {
+    if (tcgetattr(fd,&options) == -1){
         ERR_vPrintf(T_TRUE, "Error getting port settings (%s)", strerror(errno));
         return E_SERIAL_ERROR;
     }
@@ -160,13 +158,11 @@ teSerial_Status eSerial_Init(char *name, uint32 baud, int *piserial_fd)
     options.c_cflag |= CS8 | CREAD | HUPCL | CLOCAL;
     options.c_lflag &= ~(ISIG | ICANON | ECHO | IEXTEN);
 
-    /*Linux 库函数，设置串口信息*/
     cfsetispeed(&options, baud);
     cfsetospeed(&options, baud);
 
     DBG_vPrintf(DGB_SERIAL, "set serial device option\n");
-    if (tcsetattr(fd,TCSAFLUSH,&options) == -1)/*设置终端参数*/
-    {
+    if (tcsetattr(fd,TCSAFLUSH,&options) == -1){
         ERR_vPrintf(T_TRUE, "Error setting port settings (%s)", strerror(errno));
         return E_SERIAL_ERROR;
     }
@@ -181,15 +177,10 @@ teSerial_Status eSerial_Read(uint8 *data)
     signed char res;
     
     res = read(serial_fd,data,1);
-    if (res > 0)
-    {
+    if (res > 0){
         DBG_vPrintf(DGB_SERIAL, "RX 0x%02x\n", *data);
-    }
-    else
-    {
-        //printf("Serial read: %d\n", res);
-        if (res == 0)
-        {
+    }else{
+        if (res == 0){
             //daemon_log(LOG_ERR, "Serial connection to module interrupted");
             //bRunning = 0;
         }
@@ -207,28 +198,21 @@ teSerial_Status eSerial_Write(const uint8 data)
     err = write(serial_fd,&data,1);
     if (err < 0)
     {
-        if (errno == EAGAIN)/*try again*/
-        {
+        if (errno == EAGAIN){
             for (attempts = 0; attempts <= 5; attempts++)
             {
                 usleep(1000);
                 err = write(serial_fd,&data,1);
-                if (err < 0) 
-                {
-                    if ((errno == EAGAIN) && (attempts == 5))
-                    {
+                if (err < 0){
+                    if ((errno == EAGAIN) && (attempts == 5)){
                         ERR_vPrintf(T_TRUE, "Error writing to module after %d attempts(%s)", attempts, strerror(errno));
                         exit(-1);
                     }
-                }
-                else
-                {
+                }else{
                     break;
                 }
             }
-        }
-        else
-        {
+        }else{
             ERR_vPrintf(T_TRUE, "Error writing to module(%s)", strerror(errno));
             exit(-1);
         }
@@ -242,18 +226,14 @@ teSerial_Status eSerial_ReadBuffer(uint8 *data, uint32 *count)
     int res;
     
     res = read(serial_fd, data, *count);
-    if (res > 0)
-    {
+    if (res > 0){
         *count = res;
         return E_SERIAL_OK;
-    }
-    else
-    {
+    }else {
 #if DEBUG
         if (DGB_SERIAL >= LOG_DEBUG) DBG_vPrintf(DGB_SERIAL, "Serial read: %d\n", res);
 #endif /* DEBUG */
-        if (res == 0)
-        {
+        if (res == 0){
             ERR_vPrintf(T_TRUE, "Serial connection to module interrupted");
         }
         res = *count = 0;
@@ -270,25 +250,18 @@ teSerial_Status eSerial_WriteBuffer(uint8 *data, uint32 count)
     while (total_sent_bytes < count)
     {
         sent_bytes = write(serial_fd, &data[total_sent_bytes], count - total_sent_bytes);
-        if (sent_bytes <= 0)
-        {
-            if (errno == EAGAIN)
-            {
-                if (++attempts >= 5)
-                {
+        if (sent_bytes <= 0){
+            if (errno == EAGAIN){
+                if (++attempts >= 5){
                     ERR_vPrintf(T_TRUE, "Error writing to module(%s)", strerror(errno));
                     return E_SERIAL_ERROR;
                 }
                 usleep(1000);
-            }
-            else
-            {
+            }else{
                 ERR_vPrintf(T_TRUE, "Error writing to module(%s)", strerror(errno));
                 return -1;
             }
-        }
-        else
-        {
+        }else{
             attempts = 0;
             total_sent_bytes += sent_bytes;
         }

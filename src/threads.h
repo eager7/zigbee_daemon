@@ -38,16 +38,17 @@ typedef enum
     E_THREAD_DETACHED,      /**< Thread is created detached so all resources are automatically free'd at exit. */
 } teThreadDetachState;
 
+typedef volatile enum
+{
+    E_THREAD_STOPPED,   /**< Thread stopped */
+    E_THREAD_RUNNING,   /**< Thread running */
+    E_THREAD_STOPPING,  /**< Thread signaled to stop */
+} teState;               /**< Enumerated type of thread states */
 
 /** Structure to represent a thread */
 typedef struct
 {
-    volatile enum
-    {
-        E_THREAD_STOPPED,   /**< Thread stopped */
-        E_THREAD_RUNNING,   /**< Thread running */
-        E_THREAD_STOPPING,  /**< Thread signaled to stop */
-    } eState;               /**< Enumerated type of thread states */
+    teState eState;
     teThreadDetachState eThreadDetachState; /**< Detach state of the thread */
     pthread_t pThread_Id;           /**< Implementation specfific private structure */
     void *pvThreadData;     /**< Pointer to threads data parameter */
