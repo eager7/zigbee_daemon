@@ -128,16 +128,16 @@ teSL_Status eSL_SendMessage(uint16 u16Type, uint16 u16Length, void *pvMessage, u
     eStatus = eSL_WriteMessage(u16Type, u16Length, (uint8 *)pvMessage);
     if (eStatus == E_SL_OK)/* Command sent successfully */
     {
-        uint16    u16Length;
+        uint16    u16Len;
         tsSL_Msg_Status sStatus;
         tsSL_Msg_Status *psStatus = &sStatus;
         
         psStatus->u16MessageType = u16Type;
-        eStatus = eSL_MessageWait(E_SL_MSG_STATUS, 100, &u16Length, (void**)&psStatus);/* Expect a status response within 100ms */
+        eStatus = eSL_MessageWait(E_SL_MSG_STATUS, 100, &u16Len, (void**)&psStatus);/* Expect a status response within 100ms */
         if (eStatus == E_SL_OK)
         {
             DBG_vPrintf(DBG_SERIALLINK_COMMS, "Status: %d, Sequence %d\n", psStatus->eStatus, psStatus->u8SequenceNo);
-            eStatus = psStatus->eStatus;
+            eStatus = (teSL_Status)psStatus->eStatus;
             if (eStatus == E_SL_OK){
                 if (pu8SequenceNo){
                     *pu8SequenceNo = psStatus->u8SequenceNo;

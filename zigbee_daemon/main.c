@@ -104,7 +104,6 @@ int main(int argc, char *argv[])
 
     while(bRunning){
         DBG_vPrintf(DBG_MAIN, "Communication with Coordinator...\n");
-        sleep(2);
         if(E_ZB_OK == eZCB_EstablishComms()){
             DBG_vPrintf(DBG_MAIN, "eZCB_EstablishComms Success\n");
             break;

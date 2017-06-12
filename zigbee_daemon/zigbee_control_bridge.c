@@ -140,6 +140,7 @@ teZbStatus eZCB_EstablishComms(void)
             free(u32Version);
             
             DBG_vPrintf(DBG_ZCB, "Reset control bridge\n");
+            usleep(100);
             if (eSL_SendMessage(E_SL_MSG_RESET, 0, NULL, NULL) != E_SL_OK) {
                 return E_ZB_COMMS_FAILED;
             }
@@ -2076,6 +2077,7 @@ teZbStatus eZCB_StartNetwork(void)
 static teZbStatus eZCB_ConfigureControlBridge(void)
 {
     #define CONFIGURATION_INTERVAL 500000
+    usleep(CONFIGURATION_INTERVAL);
     /* Set up configuration */
     switch (eStartMode)
     {
