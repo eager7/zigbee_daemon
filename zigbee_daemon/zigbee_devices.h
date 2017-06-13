@@ -65,6 +65,7 @@ teZbStatus eTemperatureSensorInitalise(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eLightSensorInitalise(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eSimpleSensorInitalise(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eEndDeviceInitalise(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eDoorLockInitalise(tsZigbeeNodes *psZigbeeNode);
 
 /****************************************************************************/
 /***        Local Functions                                               ***/

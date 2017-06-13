@@ -19,6 +19,7 @@
 /***        Include files                                                 ***/
 /****************************************************************************/
 #include "zigbee_devices.h"
+#include "zigbee_node.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -42,8 +43,9 @@ static teZbStatus eZigbeeDeviceSetLevel(tsZigbeeBase *psZigbeeNode, uint16 u16Gr
 static teZbStatus eZigbeeDeviceGetLevel(tsZigbeeBase *psZigbeeNode, uint8 *u8Level);
 static teZbStatus eZigbeeDeviceGetLightColour(tsZigbeeBase *psZigbeeNode, tsRGB *psRGB);
 static teZbStatus eZigbeeDeviceSetLightColour(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, tsRGB sRGB, uint16 u16TransitionTime);
-static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCoveringDevice_CommandID eCommand);
+static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand);
 static teZbStatus eZigbeeDeviceGetSensorValue(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId);
+static teZbStatus eZigbeeDeviceSetDoorLockState(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -76,10 +78,10 @@ teZbStatus eOnOffLightInitalise(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetOnOff             = eZigbeeDeviceGetOnOff;
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddSence             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveSence          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetSence             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetSence             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
     eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
@@ -98,10 +100,10 @@ teZbStatus eDimmerLightInitalise(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetLevel             = eZigbeeDeviceGetLevel;
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddSence             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveSence          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetSence             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetSence             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
 
@@ -121,12 +123,12 @@ teZbStatus eColourLightInitalise(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetLevel             = eZigbeeDeviceGetLevel;
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddSence             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveSence          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
     psZigbeeNode->Method.preDeviceSetLightColour       = eZigbeeDeviceSetLightColour;
     psZigbeeNode->Method.preDeviceGetLightColour       = eZigbeeDeviceGetLightColour;
-    psZigbeeNode->Method.preDeviceSetSence             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetSence             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
     
@@ -144,10 +146,10 @@ teZbStatus eWindowCoveringInitalise(tsZigbeeNodes *psZigbeeNode)
     
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddSence             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveSence          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetSence             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetSence             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
     
@@ -164,10 +166,10 @@ teZbStatus eTemperatureSensorInitalise(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetSensorValue       = eZigbeeDeviceGetSensorValue;
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddSence             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveSence          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetSence             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetSence             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
     
@@ -185,10 +187,10 @@ teZbStatus eLightSensorInitalise(tsZigbeeNodes *psZigbeeNode)
     
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddSence             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveSence          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetSence             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetSence             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
     
@@ -206,10 +208,10 @@ teZbStatus eSimpleSensorInitalise(tsZigbeeNodes *psZigbeeNode)
     
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddSence             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveSence          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetSence             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetSence             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
     
@@ -230,6 +232,27 @@ teZbStatus eEndDeviceInitalise(tsZigbeeNodes *psZigbeeNode)
 
     return E_ZB_OK;
 }
+
+teZbStatus eDoorLockInitalise(tsZigbeeNodes *psZigbeeNode)
+{
+    NOT_vPrintf(DBG_DEVICES, "------------eDoorLockInitalise\n");
+
+    snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DoorLock", psZigbeeNode->sNode.u16ShortAddress);
+    psZigbeeNode->Method.preDeviceSetDoorLock          = eZigbeeDeviceSetDoorLockState;
+    psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
+    psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
+    psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    return E_ZB_OK;
+}
+
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
@@ -350,7 +373,7 @@ static teZbStatus eZigbeeDeviceRemoveSence(tsZigbeeBase *psZigbeeNode, uint16 u1
     }
     else
     {
-        ZbStatus = eZCB_RemoveScene(psZigbeeNode, 0xf00f, u16SenceId & 0xFF);
+        ZbStatus = eZCB_RemoveScene(psZigbeeNode, 0xf00f, u16SenceId & 0xFFFF);
     }
     
     return ZbStatus;
@@ -532,7 +555,7 @@ static teZbStatus eZigbeeDeviceRemoveNetwork(tsZigbeeBase *psZigbeeNode, uint8 u
 /**
 ** Closures
 */
-static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCoveringDevice_CommandID eCommand)
+static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand)
 {
     DBG_vPrintf(DBG_DEVICES, "eZigbeeDeviceSetWindowCoveringDevice\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -540,6 +563,17 @@ static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCL
     teZbStatus eZbStatus;  
     eZbStatus = eZCB_WindowCoveringDeviceOperator(psZigbeeNode, eCommand);
     
+    return eZbStatus;
+}
+
+static teZbStatus eZigbeeDeviceSetDoorLockState(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand)
+{
+    DBG_vPrintf(DBG_DEVICES, "eZigbeeDeviceSetDoorLockState\n");
+    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
+
+    teZbStatus eZbStatus;
+    eZbStatus = eZCB_DoorLockDeviceOperator(psZigbeeNode, eCommand);
+
     return eZbStatus;
 }
 

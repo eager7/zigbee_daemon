@@ -121,12 +121,13 @@ teZbStatus eZCB_RemoveGroupMembership(tsZigbeeBase *psZigbeeNode, uint16 u16Grou
 teZbStatus eZCB_ClearGroupMembership(tsZigbeeBase *psZigbeeNode);
 teZbStatus eZCB_StoreScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8SceneID);
 teZbStatus eZCB_RecallScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8SceneID);
-teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8SceneID);
+teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SceneID);
 
 teZbStatus eZCB_ZLL_MoveToLevel(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8OnOff, uint8 u8Level, uint16 u16TransitionTime);
 teZbStatus eZCB_ZLL_MoveToHueSaturation(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Hue, uint8 u8Saturation, uint16 u16TransitionTime);
 
-teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_WindowCoveringDevice_CommandID eCommand );
+teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand );
+teZbStatus eZCB_DoorLockDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand );
 teZbStatus eZCB_ChannelRequest(uint8 *pu8Channel);
 
 /****************************************************************************/

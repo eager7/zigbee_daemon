@@ -63,6 +63,7 @@ tsDeviceIDMap asDeviceIDMap[] =
     { E_ZBD_LIGHT_SENSOR,           eLightSensorInitalise },
     { E_ZBD_SIMPLE_SENSOR,          eSimpleSensorInitalise },
     { E_ZBD_SMART_PLUG,             eColourLightInitalise },
+    { E_ZBD_DOOR_LOCK,              eDoorLockInitalise },
     { E_ZBD_END_DEVICE_DEVICE,      eEndDeviceInitalise },
 };
 
@@ -73,11 +74,6 @@ static void vPrintUsage(char *argv[]);
 static void vQuitSignalHandler (int sig);
 static void vDaemonizeInit(const char *cmd);
 static void vGetOption(int argc, char *argv[]);
-static uint16 au16ProfileHA =   E_ZB_PROFILEID_HA;
-static uint16 au16Cluster[] = {
-        E_ZB_CLUSTERID_ONOFF,                   /*Light*/
-        E_ZB_CLUSTERID_DOOR_LOCK,
-};
 /****************************************************************************/
 /***        Locate   Functions                                            ***/
 /****************************************************************************/

@@ -554,9 +554,16 @@ typedef enum
     E_CLD_WINDOW_COVERING_DEVICE_CMD_GO_TO_LIFT_PERCENTAGE    = 0x05,         /* Option */
     E_CLD_WINDOW_COVERING_DEVICE_CMD_GO_TO_TILE_VALUE         = 0x07,         /* Option */
     E_CLD_WINDOW_COVERING_DEVICE_CMD_GO_TO_TILE_PERCENTAGE    = 0x08,         /* Option */
-} teCLD_WindowCoveringDevice_CommandID;
+} teCLD_WindowCovering_CommandID;
 
+/* Door Lock Command - Payload */
+typedef enum
+{
+    E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK                  = 0x00,         /* Mandatory */
+    E_CLD_DOOR_LOCK_DEVICE_CMD_UNLOCK                = 0x01,         /* Mandatory */
+    E_CLD_DOOR_LOCK_DEVICE_CMD_GET_LOG_RECORD        = 0x04,         /* Option */
 
+} teCLD_DoorLock_CommandID;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/

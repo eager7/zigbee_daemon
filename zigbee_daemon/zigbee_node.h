@@ -181,7 +181,8 @@ typedef teZbStatus (*tpreDeviceGetLevel)(tsZigbeeBase *psZigbeeNode, uint8 *u8Le
 typedef teZbStatus (*tpreDeviceGetSensorValue)(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId);
 typedef void (*tprAttributeUpdate)(tsZigbeeBase *psZigbeeNode, uint16 u16ClusterID, uint16 u16AttributeID, teZCL_ZCLAttributeType eType, tuZcbAttributeData uData);
 /* Closures */
-typedef teZbStatus (*tpreDeviceSetWindowCovering)(tsZigbeeBase *psZigbeeNode, teCLD_WindowCoveringDevice_CommandID eCommand);
+typedef teZbStatus (*tpreDeviceSetWindowCovering)(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand);
+typedef teZbStatus (*tpreDeviceSetDoorLock)(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand);
 
 typedef struct
 {
@@ -198,10 +199,10 @@ typedef struct
     tpreDeviceAddGroup              preDeviceAddGroup;
     tpreDeviceRemoveGroup           preDeviceRemoveGroup;
     tpreDeviceClearGroup            preDeviceClearGroup;
-    tpreDeviceAddSence              preDeviceAddSence;
-    tpreDeviceSetSence              preDeviceSetSence;
-    tpreDeviceGetSence              preDeviceGetSence;
-    tpreDeviceRemoveSence           preDeviceRemoveSence;
+    tpreDeviceAddSence              preDeviceAddScene;
+    tpreDeviceSetSence              preDeviceSetScene;
+    tpreDeviceGetSence              preDeviceGetScene;
+    tpreDeviceRemoveSence           preDeviceRemoveScene;
     /* ZLL */
     tpreDeviceSetOnOff              preDeviceSetOnOff;
     tpreDeviceGetOnOff              preDeviceGetOnOff;
@@ -213,6 +214,7 @@ typedef struct
     tpreDeviceGetSensorValue        preDeviceGetSensorValue;
     /* Closures */
     tpreDeviceSetWindowCovering     preDeviceSetWindowCovering;
+    tpreDeviceSetDoorLock           preDeviceSetDoorLock;
 } tsZigbeeCallback;
 
 typedef struct

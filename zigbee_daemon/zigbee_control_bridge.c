@@ -696,7 +696,7 @@ done:
     return eStatus;
 }
 
-teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8SceneID)
+teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SceneID)
 {
     struct _RemoveSceneRequest
     {
@@ -726,7 +726,7 @@ teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, 
     if (psZigbeeNode)
     {
         DBG_vPrintf(DBG_ZCB, "Send remove scene %d (Group 0x%04X) for Endpoint %d to 0x%04X\n", 
-                    u8SceneID, u16GroupAddress, sRemoveSceneRequest.u8DestinationEndpoint, psZigbeeNode->u16ShortAddress);
+                    u16SceneID, u16GroupAddress, sRemoveSceneRequest.u8DestinationEndpoint, psZigbeeNode->u16ShortAddress);
         if (bZCB_EnableAPSAck)
         {
             sRemoveSceneRequest.u8TargetAddressMode   = E_ZB_ADDRESS_MODE_SHORT;
@@ -755,7 +755,7 @@ teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, 
     }
     
     sRemoveSceneRequest.u16GroupAddress  = htons(u16GroupAddress);
-    sRemoveSceneRequest.u8SceneID        = u8SceneID;
+    sRemoveSceneRequest.u8SceneID        = (uint8)u16SceneID;
 
     if (eSL_SendMessage(E_SL_MSG_REMOVE_SCENE, sizeof(struct _RemoveSceneRequest), &sRemoveSceneRequest, &u8SequenceNo) != E_SL_OK)
     {
@@ -1389,7 +1389,7 @@ done:
     return eStatus;
 }
 
-teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_WindowCoveringDevice_CommandID eCommand )
+teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand )
 {
     tsNodeEndpoint  *psSourceEndpoint;
     tsNodeEndpoint  *psDestinationEndpoint;
@@ -1443,6 +1443,73 @@ teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_W
     sWindowCoveringDeviceMessage.u8Command = (uint8)eCommand;
     
     if (eSL_SendMessage(E_SL_MSG_WINDOW_COVERING_DEVICE_OPERATOR, sizeof(sWindowCoveringDeviceMessage), &sWindowCoveringDeviceMessage, &u8SequenceNo) != E_SL_OK)
+    {
+        return E_ZB_COMMS_FAILED;
+    }
+    if(bZCB_EnableAPSAck)
+    {
+        return eZCB_GetDefaultResponse(u8SequenceNo);
+    }
+    else
+    {
+        return E_ZB_OK;
+    }
+}
+
+teZbStatus eZCB_DoorLockDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand )
+{
+    tsNodeEndpoint  *psSourceEndpoint;
+    tsNodeEndpoint  *psDestinationEndpoint;
+    uint8         u8SequenceNo;
+
+    struct
+    {
+        uint8     u8TargetAddressMode;
+        uint16    u16TargetAddress;
+        uint8     u8SourceEndpoint;
+        uint8     u8DestinationEndpoint;
+        uint8     u8Command;
+    } PACKED sDoorLockDeviceMessage;
+
+    /* Just read control bridge, not need lock */
+    psSourceEndpoint = psZigbee_NodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_DOOR_LOCK);
+    if (!psSourceEndpoint)
+    {
+        ERR_vPrintf(T_TRUE, "Cluster ID 0x%04X not found on control bridge\n", E_ZB_CLUSTERID_DOOR_LOCK);
+        return E_ZB_ERROR;
+    }
+    sDoorLockDeviceMessage.u8SourceEndpoint = psSourceEndpoint->u8Endpoint;
+
+    if (psZigbeeNode)
+    {
+        if (bZCB_EnableAPSAck)
+        {
+            sDoorLockDeviceMessage.u8TargetAddressMode   = E_ZB_ADDRESS_MODE_SHORT;
+        }
+        else
+        {
+            sDoorLockDeviceMessage.u8TargetAddressMode   = E_ZB_ADDRESS_MODE_SHORT_NO_ACK;
+        }
+        sDoorLockDeviceMessage.u16TargetAddress = htons(psZigbeeNode->u16ShortAddress);
+        psDestinationEndpoint = psZigbee_NodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_DOOR_LOCK);
+        if (psDestinationEndpoint)
+        {
+            sDoorLockDeviceMessage.u8DestinationEndpoint = psDestinationEndpoint->u8Endpoint;
+        }
+        else
+        {
+            sDoorLockDeviceMessage.u8DestinationEndpoint = ZB_DEFAULT_ENDPOINT_HA;
+        }
+    }
+    else
+    {
+        sDoorLockDeviceMessage.u8TargetAddressMode   = E_ZB_ADDRESS_MODE_BROADCAST;
+        sDoorLockDeviceMessage.u16TargetAddress      = htons(E_ZB_BROADCAST_ADDRESS_ALL);
+        sDoorLockDeviceMessage.u8DestinationEndpoint = ZB_DEFAULT_ENDPOINT_HA;
+    }
+    sDoorLockDeviceMessage.u8Command = (uint8)eCommand;
+
+    if (eSL_SendMessage(E_SL_MSG_LOCK_UNLOCK_DOOR, sizeof(sDoorLockDeviceMessage), &sDoorLockDeviceMessage, &u8SequenceNo) != E_SL_OK)
     {
         return E_ZB_COMMS_FAILED;
     }
