@@ -48,7 +48,7 @@ extern "C" {
 
 /* Default network configuration */
 #define CONFIG_DEFAULT_START_MODE       E_START_COORDINATOR
-#define CONFIG_DEFAULT_CHANNEL          E_CHANNEL_DEFAULT
+#define CONFIG_DEFAULT_CHANNEL          26
 #define CONFIG_DEFAULT_PANID            0x1234567812345678ll
 
 /****************************************************************************/

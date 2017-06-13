@@ -43,15 +43,15 @@ extern "C" {
 /****************************************************************************/
 #define mLogInitSetPid(pid)    openlog(pid, LOG_PID|LOG_CONS, LOG_USER)
 #define DBG_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[34;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[34;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
 #define INF_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[33;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[33;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
 #define NOT_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[32;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[32;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
 #define WAR_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[35;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[35;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
 #define ERR_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[31;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[31;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
 #define PERR_vPrintf(x) ERR_vPrintf(1,x ":%s\n", strerror(errno))
 
 #define MIBF    256

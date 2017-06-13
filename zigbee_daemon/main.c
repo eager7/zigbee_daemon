@@ -47,7 +47,7 @@ volatile sig_atomic_t bRunning = 1;
 
 int verbosity = 7;
 int daemonize = 0;
-uint32 u32BaudRate = 1000000;
+uint32 u32BaudRate = 115200;
 uint32 u32Channel = CONFIG_DEFAULT_CHANNEL;
 char *cpSerialDevice = "/dev/ttyUSB0";
 char *pZigbeeSqlitePath = "/tmp/ZigbeeDaemon.DB";
@@ -73,7 +73,11 @@ static void vPrintUsage(char *argv[]);
 static void vQuitSignalHandler (int sig);
 static void vDaemonizeInit(const char *cmd);
 static void vGetOption(int argc, char *argv[]);
-
+static uint16 au16ProfileHA =   E_ZB_PROFILEID_HA;
+static uint16 au16Cluster[] = {
+        E_ZB_CLUSTERID_ONOFF,                   /*Light*/
+        E_ZB_CLUSTERID_DOOR_LOCK,
+};
 /****************************************************************************/
 /***        Locate   Functions                                            ***/
 /****************************************************************************/
@@ -131,7 +135,6 @@ int main(int argc, char *argv[])
         eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
         eZCB_NeighbourTableRequest(&iStart);
         //eCloudPushAllDevicesList();
-        sleep(10);
     }
     eZCB_Finish();
     eZigbeeSqliteFinished();

@@ -54,10 +54,7 @@ uint16 au16ProfileZLL =         E_ZB_PROFILEID_ZLL;
 static uint16 au16ProfileHA =   E_ZB_PROFILEID_HA;
 static uint16 au16Cluster[] = {
                                 E_ZB_CLUSTERID_ONOFF,                   /*Light*/
-                                E_ZB_CLUSTERID_BINARY_INPUT_BASIC,      /*binary sensor*/
-                                E_ZB_CLUSTERID_TEMPERATURE,             /*tempertuare*/
-                                E_ZB_CLUSTERID_ILLUMINANCE,              /*light sensor*/
-                                E_ZB_CLUSTERID_WINDOW_COVERING_DEVICE,
+                                E_ZB_CLUSTERID_DOOR_LOCK,
                               };
 
 tsZigbeeNodes sControlBridge;
@@ -140,7 +137,7 @@ teZbStatus eZCB_EstablishComms(void)
             free(u32Version);
             
             DBG_vPrintf(DBG_ZCB, "Reset control bridge\n");
-            usleep(100);
+            usleep(1000);
             if (eSL_SendMessage(E_SL_MSG_RESET, 0, NULL, NULL) != E_SL_OK) {
                 return E_ZB_COMMS_FAILED;
             }
@@ -195,21 +192,21 @@ teZbStatus eZCB_MatchDescriptorRequest(uint16 u16TargetAddress, uint16 u16Profil
     uint16 *pau16InputClusters,  uint8 u8NumOutputClusters, uint16 *pau16OutputClusters,uint8 *pu8SequenceNo)
 {
     uint8 au8Buffer[256];
-    uint32 u32Position = 0;
+    uint16 u16Position = 0;
     int i;
     
     DBG_vPrintf(DBG_ZCB, "Send Match Desciptor request for profile ID 0x%04X to 0x%04X\n", u16ProfileID, u16TargetAddress);
 
     u16TargetAddress = htons(u16TargetAddress);
-    memcpy(&au8Buffer[u32Position], &u16TargetAddress, sizeof(uint16));
-    u32Position += sizeof(uint16);
+    memcpy(&au8Buffer[u16Position], &u16TargetAddress, sizeof(uint16));
+    u16Position += sizeof(uint16);
     
     u16ProfileID = htons(u16ProfileID);
-    memcpy(&au8Buffer[u32Position], &u16ProfileID, sizeof(uint16));
-    u32Position += sizeof(uint16);
+    memcpy(&au8Buffer[u16Position], &u16ProfileID, sizeof(uint16));
+    u16Position += sizeof(uint16);
     
-    au8Buffer[u32Position] = u8NumInputClusters;
-    u32Position++;
+    au8Buffer[u16Position] = u8NumInputClusters;
+    u16Position++;
     
     DBG_vPrintf(DBG_ZCB, "  Input Cluster List:\n");
     
@@ -217,24 +214,24 @@ teZbStatus eZCB_MatchDescriptorRequest(uint16 u16TargetAddress, uint16 u16Profil
     {
         uint16 u16ClusterID = htons(pau16InputClusters[i]);
         DBG_vPrintf(DBG_ZCB, "    0x%04X\n", pau16InputClusters[i]);
-        memcpy(&au8Buffer[u32Position], &u16ClusterID , sizeof(uint16));
-        u32Position += sizeof(uint16);
+        memcpy(&au8Buffer[u16Position], &u16ClusterID , sizeof(uint16));
+        u16Position += sizeof(uint16);
     }
     
     DBG_vPrintf(DBG_ZCB, "  Output Cluster List:\n");
     
-    au8Buffer[u32Position] = u8NumOutputClusters;
-    u32Position++;
+    au8Buffer[u16Position] = u8NumOutputClusters;
+    u16Position++;
     
     for (i = 0; i < u8NumOutputClusters; i++)
     {
         uint16 u16ClusterID = htons(pau16OutputClusters[i] );
         DBG_vPrintf(DBG_ZCB, "    0x%04X\n", pau16OutputClusters[i]);
-        memcpy(&au8Buffer[u32Position], &u16ClusterID , sizeof(uint16));
-        u32Position += sizeof(uint16);
+        memcpy(&au8Buffer[u16Position], &u16ClusterID , sizeof(uint16));
+        u16Position += sizeof(uint16);
     }
 
-    if (eSL_SendMessage(E_SL_MSG_MATCH_DESCRIPTOR_REQUEST, u32Position, au8Buffer, pu8SequenceNo) != E_SL_OK)
+    if (eSL_SendMessage(E_SL_MSG_MATCH_DESCRIPTOR_REQUEST, u16Position, au8Buffer, pu8SequenceNo) != E_SL_OK)
     {
         return E_ZB_COMMS_FAILED;
     }
@@ -1286,7 +1283,7 @@ teZbStatus eZCB_NeighbourTableRequest(int *pStart)
     u16ShortAddress = 0x0000; //coordinator
         
     sManagementLQIRequest.u16TargetAddress = htons(u16ShortAddress);
-    sManagementLQIRequest.u8StartIndex     = *pStart;
+    sManagementLQIRequest.u8StartIndex     = (uint8)*pStart;
     
     DBG_vPrintf(DBG_ZCB, "Send management LQI request to 0x%04X for entries starting at %d\n", 
                                                             u16ShortAddress, sManagementLQIRequest.u8StartIndex);
@@ -1512,6 +1509,7 @@ static void vZCB_AddNodeIntoNetwork(uint16 u16ShortAddress, uint64 u64IEEEAddres
     if(u8MacCapability & E_ZB_MAC_CAPABILITY_FFD){ //router, we need get its' device id
         if(0 == psZigbeeNodeTemp->sNode.u16DeviceID){ //unfinished node
             DBG_vPrintf(DBG_ZCB, "eZCB_MatchDescriptorRequest\n");
+            usleep(1000);
             if(eZCB_MatchDescriptorRequest(u16ShortAddress, au16ProfileHA,sizeof(au16Cluster) / sizeof(uint16), au16Cluster, 0, NULL, NULL) != E_ZB_OK)
             {
                 ERR_vPrintf(DBG_ZCB, "Error sending match descriptor request\n");
@@ -1807,6 +1805,7 @@ static void vZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, v
         {
             if (psZigbeeNode->sNode.pasEndpoints[i].u16ProfileID == 0)
             {
+                usleep(500);
                 if (eZCB_SimpleDescriptorRequest(&psZigbeeNode->sNode, psZigbeeNode->sNode.pasEndpoints[i].u8Endpoint) != E_ZB_OK){
                     ERR_vPrintf(T_TRUE, "Failed to read endpoint simple descriptor - requeue\n");
                     eZigbee_RemoveNode(psZigbeeNode);
@@ -2084,8 +2083,8 @@ static teZbStatus eZCB_ConfigureControlBridge(void)
         case(E_START_COORDINATOR):
             DBG_vPrintf(DBG_ZCB, "Starting control bridge as HA coordinator");
             eZCB_SetDeviceType(E_MODE_COORDINATOR);usleep(CONFIGURATION_INTERVAL);
-            //eZCB_SetChannelMask(eChannel);      usleep(CONFIGURATION_INTERVAL);
-            //eZCB_SetExtendedPANID(u64PanID);    usleep(CONFIGURATION_INTERVAL);            
+            eZCB_SetChannelMask(eChannel);      usleep(CONFIGURATION_INTERVAL);
+            eZCB_SetExtendedPANID(u64PanID);    usleep(CONFIGURATION_INTERVAL);
             eZCB_StartNetwork();                usleep(CONFIGURATION_INTERVAL);
             break;
     
