@@ -125,6 +125,15 @@ def SetDeviceOpenCloseStop(address, mode):
     else:
         mLog(E, "Error Communication with server")
         print msg
+def SetDoorLockOpenClose(address, mode):
+    command = '{"command": ' + str(0x0041) + '	,"sequence":0,"device_address":' + address + ',"operator":' + str(mode) + '}'
+    SocketSend(command)
+    msg = eval(SocketReceive())
+    if msg['status'] == 0:
+        mLog(N, "SetDeviceOnOff Success")
+    else:
+        mLog(E, "Error Communication with server")
+        print msg
 def GetDeviceRgbValue(address):
     command = '{"command":' + str(0x0025) + ',"sequence":0,"device_address":' + address + '}'
     SocketSend(command)
@@ -297,6 +306,33 @@ def HandleClosuresDevice(device_select):
         else:
             mLog(W, 'back forward')
             break
+
+def HandleDoorLockDevice(device_select):
+    while True:
+        print '''
+            Choose your operator:
+            1. set device open
+            2. set device close
+            3. reserve
+            4. get device current location
+            5. remove device from network
+            other key will go back
+        '''
+        command = raw_input("input your command:")
+        if command == '1':
+            SetDoorLockOpenClose(str(device_select['device_mac_address']), 0)
+        elif command == '2':
+            SetDoorLockOpenClose(str(device_select['device_mac_address']), 1)
+        elif command == '3':
+            SetDoorLockOpenClose(str(device_select['device_mac_address']), 2)
+        elif command == '4':
+            print "this func is no finished"
+        elif command == '5':
+            RemoveDeviceNetwork(str(device_select['device_mac_address']))
+        else:
+            mLog(W, 'back forward')
+            break
+
 def HandleLightSensor(device_select):
     while True:
         print '''
@@ -352,6 +388,9 @@ def main():
                 elif device_select['device_id'] == 0x0202:  # E_ZBD_WINDOW_COVERING_DEVICE
                     print "E_ZBD_WINDOW_COVERING_DEVICE"
                     HandleClosuresDevice(device_select)
+                elif device_select['device_id'] == 0x000A:  # E_ZBD_DOOR_LOCK
+                    print "E_ZBD_DOOR_LOCK"
+                    HandleDoorLockDevice(device_select)
             except Exception, e:
                 mLog(E, e)
         elif command == '3':

@@ -45,6 +45,7 @@
 
 #include "utils.h"
 #include "zigbee_socket.h"
+#include "zigbee_node.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -77,6 +78,7 @@ static teSS_Status eSocketHandleGetLightLevel(int iSocketfd, struct json_object 
 static teSS_Status eSocketHandleGetLightRGB(int iSocketfd, struct json_object *psJsonMessage);
 static teSS_Status eSocketHandleGetSensorValue(int iSocketfd, struct json_object *psJsonMessage);
 static teSS_Status eSocketHandleSetClosuresState(int iSocketfd, struct json_object *psJsonMessage);
+static teSS_Status eSocketHandleSetDoorLockState(int iSocket, struct json_object *psJsonMessage);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -109,6 +111,7 @@ static tsSocketHandleMap sSocketHandleMap[] = {
     {E_SS_COMMAND_SENSOR_GET_SENSOR,        eSocketHandleGetSensorValue},
             
     {E_SS_COMMAND_SET_CLOSURES_STATE,       eSocketHandleSetClosuresState},
+    {E_SS_COMMAND_SET_DOOR_LOCK_STATE,      eSocketHandleSetDoorLockState},
 };
 /****************************************************************************/
 /***        Exported Functions                                            ***/
@@ -676,8 +679,8 @@ static teSS_Status eSocketHandleSetClosuresState(int iSocketfd, struct json_obje
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr)&&
        json_object_object_get_ex(psJsonMessage,"operator", &psJsonOperator))
     {
-        uint8 u8Operator = json_object_get_int(psJsonOperator);
-        uint64 u64DeviceAddress = json_object_get_int64(psJsonAddr);
+        uint8 u8Operator = (uint8)json_object_get_int(psJsonOperator);
+        uint64 u64DeviceAddress = (uint8)json_object_get_int64(psJsonAddr);
         
         tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode)||(NULL == psZigbeeNode->Method.preDeviceSetWindowCovering)||
@@ -690,6 +693,31 @@ static teSS_Status eSocketHandleSetClosuresState(int iSocketfd, struct json_obje
         return E_SS_OK;
     }
     
+    return E_SS_ERROR_JSON_FORMAT;
+}
+
+static teSS_Status eSocketHandleSetDoorLockState(int iSocket, struct json_object *psJsonMessage)
+{
+    INF_vPrintf(DBG_SOCKET, "Client request set door lock device state\n");
+    json_object *psJsonAddr = NULL, *psJsonOperator = NULL;
+    if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr)&&
+       json_object_object_get_ex(psJsonMessage,"operator", &psJsonOperator))
+    {
+        uint8 u8Operator = (uint8)json_object_get_int(psJsonOperator);
+        uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
+
+        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        CHECK_POINTER(psZigbeeNode, E_SS_ERROR);
+        CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLock, E_SS_ERROR);
+        if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLock(&psZigbeeNode->sNode, u8Operator))
+        {
+            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.preDeviceSetDoorLock error\n");
+            return E_SS_ERROR;
+        }
+        vResponseSuccess(iSocket);
+        return E_SS_OK;
+    }
+
     return E_SS_ERROR_JSON_FORMAT;
 }
 

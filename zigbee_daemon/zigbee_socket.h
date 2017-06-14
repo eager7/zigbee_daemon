@@ -88,7 +88,9 @@ typedef enum
     E_SS_COMMAND_SENSOR_GET_ALL_ALARM       = 0x0032,
 
     /* Closure */
-    E_SS_COMMAND_SET_CLOSURES_STATE         = 0x0040,    
+    E_SS_COMMAND_SET_CLOSURES_STATE         = 0x0040,
+    /* Door */
+    E_SS_COMMAND_SET_DOOR_LOCK_STATE        = 0x0041,
     //OTA & Upgrade
     E_SS_COMMAND_COORDINATOR_UPGRADE        = 0x0050,
 
