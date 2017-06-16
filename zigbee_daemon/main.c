@@ -50,7 +50,7 @@ int daemonize = 0;
 uint32 u32BaudRate = 115200;
 uint32 u32Channel = CONFIG_DEFAULT_CHANNEL;
 char *cpSerialDevice = "/dev/ttyUSB0";
-char *pZigbeeSqlitePath = "/tmp/ZigbeeDaemon.DB";
+char *pZigbeeSqlitePath = "./ZigbeeDaemon.DB";
 
 tsDeviceIDMap asDeviceIDMap[] = 
 {
