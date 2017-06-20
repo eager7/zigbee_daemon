@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
     int iStart= 0;
     while(bRunning){
         sleep(5);
+#if 0
         tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
         memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
         eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
@@ -132,6 +133,7 @@ int main(int argc, char *argv[])
         eZCB_NeighbourTableRequest(&iStart);
         //eCloudPushAllDevicesList();
         sleep(5);
+#endif
     }
     eZCB_Finish();
     eZigbeeSqliteFinished();

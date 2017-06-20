@@ -78,6 +78,7 @@ static void vZCB_HandleSimpleDescriptorResponse(void *pvUser, uint16 u16Length, 
 static teZbStatus eZCB_ConfigureControlBridge(void);
 static void vZCB_AddNodeIntoNetwork(uint16 u16ShortAddress, uint64 u64IEEEAddress, uint8 u8MacCapability);
 static void vZCB_InitZigbeeNodeInfo(tsZigbeeNodes *psZigbeeNode, uint16 u16DeviceID);
+static void vZCB_HandleDoorLockControllerRequest(void *pvUser, uint16 u16Length, void *pvMessage);
 
 /****************************************************************************/
 /***        Local Variables                                               ***/
@@ -92,18 +93,19 @@ teZbStatus eZCB_Init(char *cpSerialDevice, uint32 u32BaudRate)
     CHECK_STATUS(eLockCreate(&sControlBridge.mutex), E_THREAD_OK, E_ZB_ERROR); /* Lock Control bridge when add or delete the list of nodes */
     CHECK_RESULT(eSL_Init(cpSerialDevice, u32BaudRate), E_SL_OK, E_ZB_ERROR);
     /* Register listeners */
-    eSL_AddListener(E_SL_MSG_NODE_CLUSTER_LIST,             vZCB_HandleNodeClusterList,          NULL);
-    eSL_AddListener(E_SL_MSG_NODE_ATTRIBUTE_LIST,           vZCB_HandleNodeClusterAttributeList, NULL);
-    eSL_AddListener(E_SL_MSG_NODE_COMMAND_ID_LIST,          vZCB_HandleNodeCommandIDList,        NULL);
-    eSL_AddListener(E_SL_MSG_NETWORK_JOINED_FORMED,         vZCB_HandleNetworkJoined,            NULL);
-    eSL_AddListener(E_SL_MSG_DEVICE_ANNOUNCE,               vZCB_HandleDeviceAnnounce,           NULL);
-    eSL_AddListener(E_SL_MSG_LEAVE_INDICATION,              vZCB_HandleDeviceLeave,              NULL);
-    eSL_AddListener(E_SL_MSG_MATCH_DESCRIPTOR_RESPONSE,     vZCB_HandleMatchDescriptorResponse,  NULL);
-    eSL_AddListener(E_SL_MSG_REPORT_IND_ATTR_RESPONSE,      vZCB_HandleAttributeReport,          NULL);
-    eSL_AddListener(E_SL_MSG_ADD_GROUP_RESPONSE,            vZCB_HandleAddGroupResponse,         NULL);
+    eSL_AddListener(E_SL_MSG_NODE_CLUSTER_LIST,             vZCB_HandleNodeClusterList,               NULL);
+    eSL_AddListener(E_SL_MSG_NODE_ATTRIBUTE_LIST,           vZCB_HandleNodeClusterAttributeList,      NULL);
+    eSL_AddListener(E_SL_MSG_NODE_COMMAND_ID_LIST,          vZCB_HandleNodeCommandIDList,             NULL);
+    eSL_AddListener(E_SL_MSG_NETWORK_JOINED_FORMED,         vZCB_HandleNetworkJoined,                 NULL);
+    eSL_AddListener(E_SL_MSG_DEVICE_ANNOUNCE,               vZCB_HandleDeviceAnnounce,                NULL);
+    eSL_AddListener(E_SL_MSG_LEAVE_INDICATION,              vZCB_HandleDeviceLeave,                   NULL);
+    eSL_AddListener(E_SL_MSG_MATCH_DESCRIPTOR_RESPONSE,     vZCB_HandleMatchDescriptorResponse,       NULL);
+    eSL_AddListener(E_SL_MSG_REPORT_IND_ATTR_RESPONSE,      vZCB_HandleAttributeReport,               NULL);
+    eSL_AddListener(E_SL_MSG_ADD_GROUP_RESPONSE,            vZCB_HandleAddGroupResponse,              NULL);
     eSL_AddListener(E_SL_MSG_REMOVE_GROUP_RESPONSE,         vZCB_HandleRemoveGroupMembershipResponse, NULL);
-    eSL_AddListener(E_SL_MSG_REMOVE_SCENE_RESPONSE,         vZCB_HandleRemoveSceneResponse,      NULL);
-    eSL_AddListener(E_SL_MSG_SIMPLE_DESCRIPTOR_RESPONSE,    vZCB_HandleSimpleDescriptorResponse,       NULL);
+    eSL_AddListener(E_SL_MSG_REMOVE_SCENE_RESPONSE,         vZCB_HandleRemoveSceneResponse,           NULL);
+    eSL_AddListener(E_SL_MSG_SIMPLE_DESCRIPTOR_RESPONSE,    vZCB_HandleSimpleDescriptorResponse,      NULL);
+    eSL_AddListener(E_SL_MSG_LOCK_UNLOCK_DOOR_UPDATE,       vZCB_HandleDoorLockControllerRequest,     NULL);
     //eSL_AddListener(E_SL_MSG_VERSION_LIST,                  vZCB_HandleVersionResponse,    NULL);
     //eSL_AddListener(E_SL_MSG_GET_PERMIT_JOIN_RESPONSE,      vZCB_HandleGetPermitResponse,  NULL);
     eSL_AddListener(E_SL_MSG_NODE_NON_FACTORY_NEW_RESTART,  vZCB_HandleRestartProvisioned, NULL);
@@ -1931,6 +1933,35 @@ static void vZCB_HandleSimpleDescriptorResponse(void *pvUser, uint16 u16Length, 
         }
     }
     vZCB_InitZigbeeNodeInfo(psZigbeeNode, psSimpleDescriptorResponse->u16DeviceID);
+}
+
+static void vZCB_HandleDoorLockControllerRequest(void *pvUser, uint16 u16Length, void *pvMessage)
+{
+    DBG_vPrintf(DBG_ZCB, "************[0x00F2]vZCB_HandleDoorLockControllerRequest\n");
+    struct _tDoorLockControllerRequest
+    {
+        uint8     u8SequenceNo;
+        uint8     u8SrcEndpoint;
+        uint16    u16ClusterID;
+        uint8     u8SrcAddrMode;
+        uint16    u16ShortAddress;
+        uint8     u8CommandID;
+        uint8     u8PasswordLen;
+        uint8     auPasswordData[10];
+    } PACKED *psDoorLockControllerRequest = (struct _tDoorLockControllerRequest*)pvMessage;
+    psDoorLockControllerRequest->u8CommandID     = (psDoorLockControllerRequest->u8CommandID);
+    psDoorLockControllerRequest->u8PasswordLen   = (psDoorLockControllerRequest->u8PasswordLen);
+    psDoorLockControllerRequest->u16ShortAddress = ntohs(psDoorLockControllerRequest->u16ShortAddress);
+    DBG_vPrintf(DBG_ZCB, "Get Door Lock Controller[0x%04X] Request:%d, Password[%d]:%s\n",
+                psDoorLockControllerRequest->u16ShortAddress, psDoorLockControllerRequest->u8CommandID,
+                psDoorLockControllerRequest->u8PasswordLen, psDoorLockControllerRequest->auPasswordData);
+
+    tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByShortAddress(psDoorLockControllerRequest->u16ShortAddress);
+    if((NULL == psZigbeeNode) || (psZigbeeNode->sNode.u16DeviceID != 0)){
+        WAR_vPrintf(T_TRUE, "Can't Found This Node:0x%04X\n", psDoorLockControllerRequest->u16ShortAddress);
+        return ;
+    }
+    //TODO:Set Door Lock State
 }
 
 static void vZCB_HandleDeviceLeave(void *pvUser, uint16 u16Length, void *pvMessage)
