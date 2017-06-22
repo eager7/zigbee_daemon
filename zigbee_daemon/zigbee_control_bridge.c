@@ -2119,6 +2119,16 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
                 eLockunLock(&psZigbeeNode->mutex);
             }
             break;
+        case(E_ZB_CLUSTERID_DOOR_LOCK):
+            if(psZigbeeNode->sNode.u16DeviceID == 0){
+                WAR_vPrintf(T_TRUE, "This node is not in network truly\n");
+            }else{
+                eLockLock(&psZigbeeNode->mutex);
+                INF_vPrintf(DBG_ZCB, "update door lock attribute to %d\n", psMessage->uData.u8Data);
+                psZigbeeNode->sNode.sAttributeValue.u8State= psMessage->uData.u8Data;
+                eLockunLock(&psZigbeeNode->mutex);
+            }
+            break;
         default:
             WAR_vPrintf(T_TRUE, "unknow cluster id.\n");
     }

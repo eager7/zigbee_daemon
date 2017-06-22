@@ -124,6 +124,7 @@ typedef struct
 {
     volatile sig_atomic_t  bOnOff;
     volatile sig_atomic_t  u8Level;
+    volatile sig_atomic_t  u8State;
     volatile sig_atomic_t  u16Illum;
     volatile sig_atomic_t  u16Temp;
     volatile sig_atomic_t  u16Humi;
