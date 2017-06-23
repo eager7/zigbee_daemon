@@ -63,6 +63,7 @@ teZbStatus eControlBridgeInitalise(tsZigbeeNodes *psZigbeeNode)
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s", "CoorDinator");
     psZigbeeNode->Method.preCoordinatorPermitJoin = eZigbee_SetPermitJoining;
     psZigbeeNode->Method.preCoordinatorGetChannel = eZigbee_GetChannel;
+    psZigbeeNode->Method.preDeviceSetDoorLock = eZigbeeDeviceSetDoorLockState;
     eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
     //sleep(1);psZigbeeNode->Method.preCoordinatorPermitJoin(30);
         
@@ -238,6 +239,26 @@ teZbStatus eDoorLockInitalise(tsZigbeeNodes *psZigbeeNode)
     NOT_vPrintf(DBG_DEVICES, "------------eDoorLockInitalise\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DoorLock", psZigbeeNode->sNode.u16ShortAddress);
+    psZigbeeNode->Method.preDeviceSetDoorLock          = eZigbeeDeviceSetDoorLockState;
+    psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
+    psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
+    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
+    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
+    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
+    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
+    psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
+    psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    return E_ZB_OK;
+}
+
+teZbStatus eDoorLockControllerInitalise(tsZigbeeNodes *psZigbeeNode)
+{
+    NOT_vPrintf(DBG_DEVICES, "------------eDoorLockControllerInitalise\n");
+
+    snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DoorLockController", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceSetDoorLock          = eZigbeeDeviceSetDoorLockState;
     psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
     psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;

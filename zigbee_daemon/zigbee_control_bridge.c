@@ -1511,18 +1511,22 @@ teZbStatus eZCB_DoorLockDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_DoorLoc
     }
     sDoorLockDeviceMessage.u8Command = (uint8)eCommand;
 
-    if (eSL_SendMessage(E_SL_MSG_LOCK_UNLOCK_DOOR, sizeof(sDoorLockDeviceMessage), &sDoorLockDeviceMessage, &u8SequenceNo) != E_SL_OK)
-    {
-        return E_ZB_COMMS_FAILED;
+    if(sDoorLockDeviceMessage.u16TargetAddress == 0){/*Coordinator*/
+        if (eSL_SendMessage(E_SL_MSG_DOOR_LOCK_SET_DOOR_STATE, sizeof(sDoorLockDeviceMessage), &sDoorLockDeviceMessage, &u8SequenceNo) != E_SL_OK)
+        {
+            return E_ZB_COMMS_FAILED;
+        }
+    }else{
+        if (eSL_SendMessage(E_SL_MSG_LOCK_UNLOCK_DOOR, sizeof(sDoorLockDeviceMessage), &sDoorLockDeviceMessage, &u8SequenceNo) != E_SL_OK)
+        {
+            return E_ZB_COMMS_FAILED;
+        }
+        if(bZCB_EnableAPSAck)
+        {
+            return eZCB_GetDefaultResponse(u8SequenceNo);
+        }
     }
-    if(bZCB_EnableAPSAck)
-    {
-        return eZCB_GetDefaultResponse(u8SequenceNo);
-    }
-    else
-    {
-        return E_ZB_OK;
-    }
+    return E_ZB_OK;
 }
 
 teZbStatus eZCB_GetDefaultResponse(uint8 u8SequenceNo)
@@ -1813,7 +1817,6 @@ static void vZCB_HandleNetworkJoined(void *pvUser, uint16 u16Length, void *pvMes
 
     vZigbee_PrintNode(&sControlBridge.sNode);
     asDeviceIDMap[0].prInitaliseRoutine(&sControlBridge);
-    //iFlagAllowHandleReport = 1;
     eLockunLock(&sControlBridge.mutex);
 }
 

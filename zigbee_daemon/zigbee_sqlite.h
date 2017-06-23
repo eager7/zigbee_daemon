@@ -6,7 +6,7 @@
  *
  * REVISION:           $Revision: 1.0 $
  *
- * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
+ * DATED:              $Date: 2017-06-23 15:13:17  $
  *
  * AUTHOR:             PCT
  *
@@ -98,8 +98,31 @@ typedef struct _tsZigbeeSqlite
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
+/*****************************************************************************
+** Prototype    : eZigbeeSqliteOpen
+** Description  : Open the sqlite3 database
+** Input        : pZigbeeSqlitePath, the path of database file
+** Output       : None
+** Return Value : return E_SQ_OK if successful, else return E_SQ_ERROR
+
+** History      :
+** Date         : 2017/6/23
+** Author       : PCT
+*****************************************************************************/
 teSQ_Status eZigbeeSqliteOpen(char *pZigbeeSqlitePath);
+/*****************************************************************************
+** Prototype    : eZigbeeSqliteClose
+** Description  : close the sqlite3 database
+** Input        : None
+** Output       : None
+** Return Value : Return E_SQ_OK
+
+** History      :
+** Date         : 2017/6/23
+** Author       : PCT
+*****************************************************************************/
 teSQ_Status eZigbeeSqliteClose(void);
+
 teSQ_Status eZigbeeSqliteInit(char *pZigbeeSqlitePath);
 teSQ_Status eZigbeeSqliteFinished(void);
 teSQ_Status eZigbeeSqliteRetrieveDevicesList(tsZigbeeBase *psZigbee_Node);

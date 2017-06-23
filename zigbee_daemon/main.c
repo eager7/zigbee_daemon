@@ -64,6 +64,7 @@ tsDeviceIDMap asDeviceIDMap[] =
     { E_ZBD_SIMPLE_SENSOR,          eSimpleSensorInitalise },
     { E_ZBD_SMART_PLUG,             eColourLightInitalise },
     { E_ZBD_DOOR_LOCK,              eDoorLockInitalise },
+    { E_ZBD_DOOR_LOCK_CONTROLLER,   eDoorLockControllerInitalise },
     { E_ZBD_END_DEVICE_DEVICE,      eEndDeviceInitalise },
 };
 
