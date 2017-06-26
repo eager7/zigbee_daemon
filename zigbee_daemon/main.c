@@ -114,16 +114,15 @@ int main(int argc, char *argv[])
     int iStart= 0;
     while(bRunning){
         sleep(5);
-#if 0
         tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
         memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
         eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
         dl_list_for_each(psZigbeeItem, &psZigbeeNode.list, tsZigbeeBase, list)
         {
-            INF_vPrintf(DBG_MAIN, "[DEVICEID]:0X%04X, [NAME]:%s, [MAC]:0X%016llX, [ADDR]:0X%04X, [OnLine]:%d, [Type]:%d\n", 
+            INF_vPrintln(DBG_MAIN, "[DEVICEID]:0X%04X, [NAME]:%s, [MAC]:0X%016llX, [ADDR]:0X%04X, [OnLine]:%d, [Type]:%d",
                 psZigbeeItem->u16DeviceID, psZigbeeItem->auDeviceName, psZigbeeItem->u64IEEEAddress,
                 psZigbeeItem->u16ShortAddress, psZigbeeItem->u8DeviceOnline, psZigbeeItem->u8MacCapability);
-            //use u8DeviceOnline to avoid inited repetitily
+            //use u8DeviceOnline to avoid inited repetitive
             if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
                 tsZigbeeNodes *psZigbeeAdd = NULL;
                 eZigbee_AddNode(psZigbeeItem->u16ShortAddress, psZigbeeItem->u64IEEEAddress, psZigbeeItem->u16DeviceID, psZigbeeItem->u8MacCapability, &psZigbeeAdd);
@@ -133,8 +132,7 @@ int main(int argc, char *argv[])
         eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
         eZCB_NeighbourTableRequest(&iStart);
         //eCloudPushAllDevicesList();
-        sleep(5);
-#endif
+        sleep(55);
     }
     eZCB_Finish();
     eZigbeeSqliteFinished();
