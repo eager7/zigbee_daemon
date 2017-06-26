@@ -69,7 +69,7 @@ teCloudStatus eZigbeeCloudFinished()
 teCloudStatus eZigbeeCloudPush(const char *pmsg, uint16 u16Length)
 {
     if(-1 == zmq_send(sZigbeeCloud.pvSender, pmsg, u16Length, ZMQ_DONTWAIT)){
-        ERR_vPrintf(T_TRUE, "zmq send error\n");
+        ERR_vPrintln(T_TRUE, "zmq send error\n");
         return E_CLOUD_ERROR;
     }
     return E_CLOUD_OK;
@@ -80,7 +80,7 @@ teCloudStatus eCloudPushAllDevicesList(void)
     struct json_object *psJsonDevice, *psJsonDevicesArray, *psJsonResult = NULL;
     if(NULL == (psJsonResult = json_object_new_object()))
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return E_CLOUD_ERROR;
     }
     json_object_object_add(psJsonResult, "status",json_object_new_int(SUCCESS)); 
@@ -88,7 +88,7 @@ teCloudStatus eCloudPushAllDevicesList(void)
     
     if(NULL == (psJsonDevicesArray = json_object_new_array()))
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_array error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_array error\n");
         json_object_put(psJsonResult);
         return E_CLOUD_ERROR;
     }
@@ -101,7 +101,7 @@ teCloudStatus eCloudPushAllDevicesList(void)
         psJsonDevice = NULL;
         if(NULL == (psJsonDevice = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             json_object_put(psJsonResult);
             json_object_put(psJsonDevicesArray);
             eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
@@ -117,10 +117,10 @@ teCloudStatus eCloudPushAllDevicesList(void)
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
     json_object_object_add(psJsonResult,"description",psJsonDevicesArray); 
 
-    INF_vPrintf(DBG_CLOUD, "return message is ----%s\n",json_object_to_json_string(psJsonResult));
+    INF_vPrintln(DBG_CLOUD, "return message is ----%s\n",json_object_to_json_string(psJsonResult));
     eZigbeeCloudPush(json_object_to_json_string(psJsonResult), strlen(json_object_to_json_string(psJsonResult)));   
     json_object_put(psJsonResult);
-    return E_SS_OK;
+    return E_CLOUD_ERROR;
 }
 
 /****************************************************************************/
@@ -135,18 +135,18 @@ static void *pvCloudHandleThread(void *psThreadInfoVoid)
     char auSubBuf[MABF] = {0};
     while(psThreadInfo->eState == E_THREAD_RUNNING)
     {
-        DBG_vPrintf(DBG_CLOUD, "pvCloudHandleThread Recv \n");
+        DBG_vPrintln(DBG_CLOUD, "pvCloudHandleThread Recv \n");
         
         int ret = zmq_recv(psZigbeeCloud->pvSubscriber, auSubBuf, sizeof(auSubBuf), 0);
         if(ret != -1){
-            NOT_vPrintf(DBG_CLOUD, "Server Pub Msg:%s\n", auSubBuf);
+            NOT_vPrintln(DBG_CLOUD, "Server Pub Msg:%s\n", auSubBuf);
         } else {
-            WAR_vPrintf(T_TRUE, "zmq_recv message error:%s\n", strerror(errno));
+            WAR_vPrintln(T_TRUE, "zmq_recv message error:%s\n", strerror(errno));
             continue;
         }
     }
 
-    DBG_vPrintf(DBG_CLOUD, "pvCloudHandleThread Exit \n");
+    DBG_vPrintln(DBG_CLOUD, "pvCloudHandleThread Exit \n");
     vThreadFinish(psThreadInfo);
     return NULL;
 }

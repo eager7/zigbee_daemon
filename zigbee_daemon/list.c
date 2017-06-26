@@ -61,7 +61,7 @@ int dl_list_empty ( struct dl_list *list )
 unsigned int dl_list_len ( struct dl_list *list )
 {
 	struct dl_list *item;
-	int count = 0;
+	unsigned int count = 0;
 	for ( item = list->next; item != list; item = item->next )
 	{
 		count++;

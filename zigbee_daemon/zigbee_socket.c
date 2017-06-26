@@ -26,27 +26,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <pthread.h>
-#include <sys/time.h>
 #include <unistd.h>
-
 #include <syslog.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <sys/un.h>
-
 
 #include "utils.h"
 #include "zigbee_socket.h"
-#include "zigbee_node.h"
-
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -85,7 +71,7 @@ static teSS_Status eSocketHandleSetDoorLockState(int iSocket, struct json_object
 /****************************************************************************/
 
 extern int verbosity;
-extern const char *Version;
+extern const char *pVersion;
 /****************************************************************************/
 /***        Local Variables                                               ***/
 /****************************************************************************/
@@ -130,7 +116,7 @@ teSS_Status eSocketServer_Init(void)
     teSS_Status SStatus = E_SS_OK;
     if(-1 == (sSocketServer.iSocketFd = socket(AF_INET, SOCK_STREAM, 0)))
     {
-        ERR_vPrintf(T_TRUE,"setsockopt failed");  
+        ERR_vPrintln(T_TRUE,"setsockopt failed");
         SStatus = E_SS_ERROR_SOCKET;
         return SStatus;
     }
@@ -143,7 +129,7 @@ teSS_Status eSocketServer_Init(void)
     int on = 1;  
     if((setsockopt(sSocketServer.iSocketFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)))<0) 
     {  
-        ERR_vPrintf(T_TRUE,"setsockopt failed, %s\n", strerror(errno)); 
+        ERR_vPrintln(T_TRUE,"setsockopt failed, %s\n", strerror(errno));
         close(sSocketServer.iSocketFd);
         SStatus = E_SS_ERROR_SOCKET;
         return SStatus;
@@ -151,7 +137,7 @@ teSS_Status eSocketServer_Init(void)
 
     if(-1 == bind(sSocketServer.iSocketFd, (struct sockaddr *)&server_addr, sizeof(server_addr)))
     {
-        ERR_vPrintf(T_TRUE,"bind error! %s\n", strerror(errno));
+        ERR_vPrintln(T_TRUE,"bind error! %s\n", strerror(errno));
         close(sSocketServer.iSocketFd);
         SStatus = E_SS_ERROR_BIND;
         return SStatus;
@@ -159,18 +145,18 @@ teSS_Status eSocketServer_Init(void)
 
     if(-1 == listen(sSocketServer.iSocketFd, 5))
     {
-        PERR_vPrintf("listen error!");
+        PERR_vPrintln("listen error!");
         close(sSocketServer.iSocketFd);
         SStatus = E_SS_ERROR_LISTEN;
         return SStatus;
     }
 
     eQueueCreate(&sSocketServer.sQueue, NUM_SOCKET_QUEUE);
-    DBG_vPrintf(DBG_SOCKET, "Create pvSocketServerThread\n");
+    DBG_vPrintln(DBG_SOCKET, "Create pvSocketServerThread\n");
     sSocketServer.sThreadSocket.pvThreadData = &sSocketServer;
     CHECK_RESULT(eThreadStart(pvSocketServerThread, &sSocketServer.sThreadSocket, E_THREAD_DETACHED), E_THREAD_OK, E_SS_ERROR);
     
-    DBG_vPrintf(DBG_SOCKET, "Create pvSocketCallbackHandlerThread\n");
+    DBG_vPrintln(DBG_SOCKET, "Create pvSocketCallbackHandlerThread\n");
     sSocketServer.sThreadQueue.pvThreadData = &sSocketServer;
     CHECK_RESULT(eThreadStart(pvSocketCallbackHandlerThread, &sSocketServer.sThreadQueue, E_THREAD_DETACHED), E_THREAD_OK, E_SS_ERROR);
     
@@ -179,7 +165,7 @@ teSS_Status eSocketServer_Init(void)
 
 teSS_Status eSocketServer_Destroy(void)
 {
-    DBG_vPrintf(DBG_SOCKET, "eSocketServer_Destroy\n");
+    DBG_vPrintln(DBG_SOCKET, "eSocketServer_Destroy\n");
     eThreadStop(&sSocketServer.sThreadSocket);
     eThreadStop(&sSocketServer.sThreadQueue);
     eQueueDestroy(&sSocketServer.sQueue);
@@ -212,20 +198,20 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
         switch(iResult)
         {
             case 0:
-                DBG_vPrintf(DBG_SOCKET, "receive message time out \n");
+                DBG_vPrintln(DBG_SOCKET, "receive message time out \n");
             break;
 
             case -1:
-                WAR_vPrintf(T_TRUE,"receive message error:%s \n", strerror(errno));
+                WAR_vPrintln(T_TRUE,"receive message error:%s \n", strerror(errno));
             break;
 
             default:
             {
                 if(FD_ISSET(psSocketServer->iSocketFd, &fdTemp))//there is client accept
                 {
-                    DBG_vPrintf(DBG_SOCKET, "A client connecting... \n");
+                    DBG_vPrintln(DBG_SOCKET, "A client connecting... \n");
                     if(psSocketServer->u8NumClientSocket >= 5){
-                        DBG_vPrintf(DBG_SOCKET, "Client already connected 5, don't allow connected\n");  
+                        DBG_vPrintln(DBG_SOCKET, "Client already connected 5, don't allow connected\n");
                         FD_CLR(psSocketServer->iSocketFd, &fdSelect);//delete this Server from select set
                         break;
                     }
@@ -234,10 +220,10 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
                         if(ClientSocket[i].iSocketClient == -1){
                             ClientSocket[i].iSocketClient = accept(psSocketServer->iSocketFd, (struct sockaddr *)&ClientSocket[i].addrclint, (socklen_t *) &ClientSocket[i].u16Length);
                             if(-1 == ClientSocket[i].iSocketClient){
-                                ERR_vPrintf(T_TRUE,"accept client connecting error \n");   
+                                ERR_vPrintln(T_TRUE,"accept client connecting error \n");
                                 break;
                             } else {                              
-                                DBG_vPrintf(DBG_SOCKET, "Client (%d-%d) already connected\n", i, ClientSocket[i].iSocketClient);  
+                                DBG_vPrintln(DBG_SOCKET, "Client (%d-%d) already connected\n", i, ClientSocket[i].iSocketClient);
                                 FD_SET(ClientSocket[i].iSocketClient, &fdSelect);
                                 
                                 if(ClientSocket[i].iSocketClient > iListenFD){
@@ -255,9 +241,9 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
                     {
                         if(FD_ISSET(ClientSocket[i].iSocketClient, &fdTemp)) {
                             memset(ClientSocket[i].auClientData, 0, sizeof(ClientSocket[i].auClientData));
-                            ClientSocket[i].u16Length = recv(ClientSocket[i].iSocketClient, ClientSocket[i].auClientData, sizeof(ClientSocket[i].auClientData), 0);
+                            ClientSocket[i].u16Length = (uint16)recv(ClientSocket[i].iSocketClient, ClientSocket[i].auClientData, sizeof(ClientSocket[i].auClientData), 0);
                             if (0 == ClientSocket[i].u16Length){
-                                ERR_vPrintf(T_TRUE, "Can't recv client[%d] message, close it\n", i);  
+                                ERR_vPrintln(T_TRUE, "Can't recv client[%d] message, close it\n", i);
                                 close(ClientSocket[i].iSocketClient);
                                 FD_SET(psSocketServer->iSocketFd, &fdSelect);//Add socketserver fd into select fd
                                 FD_CLR(ClientSocket[i].iSocketClient, &fdSelect);//delete this client from select set
@@ -267,7 +253,7 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
                                 tsSSCallbackThreadData *psSCallBackThreadData = NULL;
                                 psSCallBackThreadData = (tsSSCallbackThreadData*)malloc(sizeof(tsSSCallbackThreadData));
                                 if (!psSCallBackThreadData){
-                                    ERR_vPrintf(T_TRUE, "Memory allocation failure");
+                                    ERR_vPrintln(T_TRUE, "Memory allocation failure");
                                     break;
                                 }
                                 memset(psSCallBackThreadData, 0, sizeof(tsSSCallbackThreadData));  
@@ -285,14 +271,14 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
         }
     }
     
-    DBG_vPrintf(DBG_SOCKET, "pvSocketServerThread Exit\n");
+    DBG_vPrintln(DBG_SOCKET, "pvSocketServerThread Exit\n");
     vThreadFinish(psThreadInfo)/* Return from thread clearing resources */;
     return NULL;
 }
 
 static void *pvSocketCallbackHandlerThread(void *psThreadInfoVoid)
 {
-    DBG_vPrintf(DBG_SOCKET, "pvSocketCallbackHandlerThread\n");
+    DBG_vPrintln(DBG_SOCKET, "pvSocketCallbackHandlerThread\n");
     tsThread *psThreadInfo = (tsThread *)psThreadInfoVoid;
     tsSocketServer *psSocketServer = (tsSocketServer*)psThreadInfo->pvThreadData;
     psThreadInfo->eState = E_THREAD_RUNNING;
@@ -309,7 +295,7 @@ static void *pvSocketCallbackHandlerThread(void *psThreadInfoVoid)
             struct json_object *psJsonTemp  = NULL;
             if(json_object_object_get_ex(psJsonMessage,"command", &psJsonTemp))
             {
-                eSocketCommand = json_object_get_int(psJsonTemp);
+                eSocketCommand = (teSocketCommand)json_object_get_int(psJsonTemp);
                 if(json_object_object_get_ex(psJsonMessage,"sequence", &psJsonTemp))
                 {
                     iSequenceNumber = json_object_get_int(psJsonTemp);
@@ -335,13 +321,13 @@ static void *pvSocketCallbackHandlerThread(void *psThreadInfoVoid)
         }
         else
         {
-            ERR_vPrintf(T_TRUE, "ResponseJsonFormatError error\n");
+            ERR_vPrintln(T_TRUE, "ResponseJsonFormatError error\n");
             vResponseJsonFormatError(psCallbackData->iSocketClientfd);
         }
         FREE(psCallbackData);
         eThreadYield();
     }
-    DBG_vPrintf(DBG_SOCKET, "pvSocketCallbackHandlerThread Exit\n");   
+    DBG_vPrintln(DBG_SOCKET, "pvSocketCallbackHandlerThread Exit\n");
     vThreadFinish(psThreadInfo);
 
     return NULL;    
@@ -349,12 +335,12 @@ static void *pvSocketCallbackHandlerThread(void *psThreadInfoVoid)
 //////////////////////////////////////Message Handle////////////////////////////////////////
 static void vResponseSuccess(int iSocketfd)
 {
-    DBG_vPrintf(DBG_SOCKET, "Handle message success\n");
+    DBG_vPrintln(DBG_SOCKET, "Handle message success\n");
 
     struct json_object* psJsonMessage = json_object_new_object();
     if(NULL == psJsonMessage)
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return ;
     }
     json_object_object_add(psJsonMessage, "status",json_object_new_int(E_SS_OK));
@@ -364,7 +350,7 @@ static void vResponseSuccess(int iSocketfd)
     if(-1 == send(iSocketfd, 
             json_object_get_string(psJsonMessage),strlen(json_object_get_string(psJsonMessage)),0))
     {
-        ERR_vPrintf(T_TRUE, "send data to client error\n");
+        ERR_vPrintln(T_TRUE, "send data to client error\n");
     }     
     json_object_put(psJsonMessage);
     return ;
@@ -375,7 +361,7 @@ static void vResponseFailed(int iSocketfd)
     struct json_object* psJsonMessage = json_object_new_object();
     if(NULL == psJsonMessage)
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return ;
     }
     json_object_object_add(psJsonMessage, "status",json_object_new_int(E_SS_ERROR));
@@ -385,7 +371,7 @@ static void vResponseFailed(int iSocketfd)
     if(-1 == send(iSocketfd, 
             json_object_get_string(psJsonMessage),strlen(json_object_get_string(psJsonMessage)),0))
     {
-        ERR_vPrintf(T_TRUE, "send data to client error\n");
+        ERR_vPrintln(T_TRUE, "send data to client error\n");
     }     
     json_object_put(psJsonMessage);
     return ;
@@ -396,7 +382,7 @@ static void vResponseJsonFormatError(int iSocketfd)
     struct json_object* psJsonMessage = json_object_new_object();
     if(NULL == psJsonMessage)
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return ;
     }
     json_object_object_add(psJsonMessage, "status",json_object_new_int(E_SS_ERROR_JSON_FORMAT));
@@ -406,7 +392,7 @@ static void vResponseJsonFormatError(int iSocketfd)
     if(-1 == send(iSocketfd, 
             json_object_get_string(psJsonMessage),strlen(json_object_get_string(psJsonMessage)),0))
     {
-        ERR_vPrintf(T_TRUE, "send data to client error\n");
+        ERR_vPrintln(T_TRUE, "send data to client error\n");
     }     
     json_object_put(psJsonMessage);
     return;
@@ -417,7 +403,7 @@ static void vResponseCommandError(int iSocketfd)
     struct json_object* psJsonMessage = json_object_new_object();
     if(NULL == psJsonMessage)
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return ;
     }
     json_object_object_add(psJsonMessage, "status",json_object_new_int(E_SS_ERROR_NO_COMMAND));
@@ -427,7 +413,7 @@ static void vResponseCommandError(int iSocketfd)
     if(-1 == send(iSocketfd, 
             json_object_get_string(psJsonMessage),strlen(json_object_get_string(psJsonMessage)),0))
     {
-        ERR_vPrintf(T_TRUE, "send data to client error\n");
+        ERR_vPrintln(T_TRUE, "send data to client error\n");
     }     
     json_object_put(psJsonMessage);
     return;
@@ -435,22 +421,22 @@ static void vResponseCommandError(int iSocketfd)
 
 static teSS_Status eSocketHandleGetVersion(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request is get version\n");
+    INF_vPrintln(DBG_SOCKET, "Client request is get version\n");
     teSS_Status eSS_Status = E_SS_OK;
     struct json_object* psJsonReturn = json_object_new_object();
     if(NULL == psJsonReturn)
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return E_SS_ERROR;
     }
     json_object_object_add(psJsonReturn, "status",json_object_new_int(E_SS_OK));
     json_object_object_add(psJsonReturn, "sequence",json_object_new_int(iSequenceNumber));
-    json_object_object_add(psJsonReturn, "description",json_object_new_string(Version));
-    INF_vPrintf(DBG_SOCKET, "return message is ----%s\n",json_object_get_string(psJsonReturn));
+    json_object_object_add(psJsonReturn, "description",json_object_new_string(pVersion));
+    INF_vPrintln(DBG_SOCKET, "return message is ----%s\n",json_object_get_string(psJsonReturn));
     if(-1 == send(iSocketfd, 
         json_object_get_string(psJsonReturn),strlen(json_object_get_string(psJsonReturn)), 0))
     {
-        ERR_vPrintf(T_TRUE, "send data to client error\n");
+        ERR_vPrintln(T_TRUE, "send data to client error\n");
         eSS_Status = E_SS_ERROR;
     }
     json_object_put(psJsonReturn);
@@ -459,7 +445,7 @@ static teSS_Status eSocketHandleGetVersion(int iSocketfd, struct json_object *ps
 
 static teSS_Status eSocketHandleGetChannel(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request is get coordiantor channel\n");
+    INF_vPrintln(DBG_SOCKET, "Client request is get coordiantor channel\n");
     teSS_Status eSS_Status = E_SS_ERROR;
 
     uint8 u8Channel = 0;
@@ -468,17 +454,17 @@ static teSS_Status eSocketHandleGetChannel(int iSocketfd, struct json_object *ps
         struct json_object* psJsonReturn = json_object_new_object();
         if(NULL == psJsonReturn)
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             return E_SS_ERROR;
         }
         json_object_object_add(psJsonReturn, "status",json_object_new_int(E_SS_OK));
         json_object_object_add(psJsonReturn, "sequence",json_object_new_int(iSequenceNumber));
         json_object_object_add(psJsonReturn, "description",json_object_new_int(u8Channel));
-        INF_vPrintf(DBG_SOCKET, "return message is ----%s\n",json_object_get_string(psJsonReturn));
+        INF_vPrintln(DBG_SOCKET, "return message is ----%s\n",json_object_get_string(psJsonReturn));
         if(-1 == send(iSocketfd, 
             json_object_get_string(psJsonReturn),strlen(json_object_get_string(psJsonReturn)), 0))
         {
-            ERR_vPrintf(T_TRUE, "send data to client error\n");
+            ERR_vPrintln(T_TRUE, "send data to client error\n");
         }
         json_object_put(psJsonReturn);
         return E_SS_OK;
@@ -489,35 +475,35 @@ static teSS_Status eSocketHandleGetChannel(int iSocketfd, struct json_object *ps
 
 static teSS_Status eSocketHandlePermitjoin(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request open zigbee network\n");
+    INF_vPrintln(DBG_SOCKET, "Client request open zigbee network\n");
     json_object *psJsonTemp = NULL;
     if(json_object_object_get_ex(psJsonMessage,"time", &psJsonTemp))
     {
-        uint8 uiPermitjoinTime = json_object_get_int(psJsonTemp);
-        CALL(sControlBridge.Method.preCoordinatorPermitJoin, uiPermitjoinTime);
+        uint8 uiPermitJoinTime = (uint8)json_object_get_int(psJsonTemp);
+        CALL(sControlBridge.Method.preCoordinatorPermitJoin, uiPermitJoinTime);
         vResponseSuccess(iSocketfd);
         return E_SS_OK;
     }
-    ERR_vPrintf(T_TRUE, "ResponseMessageError error\n");
+    ERR_vPrintln(T_TRUE, "ResponseMessageError error\n");
     return E_SS_ERROR;
 }
 
 static teSS_Status eSocketHandleLeaveNetwork(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request leave a device\n");
+    INF_vPrintln(DBG_SOCKET, "Client request leave a device\n");
     json_object *psJsonTemp = NULL, *psJsonRejoin = NULL, *psJsonChildren = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonTemp)&&
         json_object_object_get_ex(psJsonMessage,"rejoin", &psJsonRejoin)&&
         json_object_object_get_ex(psJsonMessage,"remove_children", &psJsonChildren))
     {
-        uint8 u8Rejoin = json_object_get_int(psJsonRejoin);
-        uint8 u8RemoveChildren = json_object_get_int(psJsonChildren);
-        uint64 u64DeviceAddress = json_object_get_int64(psJsonTemp);
+        uint8 u8Rejoin = (uint8)json_object_get_int(psJsonRejoin);
+        uint8 u8RemoveChildren = (uint8)json_object_get_int(psJsonChildren);
+        uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonTemp);
         tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceRemoveNetwork) || 
             (E_ZB_OK != psZigbeeNode->Method.preDeviceRemoveNetwork(&psZigbeeNode->sNode, u8Rejoin, u8RemoveChildren)))
         {
-            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.DeviceRemoveNetwork error\n");
+            ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.DeviceRemoveNetwork error\n");
             return E_SS_ERROR;
         }
         vResponseSuccess(iSocketfd);
@@ -529,12 +515,12 @@ static teSS_Status eSocketHandleLeaveNetwork(int iSocketfd, struct json_object *
 
 static teSS_Status eSocketHandleGetAllDevicesList(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request is get online devices' message\n");
+    INF_vPrintln(DBG_SOCKET, "Client request is get online devices' message\n");
     
     struct json_object *psJsonDevice, *psJsonDevicesArray, *psJsonResult = NULL;
     if(NULL == (psJsonResult = json_object_new_object()))
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return E_SS_ERROR;
     }
     json_object_object_add(psJsonResult, "status",json_object_new_int(SUCCESS)); 
@@ -542,7 +528,7 @@ static teSS_Status eSocketHandleGetAllDevicesList(int iSocketfd, struct json_obj
     
     if(NULL == (psJsonDevicesArray = json_object_new_array()))
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_array error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_array error\n");
         json_object_put(psJsonResult);
         return E_SS_ERROR;
     }
@@ -555,7 +541,7 @@ static teSS_Status eSocketHandleGetAllDevicesList(int iSocketfd, struct json_obj
         psJsonDevice = NULL;
         if(NULL == (psJsonDevice = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             json_object_put(psJsonResult);
             json_object_put(psJsonDevicesArray);
             eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
@@ -571,11 +557,11 @@ static teSS_Status eSocketHandleGetAllDevicesList(int iSocketfd, struct json_obj
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
     json_object_object_add(psJsonResult,"description",psJsonDevicesArray); 
 
-    INF_vPrintf(DBG_SOCKET, "return message is ----%s\n",json_object_to_json_string(psJsonResult));
+    INF_vPrintln(DBG_SOCKET, "return message is ----%s\n",json_object_to_json_string(psJsonResult));
     if(-1 == send(iSocketfd, 
             json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0))
     {
-        ERR_vPrintf(T_TRUE, "send data to client error\n");
+        ERR_vPrintln(T_TRUE, "send data to client error\n");
         json_object_put(psJsonResult);
         return E_SS_ERROR;
     }
@@ -586,7 +572,7 @@ static teSS_Status eSocketHandleGetAllDevicesList(int iSocketfd, struct json_obj
 
 static teSS_Status eSocketHandleSetLightOnOff(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request open light on\n");
+    INF_vPrintln(DBG_SOCKET, "Client request open light on\n");
 
     json_object *psJsonAddr, *psJsonGroup, *psJsonMode = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr) && 
@@ -599,13 +585,13 @@ static teSS_Status eSocketHandleSetLightOnOff(int iSocketfd, struct json_object 
         tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceSetOnOff))
         {
-            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.DeviceSetOnOff error\n");
+            ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.DeviceSetOnOff error\n");
             return E_SS_ERROR;
         }
         if(
            (E_ZB_OK != psZigbeeNode->Method.preDeviceSetOnOff(&psZigbeeNode->sNode, u16GroupID, u8Mode)))
             {
-                ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.DeviceSetOnOff error\n");
+                ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.DeviceSetOnOff error\n");
                 return E_SS_ERROR;
             }
         vResponseSuccess(iSocketfd);
@@ -617,7 +603,7 @@ static teSS_Status eSocketHandleSetLightOnOff(int iSocketfd, struct json_object 
 
 static teSS_Status eSocketHandleSetLightLevel(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request set light level\n");
+    INF_vPrintln(DBG_SOCKET, "Client request set light level\n");
     
     json_object *psJsonAddr, *psJsonGroup, *psJsonLevel = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr) &&
@@ -631,7 +617,7 @@ static teSS_Status eSocketHandleSetLightLevel(int iSocketfd, struct json_object 
         if((NULL == psZigbeeNode)||(NULL == psZigbeeNode->Method.preDeviceSetLevel)||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceSetLevel(&psZigbeeNode->sNode, u16GroupID, u8Level, 5)))
         {
-            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.preDeviceSetLevel error\n");
+            ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetLevel error\n");
             return E_SS_ERROR;
         }
         vResponseSuccess(iSocketfd);
@@ -642,7 +628,7 @@ static teSS_Status eSocketHandleSetLightLevel(int iSocketfd, struct json_object 
 
 static teSS_Status eSocketHandleSetLightRGB(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request set light rgb\n");
+    INF_vPrintln(DBG_SOCKET, "Client request set light rgb\n");
     json_object *psJsonAddr, *psJsonGroup, *psJsonRgb, *psJsonR, *psJsonG, *psJsonB = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr)&&
        json_object_object_get_ex(psJsonMessage,"group_id", &psJsonGroup)&&
@@ -662,7 +648,7 @@ static teSS_Status eSocketHandleSetLightRGB(int iSocketfd, struct json_object *p
         if((NULL == psZigbeeNode)||(NULL == psZigbeeNode->Method.preDeviceSetLightColour)||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceSetLightColour(&psZigbeeNode->sNode, u16GroupID, sRGB, 5)))
         {
-            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.preDeviceSetLightColour error\n");
+            ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetLightColour error\n");
             return E_SS_ERROR;
         }
         vResponseSuccess(iSocketfd);
@@ -674,7 +660,7 @@ static teSS_Status eSocketHandleSetLightRGB(int iSocketfd, struct json_object *p
 
 static teSS_Status eSocketHandleSetClosuresState(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request set closure device state\n");
+    INF_vPrintln(DBG_SOCKET, "Client request set closure device state\n");
     json_object *psJsonAddr = NULL, *psJsonOperator = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr)&&
        json_object_object_get_ex(psJsonMessage,"operator", &psJsonOperator))
@@ -686,7 +672,7 @@ static teSS_Status eSocketHandleSetClosuresState(int iSocketfd, struct json_obje
         if((NULL == psZigbeeNode)||(NULL == psZigbeeNode->Method.preDeviceSetWindowCovering)||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceSetWindowCovering(&psZigbeeNode->sNode, u8Operator)))
         {
-            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.preDeviceSetWindowCovering error\n");
+            ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetWindowCovering error\n");
             return E_SS_ERROR;
         }
         vResponseSuccess(iSocketfd);
@@ -698,7 +684,7 @@ static teSS_Status eSocketHandleSetClosuresState(int iSocketfd, struct json_obje
 
 static teSS_Status eSocketHandleSetDoorLockState(int iSocket, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request set door lock device state\n");
+    INF_vPrintln(DBG_SOCKET, "Client request set door lock device state\n");
     json_object *psJsonAddr = NULL, *psJsonOperator = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr)&&
        json_object_object_get_ex(psJsonMessage,"operator", &psJsonOperator))
@@ -711,7 +697,7 @@ static teSS_Status eSocketHandleSetDoorLockState(int iSocket, struct json_object
         CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLock, E_SS_ERROR);
         if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLock(&psZigbeeNode->sNode, u8Operator))
         {
-            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.preDeviceSetDoorLock error\n");
+            ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetDoorLock error\n");
             return E_SS_ERROR;
         }
         vResponseSuccess(iSocket);
@@ -724,7 +710,7 @@ static teSS_Status eSocketHandleSetDoorLockState(int iSocket, struct json_object
 
 static teSS_Status eSocketHandleGetLightLevel(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request get light level\n");
+    INF_vPrintln(DBG_SOCKET, "Client request get light level\n");
     json_object *psJsonAddr = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr))
     {
@@ -734,32 +720,32 @@ static teSS_Status eSocketHandleGetLightLevel(int iSocketfd, struct json_object 
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceGetLevel) || 
             (E_ZB_OK != psZigbeeNode->Method.preDeviceGetLevel(&psZigbeeNode->sNode, &u8level)))
         {
-            ERR_vPrintf(T_TRUE, "preDeviceGetLevel callback failed\n");
+            ERR_vPrintln(T_TRUE, "preDeviceGetLevel callback failed\n");
             return E_SS_ERROR;
         }
         struct json_object *psJsonResult, *psJsonLevel = NULL;
         if(NULL == (psJsonResult = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             return E_SS_ERROR;
         }
         if(NULL == (psJsonLevel = json_object_new_object()))
         {
             json_object_put(psJsonResult);
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             return E_SS_ERROR;
         }
         json_object_object_add(psJsonLevel, "light_level", json_object_new_int(u8level));    
         json_object_object_add(psJsonResult, "status", json_object_new_int(SUCCESS));    
         json_object_object_add(psJsonResult, "sequence", json_object_new_int(iSequenceNumber));
         json_object_object_add(psJsonResult, "description", psJsonLevel); 
-        DBG_vPrintf(DBG_SOCKET, "psJsonResult %s, length is %d\n", 
+        DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
         if(-1 == send(iSocketfd, 
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0))
         {
             json_object_put(psJsonResult);
-            ERR_vPrintf(T_TRUE, "send data to client error\n");
+            ERR_vPrintln(T_TRUE, "send data to client error\n");
             return E_SS_ERROR;
         }
         json_object_put(psJsonResult);
@@ -770,7 +756,7 @@ static teSS_Status eSocketHandleGetLightLevel(int iSocketfd, struct json_object 
 
 static teSS_Status eSocketHandleGetLightStatus(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request get light status\n");
+    INF_vPrintln(DBG_SOCKET, "Client request get light status\n");
     json_object *psJsonAddr = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr))
     {
@@ -780,19 +766,19 @@ static teSS_Status eSocketHandleGetLightStatus(int iSocketfd, struct json_object
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceGetLevel) || 
             (E_ZB_OK != psZigbeeNode->Method.preDeviceGetOnOff(&psZigbeeNode->sNode, &u8mode)))
         {
-            ERR_vPrintf(T_TRUE, "preDeviceGetOnOff callback failed\n");
+            ERR_vPrintln(T_TRUE, "preDeviceGetOnOff callback failed\n");
             return E_SS_ERROR;
         }
         
         struct json_object *psJsonResult, *psJsonStatus = NULL;
         if(NULL == (psJsonResult = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             return E_SS_ERROR;
         }
         if(NULL == (psJsonStatus = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             json_object_put(psJsonResult);
             return E_SS_ERROR;
         }
@@ -801,13 +787,13 @@ static teSS_Status eSocketHandleGetLightStatus(int iSocketfd, struct json_object
         json_object_object_add(psJsonResult, "sequence",json_object_new_int(iSequenceNumber));
         json_object_object_add(psJsonResult, "description",psJsonStatus); 
 
-        DBG_vPrintf(DBG_SOCKET, "psJsonResult %s, length is %d\n", 
+        DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
         if(-1 == send(iSocketfd, 
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0))
         {
             json_object_put(psJsonResult);
-            ERR_vPrintf(T_TRUE, "send data to client error\n");
+            ERR_vPrintln(T_TRUE, "send data to client error\n");
             return E_SS_ERROR;
         }
         json_object_put(psJsonResult);
@@ -818,7 +804,7 @@ static teSS_Status eSocketHandleGetLightStatus(int iSocketfd, struct json_object
 
 static teSS_Status eSocketHandleGetLightRGB(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request get light rgb\n");
+    INF_vPrintln(DBG_SOCKET, "Client request get light rgb\n");
     json_object *psJsonAddr = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr))
     {
@@ -828,25 +814,25 @@ static teSS_Status eSocketHandleGetLightRGB(int iSocketfd, struct json_object *p
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceGetLevel) || 
             (E_ZB_OK != psZigbeeNode->Method.preDeviceGetLightColour(&psZigbeeNode->sNode, &sRGB)))
         {
-            ERR_vPrintf(T_TRUE, "preDeviceGetOnOff callback failed\n");
+            ERR_vPrintln(T_TRUE, "preDeviceGetOnOff callback failed\n");
             return E_SS_ERROR;
         }
 
         struct json_object *psJsonResult, *psJsonRGB, *psJsonRGBValue = NULL;
         if(NULL == (psJsonResult = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             return E_SS_ERROR;
         }
         if(NULL == (psJsonRGB = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             json_object_put(psJsonResult);
             return E_SS_ERROR;
         }
         if(NULL == (psJsonRGBValue = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             json_object_put(psJsonResult);
             json_object_put(psJsonRGB);
             return E_SS_ERROR;
@@ -859,12 +845,12 @@ static teSS_Status eSocketHandleGetLightRGB(int iSocketfd, struct json_object *p
         json_object_object_add(psJsonResult,"status",json_object_new_int(SUCCESS));    
         json_object_object_add(psJsonResult, "sequence",json_object_new_int(iSequenceNumber));
         json_object_object_add(psJsonResult,"description",psJsonRGB); 
-        DBG_vPrintf(DBG_SOCKET, "psJsonResult %s, length is %d\n", 
+        DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
         if(-1 == send(iSocketfd, 
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0))
         {
-            ERR_vPrintf(T_TRUE, "send data to client error\n");
+            ERR_vPrintln(T_TRUE, "send data to client error\n");
             json_object_put(psJsonResult);
             return E_SS_ERROR;
         }
@@ -876,7 +862,7 @@ static teSS_Status eSocketHandleGetLightRGB(int iSocketfd, struct json_object *p
 
 static teSS_Status eSocketHandleGetSensorValue(int iSocketfd, struct json_object *psJsonMessage)
 {
-    INF_vPrintf(DBG_SOCKET, "Client request get sensor value\n");
+    INF_vPrintln(DBG_SOCKET, "Client request get sensor value\n");
     json_object *psJsonAddr = NULL, *psJsonSensor = NULL;
     if(json_object_object_get_ex(psJsonMessage,"device_address", &psJsonAddr) &&
        json_object_object_get_ex(psJsonMessage,"sensor_type", &psJsonSensor))
@@ -886,26 +872,26 @@ static teSS_Status eSocketHandleGetSensorValue(int iSocketfd, struct json_object
         tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
         if(NULL == psZigbeeNode)
         {
-            ERR_vPrintf(T_TRUE, "preDeviceGetOnOff callback failed\n");
+            ERR_vPrintln(T_TRUE, "preDeviceGetOnOff callback failed\n");
             return E_SS_ERROR;
         }
         uint16 u16SensorValue = 0;
         if((NULL == psZigbeeNode->Method.preDeviceGetSensorValue)||
             (E_ZB_OK != psZigbeeNode->Method.preDeviceGetSensorValue(&psZigbeeNode->sNode, &u16SensorValue, eSensorType)))
         {
-            ERR_vPrintf(T_TRUE, "ZigbeeNode->Method.preDeviceGetSensorValue error\n");
+            ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceGetSensorValue error\n");
             return E_SS_ERROR;
         }        
 
         struct json_object *psJsonResult, *psJsonValue = NULL;
         if(NULL == (psJsonResult = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             return E_SS_ERROR;
         }
         if(NULL == (psJsonValue = json_object_new_object()))
         {
-            ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
             json_object_put(psJsonResult);
             return E_SS_ERROR;
         }
@@ -932,12 +918,12 @@ static teSS_Status eSocketHandleGetSensorValue(int iSocketfd, struct json_object
         json_object_object_add(psJsonResult, "sequence",json_object_new_int(iSequenceNumber));
         json_object_object_add(psJsonResult,"description",psJsonValue); 
 
-        DBG_vPrintf(DBG_SOCKET, "psJsonResult %s, length is %d\n", 
+        DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
         if(-1 == send(iSocketfd, 
                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0))
         {
-            ERR_vPrintf(T_TRUE, "send data to client error\n");
+            ERR_vPrintln(T_TRUE, "send data to client error\n");
             json_object_put(psJsonResult);
             return E_SS_ERROR;
         }

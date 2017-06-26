@@ -8,6 +8,8 @@
  *
  * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
  *
+ * MODIFICATION:       $Modification: 2017-06-25
+ *
  * AUTHOR:             PCT
  *
  ****************************************************************************
@@ -24,10 +26,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
 #include <signal.h>
 #include <syslog.h>
-#include <pthread.h>
 #include "utils.h"
 #include "serial_link.h"
 #include "zigbee_devices.h"
@@ -42,14 +42,14 @@
 /****************************************************************************/
 /***        Local Variables                                               ***/
 /****************************************************************************/
-const char *Version = "1.0";
+const char *pVersion = "1.0";
 volatile sig_atomic_t bRunning = 1;
 
 int verbosity = 7;
 int daemonize = 0;
 uint32 u32BaudRate = 115200;
-uint32 u32Channel = CONFIG_DEFAULT_CHANNEL;
-char *cpSerialDevice = "/dev/ttyUSB0";
+uint32 u32Channel = E_CHANNEL_CONFIG_DEFAULT;
+char *pSerialDevice = "/dev/ttyUSB0";
 char *pZigbeeSqlitePath = "./ZigbeeDaemon.DB";
 
 tsDeviceIDMap asDeviceIDMap[] = 
@@ -80,15 +80,15 @@ static void vGetOption(int argc, char *argv[]);
 /****************************************************************************/
 int main(int argc, char *argv[])
 {
-    DBG_vPrintf(DBG_MAIN, "This is zigbee daemon program...\n");
+    DBG_vPrintln(DBG_MAIN, "This is zigbee daemon program...\n");
     vGetOption(argc, argv);
     
-    if ((!cpSerialDevice) || (0 == u32BaudRate)){
+    if ((!pSerialDevice) || (0 == u32BaudRate)){
         vPrintUsage(argv);
     }
     
     if (daemonize){
-        WAR_vPrintf(T_TRUE, "Enter Daemon Mode...\n");
+        WAR_vPrintln(T_TRUE, "Enter Daemon Mode...\n");
         vDaemonizeInit("ZigbeeDaemon");
     }
 
@@ -96,17 +96,17 @@ int main(int argc, char *argv[])
     signal(SIGTERM, vQuitSignalHandler);
     mLogInitSetPid("[TB]");
         
-    DBG_vPrintf(DBG_MAIN, "Init The Program with dev = %s, braud = %d\n", cpSerialDevice, u32BaudRate);
-    CHECK_RESULT(eZCB_Init(cpSerialDevice, u32BaudRate), E_ZB_OK, -1);
+    DBG_vPrintln(DBG_MAIN, "Init The Program with dev = %s, baud = %d\n", pSerialDevice, u32BaudRate);
+    CHECK_RESULT(eZCB_Init(pSerialDevice, u32BaudRate), E_ZB_OK, -1);
     CHECK_RESULT(eZigbeeSqliteInit(pZigbeeSqlitePath), E_SQ_OK, -1);
     CHECK_RESULT(eSocketServer_Init(), E_SS_OK, -1);
     CHECK_RESULT(eZigbeeDiscoveryInit(), E_DISCOVERY_OK, -1);
     CHECK_RESULT(eZigbeeCloudInit(), E_CLOUD_OK, -1);
 
     while(bRunning){
-        DBG_vPrintf(DBG_MAIN, "Communication with Coordinator...\n");
-        if(E_ZB_OK == eZCB_EstablishComms()){
-            DBG_vPrintf(DBG_MAIN, "eZCB_EstablishComms Success\n");
+        DBG_vPrintln(DBG_MAIN, "Communication with Coordinator...\n");
+        if(E_ZB_OK == eZCB_EstablishComm()){
+            DBG_vPrintln(DBG_MAIN, "eZCB_EstablishComm Success\n");
             break;
         }
     }
@@ -143,14 +143,14 @@ int main(int argc, char *argv[])
     eZigbeeCloudFinished();
 
     sleep(1);
-    DBG_vPrintf(DBG_MAIN, "Main thread will exiting\n");
+    DBG_vPrintln(DBG_MAIN, "Main thread will exiting\n");
 
 	return 0;
 }
 
 static void vGetOption(int argc, char *argv[])
 {
-    signed char opt = 0;
+    int opt = 0;
     int option_index = 0;
     static struct option long_options[] = {
         {"serial",                  required_argument,  NULL, 's'},
@@ -159,7 +159,7 @@ static void vGetOption(int argc, char *argv[])
         {"DBG_MAIN",                required_argument,  NULL, 'v'},
         {"baud",                    required_argument,  NULL, 'B'},
         {"channel",                 required_argument,  NULL, 'c'},
-        {"datebase",                required_argument,  NULL, 'D'},
+        {"database",                required_argument,  NULL, 'D'},
         { NULL, 0, NULL, 0}
     };
 
@@ -180,7 +180,7 @@ static void vGetOption(int argc, char *argv[])
             {
                 char *pcEnd;
                 errno = 0;
-                u32BaudRate = strtoul(optarg, &pcEnd, 0);
+                u32BaudRate = (uint32)strtoul(optarg, &pcEnd, 0);
                 if (errno){
                     printf("Baud rate '%s' cannot be converted to 32 bit integer (%s)\n", optarg, strerror(errno));
                     vPrintUsage(argv);
@@ -192,7 +192,7 @@ static void vGetOption(int argc, char *argv[])
                 break;
             }
             case 's':
-                cpSerialDevice = optarg;
+                pSerialDevice = optarg;
             break;
             case 'D':
                 pZigbeeSqlitePath = optarg;
@@ -202,7 +202,7 @@ static void vGetOption(int argc, char *argv[])
                 char *pcEnd;
                 uint32 u32Channel;
                 errno = 0;
-                u32Channel = strtoul(optarg, &pcEnd, 0);
+                u32Channel = (uint32)strtoul(optarg, &pcEnd, 0);
                 if (errno){
                     printf("Channel '%s' cannot be converted to 32 bit integer (%s)\n", optarg, strerror(errno));
                     vPrintUsage(argv);
@@ -211,7 +211,7 @@ static void vGetOption(int argc, char *argv[])
                     printf("Channel '%s' contains invalid characters\n", optarg);
                     vPrintUsage(argv);
                 }
-                u32Channel = u32Channel;
+                eChannel = (teChannel)u32Channel;
                 break;
             }
             case 0:
@@ -224,7 +224,7 @@ static void vGetOption(int argc, char *argv[])
 
 static void vQuitSignalHandler (int sig)
 {
-    DBG_vPrintf(DBG_MAIN, "Got signal %d\n", sig); 
+    DBG_vPrintln(DBG_MAIN, "Got signal %d, exit program\n", sig);
     bRunning = 0;
     
     return;
@@ -237,14 +237,14 @@ static void vDaemonizeInit(const char *cmd)
     struct sigaction sa;
     umask(0);   //Clear file creation mask.
     if (getrlimit(RLIMIT_NOFILE, &rl) < 0) { //Get maximum number of file descriptors
-        ERR_vPrintf(T_TRUE,"%s: can't get file limit", cmd);
+        ERR_vPrintln(T_TRUE,"%s: can't get file limit", cmd);
         exit(-1);
     }
     if ((pid = fork()) < 0) { //Become a session leader to lose controlling TTY
-        ERR_vPrintf(T_TRUE,"%s: can't fork, exit(-1)\n", cmd);
+        ERR_vPrintln(T_TRUE,"%s: can't fork, exit(-1)\n", cmd);
         exit(-1);
     } else if (pid != 0) { /* parent */
-        DBG_vPrintf(T_TRUE,"This is Parent Program, exit(0)\n");
+        DBG_vPrintln(T_TRUE,"This is Parent Program, exit(0)\n");
         exit(0);
     }
     setsid();
@@ -252,14 +252,14 @@ static void vDaemonizeInit(const char *cmd)
     sigemptyset(&sa.sa_mask); //Ensure future opens won't allocate controlling TTYs
     sa.sa_flags = 0;
     if (sigaction(SIGHUP, &sa, NULL) < 0) {
-        ERR_vPrintf(T_TRUE,"%s: can't ignore SIGHUP", cmd);
+        ERR_vPrintln(T_TRUE,"%s: can't ignore SIGHUP", cmd);
         exit(-1);
     }
     if ((pid = fork()) < 0) {
-        ERR_vPrintf(T_TRUE,"%s: can't fork, exit(-1)\n", cmd);
+        ERR_vPrintln(T_TRUE,"%s: can't fork, exit(-1)\n", cmd);
         exit(-1);
     } else if (pid != 0) { /* parent */
-        DBG_vPrintf(T_TRUE,"This is Parent Program, exit(0)\n");
+        DBG_vPrintln(T_TRUE,"This is Parent Program, exit(0)\n");
         exit(0);
     }
     /*
@@ -267,7 +267,7 @@ static void vDaemonizeInit(const char *cmd)
     * we won't prevent file systems from being unmounted.
     */
     if (chdir("/") < 0) {
-        ERR_vPrintf(T_TRUE,"%s: can,t change directory to /", cmd);
+        ERR_vPrintln(T_TRUE,"%s: can,t change directory to /", cmd);
         exit(-1);
     }
     if (rl.rlim_max == RLIM_INFINITY) { //Close all open file descriptors
@@ -281,7 +281,7 @@ static void vDaemonizeInit(const char *cmd)
     fd2 = dup(0);
     openlog(cmd, LOG_CONS, LOG_DAEMON); //Initialize the log file
     if (fd0 != 0 || fd1 != 1 || fd2 != 2) {
-        ERR_vPrintf(T_TRUE, "unexpected file descriptors %d %d %d",fd0, fd1, fd2);
+        ERR_vPrintln(T_TRUE, "unexpected file descriptors %d %d %d",fd0, fd1, fd2);
         exit(1);
     }
 }
@@ -289,7 +289,7 @@ static void vDaemonizeInit(const char *cmd)
 static void vPrintUsage(char *argv[])
 {
     fprintf(stderr, "\t******************************************************\n");
-    fprintf(stderr, "\t*         zigbee-daemon Version: %s              *\n", Version);
+    fprintf(stderr, "\t*         zigbee-daemon pVersion: %s              *\n", pVersion);
     fprintf(stderr, "\t******************************************************\n");
     fprintf(stderr, "\t************************Release***********************\n");
     

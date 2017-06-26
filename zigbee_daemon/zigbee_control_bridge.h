@@ -48,7 +48,6 @@ extern "C" {
 
 /* Default network configuration */
 #define CONFIG_DEFAULT_START_MODE       E_START_COORDINATOR
-#define CONFIG_DEFAULT_CHANNEL          26
 #define CONFIG_DEFAULT_PANID            0x1234567812345678ll
 
 /****************************************************************************/
@@ -60,7 +59,8 @@ typedef enum
     E_CHANNEL_AUTOMATIC     = 0,
     E_CHANNEL_MINIMUM       = 11,
     E_CHANNEL_DEFAULT       = 20,
-    E_CHANNEL_MAXIMUM       = 26
+    E_CHANNEL_MAXIMUM       = 26,
+    E_CHANNEL_CONFIG_DEFAULT= 26,
 } teChannel;
 
 /** Structure of Zigbee Device ID mappings.
@@ -97,6 +97,7 @@ typedef struct
 /***        Exported Variables                                            ***/
 /****************************************************************************/
 extern tsZigbeeNodes sControlBridge;
+extern teChannel     eChannel;
 
 /****************************************************************************/
 /***        Local Variables                                               ***/
@@ -107,7 +108,7 @@ extern tsZigbeeNodes sControlBridge;
 /****************************************************************************/
 teZbStatus eZCB_Init(char *cpSerialDevice, uint32 u32BaudRate);
 teZbStatus eZCB_Finish(void);
-teZbStatus eZCB_EstablishComms(void);
+teZbStatus eZCB_EstablishComm(void);
 teZbStatus eZCB_SetPermitJoining(uint8 u8Interval);
 teZbStatus eZCB_ManagementLeaveRequest(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoin, uint8 u8RemoveChildren);
 teZbStatus eZCB_NeighbourTableRequest(int *pStart);

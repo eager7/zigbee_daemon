@@ -51,7 +51,7 @@ static struct termios options;       //place for settings for serial port
 teSerial_Status eSerial_Init(char *name, uint32 baud, int *piserial_fd)
 {
     int fd;
-    DBG_vPrintf(DGB_SERIAL, "Opening serial device '%s' at baud rate %ubps\n", name, baud);
+    DBG_vPrintln(DGB_SERIAL, "Opening serial device '%s' at baud rate %ubps\n", name, baud);
     
     switch (baud)
     {
@@ -146,19 +146,19 @@ teSerial_Status eSerial_Init(char *name, uint32 baud, int *piserial_fd)
         case (4000000):     baud = B4000000;    break;
 #endif /* B4000000 */
         default:
-            ERR_vPrintf(T_TRUE, "Unsupported baud rate speccified (%d)\n", baud);
+            ERR_vPrintln(T_TRUE, "Unsupported baud rate speccified (%d)\n", baud);
             return E_SERIAL_ERROR;
     }
     
     fd = open(name, O_RDWR | O_NOCTTY);
     if (fd < 0){
-        ERR_vPrintf(T_TRUE, "Couldn't open serial device \"%s\"(%s)\n", name, strerror(errno));
+        ERR_vPrintln(T_TRUE, "Couldn't open serial device \"%s\"(%s)\n", name, strerror(errno));
         return E_SERIAL_ERROR;
     }
-    DBG_vPrintf(DGB_SERIAL, "open serial device %s (%d) success\n", name, baud);
+    DBG_vPrintln(DGB_SERIAL, "open serial device %s (%d) success\n", name, baud);
 
     if (tcgetattr(fd,&options) == -1){
-        ERR_vPrintf(T_TRUE, "Error getting port settings (%s)", strerror(errno));
+        ERR_vPrintln(T_TRUE, "Error getting port settings (%s)", strerror(errno));
         return E_SERIAL_ERROR;
     }
 
@@ -172,9 +172,9 @@ teSerial_Status eSerial_Init(char *name, uint32 baud, int *piserial_fd)
     cfsetispeed(&options, baud);
     cfsetospeed(&options, baud);
 
-    DBG_vPrintf(DGB_SERIAL, "set serial device option\n");
+    DBG_vPrintln(DGB_SERIAL, "set serial device option\n");
     if (tcsetattr(fd,TCSAFLUSH,&options) == -1){
-        ERR_vPrintf(T_TRUE, "Error setting port settings (%s)", strerror(errno));
+        ERR_vPrintln(T_TRUE, "Error setting port settings (%s)", strerror(errno));
         return E_SERIAL_ERROR;
     }
     
@@ -189,7 +189,7 @@ teSerial_Status eSerial_Read(uint8 *data)
     
     res = read(serial_fd,data,1);
     if (res > 0){
-        DBG_vPrintf(DGB_SERIAL, "RX 0x%02x\n", *data);
+        DBG_vPrintln(DGB_SERIAL, "RX 0x%02x\n", *data);
     }else{
         return E_SERIAL_NODATA;
     }
@@ -200,7 +200,7 @@ teSerial_Status eSerial_Write(const uint8 data)
 {
     int err, attempts = 0;
     
-    DBG_vPrintf(DGB_SERIAL, "TX 0x%02x\n", data);
+    DBG_vPrintln(DGB_SERIAL, "TX 0x%02x\n", data);
     
     err = write(serial_fd,&data,1);
     if (err < 0)
@@ -212,7 +212,7 @@ teSerial_Status eSerial_Write(const uint8 data)
                 err = write(serial_fd,&data,1);
                 if (err < 0){
                     if ((errno == EAGAIN) && (attempts == 5)){
-                        ERR_vPrintf(T_TRUE, "Error writing to module after %d attempts(%s)", attempts, strerror(errno));
+                        ERR_vPrintln(T_TRUE, "Error writing to module after %d attempts(%s)", attempts, strerror(errno));
                         exit(-1);
                     }
                 }else{
@@ -220,7 +220,7 @@ teSerial_Status eSerial_Write(const uint8 data)
                 }
             }
         }else{
-            ERR_vPrintf(T_TRUE, "Error writing to module(%s)", strerror(errno));
+            ERR_vPrintln(T_TRUE, "Error writing to module(%s)", strerror(errno));
             exit(-1);
         }
     }
@@ -237,9 +237,9 @@ teSerial_Status eSerial_ReadBuffer(uint8 *data, uint32 *count)
         *count = res;
         return E_SERIAL_OK;
     }else {
-        DBG_vPrintf(DGB_SERIAL, "Serial read: %d\n", res);
+        DBG_vPrintln(DGB_SERIAL, "Serial read: %d\n", res);
         if (res == 0){
-            ERR_vPrintf(T_TRUE, "Serial connection to module interrupted");
+            ERR_vPrintln(T_TRUE, "Serial connection to module interrupted");
         }
         res = *count = 0;
         return E_SERIAL_NODATA;
@@ -258,12 +258,12 @@ teSerial_Status eSerial_WriteBuffer(uint8 *data, uint32 count)
         if (sent_bytes <= 0){
             if (errno == EAGAIN){
                 if (++attempts >= 5){
-                    ERR_vPrintf(T_TRUE, "Error writing to module(%s)", strerror(errno));
+                    ERR_vPrintln(T_TRUE, "Error writing to module(%s)", strerror(errno));
                     return E_SERIAL_ERROR;
                 }
                 usleep(1000);
             }else{
-                ERR_vPrintf(T_TRUE, "Error writing to module(%s)", strerror(errno));
+                ERR_vPrintln(T_TRUE, "Error writing to module(%s)", strerror(errno));
                 return -1;
             }
         }else{

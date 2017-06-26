@@ -60,7 +60,7 @@ teZbStatus eZigbee_AddNode(uint16 u16ShortAddress, uint64 u64IEEEAddress, uint16
         }
     }
     //Add New Zigbee Node
-    WAR_vPrintf(DBG_NODE, "Add New Node:0x%04X\n", u16ShortAddress);
+    WAR_vPrintln(DBG_NODE, "Add New Node:0x%04X\n", u16ShortAddress);
     psZigbeeTemp = (tsZigbeeNodes*)malloc(sizeof(tsZigbeeNodes));
     memset(psZigbeeTemp, 0, sizeof(tsZigbeeNodes));
     CHECK_POINTER(psZigbeeTemp, E_ZB_ERROR_NO_MEM);
@@ -84,7 +84,7 @@ teZbStatus eZigbee_RemoveNode(tsZigbeeNodes *psZigbeeNode)
     tsZigbeeNodes *psZigbeeTemp1, *psZigbeeTemp2;
     dl_list_for_each_safe(psZigbeeTemp1, psZigbeeTemp2, &sControlBridge.list, tsZigbeeNodes, list){  //Search List
         if(psZigbeeNode == psZigbeeTemp1){
-            WAR_vPrintf(DBG_NODE, "Remove Node:0x%04X\n", psZigbeeNode->sNode.u16ShortAddress);
+            WAR_vPrintln(DBG_NODE, "Remove Node:0x%04X\n", psZigbeeNode->sNode.u16ShortAddress);
             dl_list_del(&psZigbeeTemp1->list);
             int i, j;
             for(i = 0; i < psZigbeeTemp1->sNode.u32NumEndpoints; i++){
@@ -149,29 +149,29 @@ teZbStatus eZigbee_NodeAddEndpoint(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint,
     tsNodeEndpoint *psNewEndpoint;
     int i;
     
-    DBG_vPrintf(DBG_NODE, "Add Endpoint %d, profile 0x%04X to node 0x%04X\n", u8Endpoint, u16ProfileID, psZigbeeNode->u16ShortAddress);
+    DBG_vPrintln(DBG_NODE, "Add Endpoint %d, profile 0x%04X to node 0x%04X\n", u8Endpoint, u16ProfileID, psZigbeeNode->u16ShortAddress);
     
     for (i = 0; i < psZigbeeNode->u32NumEndpoints; i++)
     {
         if (psZigbeeNode->pasEndpoints[i].u8Endpoint == u8Endpoint)
         {
-            DBG_vPrintf(DBG_NODE, "Duplicate Endpoint\n");
+            DBG_vPrintln(DBG_NODE, "Duplicate Endpoint\n");
             if (u16ProfileID)
             {
-                DBG_vPrintf(DBG_NODE, "Set Endpoint %d profile to 0x%04X\n", u8Endpoint, u16ProfileID);
+                DBG_vPrintln(DBG_NODE, "Set Endpoint %d profile to 0x%04X\n", u8Endpoint, u16ProfileID);
                 psZigbeeNode->pasEndpoints[i].u16ProfileID = u16ProfileID;
             }
             return E_ZB_OK;
         }
     }
     
-    DBG_vPrintf(DBG_NODE, "Creating new endpoint %d\n", u8Endpoint);
+    DBG_vPrintln(DBG_NODE, "Creating new endpoint %d\n", u8Endpoint);
     
     psNewEndpoint = realloc(psZigbeeNode->pasEndpoints, sizeof(tsNodeEndpoint) * (psZigbeeNode->u32NumEndpoints+1));
     
     if (!psNewEndpoint)
     {
-        WAR_vPrintf(T_TRUE, "Memory allocation failure allocating endpoint\n");
+        WAR_vPrintln(T_TRUE, "Memory allocation failure allocating endpoint\n");
         return E_ZB_ERROR_NO_MEM;
     }
     
@@ -197,7 +197,7 @@ teZbStatus eZigbee_NodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     tsNodeEndpoint *psEndpoint = NULL;
     tsNodeCluster  *psNewClusters;
     
-    DBG_vPrintf(DBG_NODE, "Node 0x%04X: Add cluster 0x%04X to Endpoint %d\n", psZigbeeNode->u16ShortAddress, u16ClusterID, u8Endpoint);
+    DBG_vPrintln(DBG_NODE, "Node 0x%04X: Add cluster 0x%04X to Endpoint %d\n", psZigbeeNode->u16ShortAddress, u16ClusterID, u8Endpoint);
     
     for (i = 0; i < psZigbeeNode->u32NumEndpoints; i++)
     {
@@ -209,7 +209,7 @@ teZbStatus eZigbee_NodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     }
     if (!psEndpoint)
     {
-        DBG_vPrintf(DBG_NODE, "Endpoint not found\n");
+        DBG_vPrintln(DBG_NODE, "Endpoint not found\n");
         return E_ZB_UNKNOWN_ENDPOINT;
     }
     
@@ -217,7 +217,7 @@ teZbStatus eZigbee_NodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     {
         if (psEndpoint->pasClusters[i].u16ClusterID == u16ClusterID)
         {
-            DBG_vPrintf(DBG_NODE, "Duplicate Cluster ID\n");
+            DBG_vPrintln(DBG_NODE, "Duplicate Cluster ID\n");
             return E_ZB_OK;
         }
     }
@@ -225,7 +225,7 @@ teZbStatus eZigbee_NodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     psNewClusters = realloc(psEndpoint->pasClusters, sizeof(tsNodeCluster) * (psEndpoint->u32NumClusters+1));
     if (!psNewClusters)
     {
-        ERR_vPrintf(T_TRUE, "Memory allocation failure allocating clusters\n");
+        ERR_vPrintln(T_TRUE, "Memory allocation failure allocating clusters\n");
         return E_ZB_ERROR_NO_MEM;
     }
     psEndpoint->pasClusters = psNewClusters;
@@ -242,7 +242,7 @@ teZbStatus eZigbee_NodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint
     tsNodeCluster  *psCluster = NULL;
     uint16 *pu16NewAttributeList;
     
-    DBG_vPrintf(DBG_NODE, "Node 0x%04X: Add Attribute 0x%04X to cluster 0x%04X on Endpoint %d\n",
+    DBG_vPrintln(DBG_NODE, "Node 0x%04X: Add Attribute 0x%04X to cluster 0x%04X on Endpoint %d\n",
                 psZigbeeNode->u16ShortAddress, u16AttributeID, u16ClusterID, u8Endpoint);
     
     for (i = 0; i < psZigbeeNode->u32NumEndpoints; i++)
@@ -254,7 +254,7 @@ teZbStatus eZigbee_NodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint
     }
     if (!psEndpoint)
     {
-        DBG_vPrintf(DBG_NODE, "Endpoint not found\n");
+        DBG_vPrintln(DBG_NODE, "Endpoint not found\n");
         return E_ZB_UNKNOWN_ENDPOINT;
     }
     
@@ -267,7 +267,7 @@ teZbStatus eZigbee_NodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint
     }
     if (!psCluster)
     {
-        DBG_vPrintf(DBG_NODE, "Cluster not found\n");
+        DBG_vPrintln(DBG_NODE, "Cluster not found\n");
         return E_ZB_UNKNOWN_CLUSTER;
     }
 
@@ -275,7 +275,7 @@ teZbStatus eZigbee_NodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint
     {
         if (psCluster->pau16Attributes[i] == u16AttributeID)
         {
-            DBG_vPrintf(DBG_NODE, "Duplicate Attribute ID\n");
+            DBG_vPrintln(DBG_NODE, "Duplicate Attribute ID\n");
             return E_ZB_ERROR;
         }
     }
@@ -284,7 +284,7 @@ teZbStatus eZigbee_NodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint
     
     if (!pu16NewAttributeList)
     {
-        ERR_vPrintf(T_TRUE, "Memory allocation failure allocating attributes\n");
+        ERR_vPrintln(T_TRUE, "Memory allocation failure allocating attributes\n");
         return E_ZB_ERROR_NO_MEM;
     }
     psCluster->pau16Attributes = pu16NewAttributeList;
@@ -300,7 +300,7 @@ teZbStatus eZigbee_NodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     tsNodeCluster  *psCluster = NULL;
     uint8 *pu8NewCommandList;
     
-    DBG_vPrintf(DBG_NODE, "Node 0x%04X: Add Command 0x%02X to cluster 0x%04X on Endpoint %d\n",
+    DBG_vPrintln(DBG_NODE, "Node 0x%04X: Add Command 0x%02X to cluster 0x%04X on Endpoint %d\n",
                 psZigbeeNode->u16ShortAddress, u8CommandID, u16ClusterID, u8Endpoint);
     
     for (i = 0; i < psZigbeeNode->u32NumEndpoints; i++)
@@ -312,7 +312,7 @@ teZbStatus eZigbee_NodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     }
     if (!psEndpoint)
     {
-        DBG_vPrintf(DBG_NODE, "Endpoint not found\n");
+        DBG_vPrintln(DBG_NODE, "Endpoint not found\n");
         return E_ZB_UNKNOWN_ENDPOINT;
     }
     
@@ -325,7 +325,7 @@ teZbStatus eZigbee_NodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     }
     if (!psCluster)
     {
-        DBG_vPrintf(DBG_NODE, "Cluster not found\n");
+        DBG_vPrintln(DBG_NODE, "Cluster not found\n");
         return E_ZB_UNKNOWN_CLUSTER;
     }
 
@@ -333,7 +333,7 @@ teZbStatus eZigbee_NodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     {
         if (psCluster->pau8Commands[i] == u8CommandID)
         {
-            DBG_vPrintf(DBG_NODE, "Duplicate Command ID\n");
+            DBG_vPrintln(DBG_NODE, "Duplicate Command ID\n");
             return E_ZB_ERROR;
         }
     }
@@ -342,7 +342,7 @@ teZbStatus eZigbee_NodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
     
     if (!pu8NewCommandList)
     {
-        ERR_vPrintf(T_TRUE, "Memory allocation failure allocating commands\n");
+        ERR_vPrintln(T_TRUE, "Memory allocation failure allocating commands\n");
         return E_ZB_ERROR_NO_MEM;
     }
     psCluster->pau8Commands = pu8NewCommandList;
@@ -356,7 +356,7 @@ tsNodeEndpoint *psZigbee_NodeFindEndpoint(tsZigbeeBase *psZigbeeNode, uint16 u16
 {
     int i, j;
     
-    DBG_vPrintf(DBG_NODE, "Node 0x%04X: Find cluster 0x%04X\n", psZigbeeNode->u16ShortAddress, u16ClusterID);
+    DBG_vPrintln(DBG_NODE, "Node 0x%04X: Find cluster 0x%04X\n", psZigbeeNode->u16ShortAddress, u16ClusterID);
     
     for (i = 0; i < psZigbeeNode->u32NumEndpoints; i++)
     {
@@ -367,12 +367,12 @@ tsNodeEndpoint *psZigbee_NodeFindEndpoint(tsZigbeeBase *psZigbeeNode, uint16 u16
         {
             if (psEndpoint->pasClusters[j].u16ClusterID == u16ClusterID)
             {
-                DBG_vPrintf(DBG_NODE, "Found Cluster ID on Endpoint %d\n", psEndpoint->u8Endpoint);
+                DBG_vPrintln(DBG_NODE, "Found Cluster ID on Endpoint %d\n", psEndpoint->u8Endpoint);
                 return psEndpoint;
             }
         }
     }
-    DBG_vPrintf(DBG_NODE, "Cluster 0x%04X not found on node 0x%04X\n", u16ClusterID, psZigbeeNode->u16ShortAddress);
+    DBG_vPrintln(DBG_NODE, "Cluster 0x%04X not found on node 0x%04X\n", u16ClusterID, psZigbeeNode->u16ShortAddress);
     return NULL;
 }
 
@@ -386,7 +386,7 @@ teZbStatus eZigbee_GetEndpoints(tsZigbeeBase *psZigbee_Node, teZigbee_ClusterID 
         psSourceEndpoint = psZigbee_NodeFindEndpoint(&sControlBridge.sNode, eClusterID);
         if (!psSourceEndpoint)
         {
-            DBG_vPrintf(DBG_NODE, "Cluster ID 0x%04X not found on control bridge\n", eClusterID);
+            DBG_vPrintln(DBG_NODE, "Cluster ID 0x%04X not found on control bridge\n", eClusterID);
             return E_ZB_UNKNOWN_CLUSTER;
         }
 
@@ -403,7 +403,7 @@ teZbStatus eZigbee_GetEndpoints(tsZigbeeBase *psZigbee_Node, teZigbee_ClusterID 
 
         if (!psDestinationEndpoint)
         {
-            DBG_vPrintf(DBG_NODE, "Cluster ID 0x%04X not found on node 0x%04X\n", eClusterID, psZigbee_Node->u16ShortAddress);
+            DBG_vPrintln(DBG_NODE, "Cluster ID 0x%04X not found on node 0x%04X\n", eClusterID, psZigbee_Node->u16ShortAddress);
             return E_ZB_UNKNOWN_CLUSTER;
         }
         *pu8Dst = psDestinationEndpoint->u8Endpoint;
@@ -442,7 +442,7 @@ tsZigbeeNodes *psZigbee_FindNodeByIEEEAddress(uint64 u64IEEEAddress)
 void vZigbee_PrintNode(tsZigbeeBase *psNode)
 {
     int i, j, k;
-    INF_vPrintf(DBG_NODE_PRINT, "Node Short Address: 0x%04X, IEEE Address: 0x%016llX MAC Capability 0x%02X Device ID 0x%04X\n", 
+    INF_vPrintln(DBG_NODE_PRINT, "Node Short Address: 0x%04X, IEEE Address: 0x%016llX MAC Capability 0x%02X Device ID 0x%04X\n",
                 psNode->u16ShortAddress, (unsigned long long int)psNode->u64IEEEAddress,psNode->u8MacCapability,psNode->u16DeviceID);
     for (i = 0; i < psNode->u32NumEndpoints; i++)
     {
@@ -456,24 +456,24 @@ void vZigbee_PrintNode(tsZigbeeBase *psNode)
             default:        pcProfileName = "Unknown"; break;
         }
             
-        INF_vPrintf(DBG_NODE_PRINT, "  Endpoint %d - Profile 0x%04X (%s)\n", 
+        INF_vPrintln(DBG_NODE_PRINT, "  Endpoint %d - Profile 0x%04X (%s)\n",
                     psEndpoint->u8Endpoint, psEndpoint->u16ProfileID,pcProfileName);
         
         for (j = 0; j < psEndpoint->u32NumClusters; j++)
         {
             tsNodeCluster *psCluster = &psEndpoint->pasClusters[j];
-            INF_vPrintf(DBG_NODE_PRINT, "    Cluster ID 0x%04X\n", psCluster->u16ClusterID);
+            INF_vPrintln(DBG_NODE_PRINT, "    Cluster ID 0x%04X\n", psCluster->u16ClusterID);
             
-            INF_vPrintf(DBG_NODE_PRINT, "      Attributes:\n");
+            INF_vPrintln(DBG_NODE_PRINT, "      Attributes:\n");
             for (k = 0; k < psCluster->u32NumAttributes; k++)
             {
-                DBG_vPrintf(DBG_NODE_PRINT, "        Attribute ID 0x%04X\n", psCluster->pau16Attributes[k]);
+                DBG_vPrintln(DBG_NODE_PRINT, "        Attribute ID 0x%04X\n", psCluster->pau16Attributes[k]);
             }
             
-            INF_vPrintf(DBG_NODE_PRINT, "      Commands:\n");
+            INF_vPrintln(DBG_NODE_PRINT, "      Commands:\n");
             for (k = 0; k < psCluster->u32NumCommands; k++)
             {
-                INF_vPrintf(DBG_NODE_PRINT, "        Command ID 0x%02X\n", psCluster->pau8Commands[k]);
+                INF_vPrintln(DBG_NODE_PRINT, "        Command ID 0x%02X\n", psCluster->pau8Commands[k]);
             }
         }
     }

@@ -42,17 +42,17 @@ extern "C" {
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
 #define mLogInitSetPid(pid)    openlog(pid, LOG_PID|LOG_CONS, LOG_USER)
-#define DBG_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[34;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
-#define INF_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[33;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
-#define NOT_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[32;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
-#define WAR_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[35;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
-#define ERR_vPrintf(a,b,ARGS...)  \
-    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[31;1m""[%d]" b "\e[0m"), __LINE__, ## ARGS);}}} while(0)
-#define PERR_vPrintf(x) ERR_vPrintf(1,x ":%s\n", strerror(errno))
+#define DBG_vPrintln(a,b,ARGS...)  \
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[34;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+#define INF_vPrintln(a,b,ARGS...)  \
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[33;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+#define NOT_vPrintln(a,b,ARGS...)  \
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[32;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+#define WAR_vPrintln(a,b,ARGS...)  \
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[35;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+#define ERR_vPrintln(a,b,ARGS...)  \
+    do {if (a) {if(daemonize){syslog(LOG_DEBUG|LOG_USER, "[%d]" b, __LINE__, ## ARGS);} else {printf(("\e[31;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);}}} while(0)
+#define PERR_vPrintln(x) ERR_vPrintln(1,x ":%s", strerror(errno))
 
 #define MIBF    256
 #define MDBF    1024
@@ -60,8 +60,8 @@ extern "C" {
 #define PACKED __attribute__((__packed__))
 
 #define CHECK_RESULT(fun,value,ret) do{ if(value!=fun)return ret;}while(0)
-#define CHECK_STATUS(fun,value,ret) do{ if(value!=fun){ERR_vPrintf(T_TRUE, "Error:%s\n", strerror(errno));return ret;}}while(0)
-#define CHECK_POINTER(value,ret) do{ if(value==NULL){ERR_vPrintf(T_TRUE, "Pointer is NULL\n");return ret;}}while(0)
+#define CHECK_STATUS(fun,value,ret) do{ if(value!=fun){ERR_vPrintln(T_TRUE, "Error:%s\n", strerror(errno));return ret;}}while(0)
+#define CHECK_POINTER(value,ret) do{ if(value==NULL){ERR_vPrintln(T_TRUE, "Pointer is NULL\n");return ret;}}while(0)
 #define FREE(p) do{ if(p){free(p); p=NULL;} }while(0)
 #define CALL(f, x) do{ if(f){ f(x); } }while(0)
 

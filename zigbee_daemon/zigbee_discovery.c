@@ -52,18 +52,18 @@ teDiscStatus eZigbeeDiscoveryInit()
 
 teDiscStatus eZigbeeDiscoveryFinished()
 {
-    DBG_vPrintf(DBG_DISC, "eZigbeeDiscoveryFinished\n");
+    DBG_vPrintln(DBG_DISC, "eZigbeeDiscoveryFinished\n");
     eThreadStop(&sZigbeeDiscovery.sThreadDiscovery);
     return E_DISCOVERY_OK;
 }
 
 teDiscStatus eZigbeeDiscoveryBroadcastEvent(uint8 *pu8Msg, tsBroadcastEvent sEvent)
 {
-    DBG_vPrintf(DBG_DISC, "eZigbeeDiscoveryBrocastEvent:%d\n", sEvent);
+    DBG_vPrintln(DBG_DISC, "eZigbeeDiscoveryBrocastEvent:%d\n", sEvent);
     int iSocketFd = socket(AF_INET, SOCK_DGRAM, 0);
     if(-1 == iSocketFd)
     {
-        ERR_vPrintf(T_TRUE, "socket create error %s\n", strerror(errno));
+        ERR_vPrintln(T_TRUE, "socket create error %s\n", strerror(errno));
         return E_DISCOVERY_ERROR_CREATESOCK;
     }
     int on = 1;int broadcastEnable = 1;//the permissions of broadcast
@@ -78,18 +78,18 @@ teDiscStatus eZigbeeDiscoveryBroadcastEvent(uint8 *pu8Msg, tsBroadcastEvent sEve
     struct json_object *psJsonResult = NULL;
     if(NULL == (psJsonResult = json_object_new_object()))
     {
-        ERR_vPrintf(T_TRUE, "json_object_new_object error\n");
+        ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         close(iSocketFd);
-        return E_SS_ERROR;
+        return E_DISCOVERY_ERROR;
     }
     json_object_object_add(psJsonResult, "broadcast", json_object_new_int(sEvent));    
-    DBG_vPrintf(DBG_DISC, "psJsonResult %s, length is %d\n", 
+    DBG_vPrintln(DBG_DISC, "psJsonResult %s, length is %d\n",
             json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
 
     if(-1 == sendto(iSocketFd, json_object_to_json_string(psJsonResult), 
         (int)strlen(json_object_to_json_string(psJsonResult)), 0, (struct sockaddr*)&server_addr, sizeof(server_addr)))
     {
-        ERR_vPrintf(T_TRUE, "Brocast error %s\n", strerror(errno));
+        ERR_vPrintln(T_TRUE, "Brocast error %s\n", strerror(errno));
         json_object_put(psJsonResult);
         close(iSocketFd);
         return E_DISCOVERY_ERROR;
@@ -104,18 +104,18 @@ teDiscStatus eZigbeeDiscoveryBroadcastEvent(uint8 *pu8Msg, tsBroadcastEvent sEve
 /****************************************************************************/
 static teDiscStatus eZigbeeDiscoverySocketInit(int iPort, tsZigbeeDiscovery *psZigbeeDiscovery)
 {
-    DBG_vPrintf(DBG_DISC, "IotcBroadcastSocketInit\n");
+    DBG_vPrintln(DBG_DISC, "IotcBroadcastSocketInit\n");
 
     if(-1 == (psZigbeeDiscovery->iSocketFd = socket(AF_INET, SOCK_DGRAM, 0)))
     {
-        ERR_vPrintf(T_TRUE, "socket create error %s\n", strerror(errno));
+        ERR_vPrintln(T_TRUE, "socket create error %s\n", strerror(errno));
         return E_DISCOVERY_ERROR_CREATESOCK;
     }
     
     int on = 1;  /*SO_REUSEADDR port can used twice by program */
     if((setsockopt(psZigbeeDiscovery->iSocketFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)))<0) 
     {  
-        ERR_vPrintf(T_TRUE,"setsockopt failed, %s\n", strerror(errno));  
+        ERR_vPrintln(T_TRUE,"setsockopt failed, %s\n", strerror(errno));
         close(psZigbeeDiscovery->iSocketFd);
         return E_DISCOVERY_ERROR_SETSOCK;
     }  
@@ -128,12 +128,12 @@ static teDiscStatus eZigbeeDiscoverySocketInit(int iPort, tsZigbeeDiscovery *psZ
     if(-1 == bind(psZigbeeDiscovery->iSocketFd, 
                     (struct sockaddr*)&psZigbeeDiscovery->server_addr, sizeof(psZigbeeDiscovery->server_addr)))
     {
-        ERR_vPrintf(T_TRUE,"bind socket failed, %s\n", strerror(errno));  
+        ERR_vPrintln(T_TRUE,"bind socket failed, %s\n", strerror(errno));
         close(psZigbeeDiscovery->iSocketFd);
         return E_DISCOVERY_ERROR_BIND;
     }
 
-    DBG_vPrintf(DBG_DISC, "Create Socket Fd %d\n", psZigbeeDiscovery->iSocketFd);
+    DBG_vPrintln(DBG_DISC, "Create Socket Fd %d\n", psZigbeeDiscovery->iSocketFd);
     return E_DISCOVERY_OK;
 }
 
@@ -153,7 +153,7 @@ static void *pvDiscoveryHandleThread(void *psThreadInfoVoid)
                     (struct sockaddr*)&psZigbeeDiscovery->server_addr,(socklen_t*)&iAddrLen)) > 0)
         {
             struct sockaddr_in *p = (struct sockaddr_in*)&psZigbeeDiscovery->server_addr;
-            DBG_vPrintf(DBG_DISC, "Recv Data[%d]: %s, from %s\n", iRecvLen, paRecvBuffer, inet_ntoa(p->sin_addr));
+            DBG_vPrintln(DBG_DISC, "Recv Data[%d]: %s, from %s\n", iRecvLen, paRecvBuffer, inet_ntoa(p->sin_addr));
             struct json_object *psJsonMessage = NULL;
             if(NULL != (psJsonMessage = json_tokener_parse((const char*)paRecvBuffer)))
             {
@@ -166,9 +166,9 @@ static void *pvDiscoveryHandleThread(void *psThreadInfoVoid)
                         if(sendto(psZigbeeDiscovery->iSocketFd, auResponse, strlen(auResponse), 0, 
                                     (struct sockaddr*)&psZigbeeDiscovery->server_addr, sizeof(psZigbeeDiscovery->server_addr)) < 0)
                         {
-                            ERR_vPrintf(T_TRUE, "Send Data Error!\n");
+                            ERR_vPrintln(T_TRUE, "Send Data Error!\n");
                         } else {
-                            DBG_vPrintf(DBG_DISC, "Send Data: %s\n", auResponse);
+                            DBG_vPrintln(DBG_DISC, "Send Data: %s\n", auResponse);
                         }
                     }
                 }
@@ -177,12 +177,12 @@ static void *pvDiscoveryHandleThread(void *psThreadInfoVoid)
         }
         else
         {
-            WAR_vPrintf(T_TRUE,"recvfrom message error:%s \n", strerror(errno));
+            WAR_vPrintln(T_TRUE,"recvfrom message error:%s \n", strerror(errno));
         }
     }
     close(sZigbeeDiscovery.iSocketFd);
 
-    DBG_vPrintf(DBG_DISC, "pvDiscoveryHandleThread Exit \n");
+    DBG_vPrintln(DBG_DISC, "pvDiscoveryHandleThread Exit \n");
     vThreadFinish(psThreadInfo);
     return NULL;
 }
