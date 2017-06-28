@@ -46,6 +46,8 @@ static teZbStatus eZigbeeDeviceSetLightColour(tsZigbeeBase *psZigbeeNode, uint16
 static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand);
 static teZbStatus eZigbeeDeviceGetSensorValue(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId);
 static teZbStatus eZigbeeDeviceSetDoorLockState(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand);
+static teZbStatus eZigbeeDeviceResetNetwork(tsZigbeeBase *psZigbeeNode);
+static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -64,6 +66,8 @@ teZbStatus eControlBridgeInitalise(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preCoordinatorPermitJoin = eZigbee_SetPermitJoining;
     psZigbeeNode->Method.preCoordinatorGetChannel = eZigbee_GetChannel;
     psZigbeeNode->Method.preDeviceSetDoorLock = eZigbeeDeviceSetDoorLockState;
+    psZigbeeNode->Method.preDeviceSetDoorLockPassword = eZigbeeDeviceSetDoorLockPassword;
+    psZigbeeNode->Method.preZCB_ResetNetwork = eZigbeeDeviceResetNetwork;
     eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
     //sleep(1);psZigbeeNode->Method.preCoordinatorPermitJoin(30);
         
@@ -418,7 +422,6 @@ static teZbStatus eZigbeeDeviceCallSence(tsZigbeeBase *psZigbeeNode, uint16 u16G
     return ZbStatus;
 }
 
- 
 static teZbStatus eZigbeeDeviceGetSence(tsZigbeeBase *psZigbeeNode, uint16 *u16SenceId)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
@@ -436,7 +439,6 @@ static teZbStatus eZigbeeDeviceGetSence(tsZigbeeBase *psZigbeeNode, uint16 *u16S
     
     return ZbStatus;
 }
-
 
 static teZbStatus eZigbeeDeviceSetOnOff(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Mode)
 {
@@ -594,6 +596,27 @@ static teZbStatus eZigbeeDeviceSetDoorLockState(tsZigbeeBase *psZigbeeNode, teCL
 
     teZbStatus eZbStatus;
     eZbStatus = eZCB_DoorLockDeviceOperator(psZigbeeNode, eCommand);
+
+    return eZbStatus;
+}
+
+static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload)
+{
+    DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceSetDoorLockPassword\n");
+    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
+
+    teZbStatus eZbStatus = eZCB_SetDoorLockPassword(psZigbeeNode, sDoorLockPayload);
+
+    return eZbStatus;
+}
+
+static teZbStatus eZigbeeDeviceResetNetwork(tsZigbeeBase *psZigbeeNode)
+{
+    DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceResetNetwork\n");
+    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
+
+    teZbStatus eZbStatus;
+    eZbStatus = eZCB_ResetNetwork(psZigbeeNode);
 
     return eZbStatus;
 }

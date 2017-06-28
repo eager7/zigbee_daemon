@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "zigbee_control_bridge.h"
+#include "zigbee_zcl.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -173,7 +174,7 @@ teZbStatus eZCB_ChannelRequest(uint8 *pu8Channel)
         uint16 u16Length;
         
         /* Wait 300ms for the versions message to arrive */
-        if (eSL_MessageWait(E_SL_MSG_CHANNEL_RESPONE, 300, &u16Length, (void**)&pu8chan) == E_SL_OK) {
+        if (eSL_MessageWait(E_SL_MSG_CHANNEL_RESPONSE, 300, &u16Length, (void**)&pu8chan) == E_SL_OK) {
             *pu8Channel = *pu8chan;
             DBG_vPrintln(DBG_ZCB, "the devices' channel is %d\n", *pu8Channel );
         } else {
@@ -1927,18 +1928,27 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
     return ;
 }
 
-
-static void vZCB_HandleAddGroupResponse(void *pvUser, uint16 u16Length, void *pvMessage)
+teZbStatus eZCB_ResetNetwork(tsZigbeeBase *psZigbeeNode)
 {
+    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_ERASE_PERSISTENT_DATA, 0, NULL, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    return E_ZB_OK;
 }
 
-static void vZCB_HandleRemoveGroupMembershipResponse(void *pvUser, uint16 u16Length, void *pvMessage)
+teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload)
 {
+    uint8 auPassword[20] = {0};
+    auPassword[0] = sDoorLockPayload.u8PasswordLen;
+    memcpy(&auPassword[1], sDoorLockPayload.auPassword, sDoorLockPayload.u8PasswordLen);
+    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_DOOR_LOCK_SET_DOOR_PASSWORD, sizeof(auPassword), auPassword, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    return E_ZB_OK;
 }
 
-static void vZCB_HandleRemoveSceneResponse(void *pvUser, uint16 u16Length, void *pvMessage)
-{
-}
+
+static void vZCB_HandleAddGroupResponse(void *pvUser, uint16 u16Length, void *pvMessage) {}
+
+static void vZCB_HandleRemoveGroupMembershipResponse(void *pvUser, uint16 u16Length, void *pvMessage) {}
+
+static void vZCB_HandleRemoveSceneResponse(void *pvUser, uint16 u16Length, void *pvMessage) {}
 
 /****************************************************************************/
 /***                   Set Coordinator                                    ***/
@@ -1947,7 +1957,7 @@ teZbStatus eZCB_SetDeviceType(teModuleMode eModuleMode)
 {
     uint8 u8ModuleMode = eModuleMode;
     DBG_vPrintln(DBG_ZCB, "Writing Module: Set Device Type: %d\n", eModuleMode);
-    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_SET_DEVICETYPE, sizeof(uint8), &u8ModuleMode, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_SET_DEVICE_TYPE, sizeof(uint8), &u8ModuleMode, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
     return E_ZB_OK;
 }
 
@@ -1955,14 +1965,14 @@ teZbStatus eZCB_SetChannelMask(uint32 u32ChannelMask)
 {
     DBG_vPrintln(DBG_ZCB, "Setting channel mask: 0x%08X", u32ChannelMask);
     u32ChannelMask = htonl(u32ChannelMask);    
-    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_SET_CHANNELMASK, sizeof(uint32), &u32ChannelMask, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_SET_CHANNEL_MASK, sizeof(uint32), &u32ChannelMask, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
     return E_ZB_OK;
 }
 
 teZbStatus eZCB_SetExtendedPANID(uint64 u64PanID)
 {
     u64PanID = htobe64(u64PanID);    
-    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_SET_EXT_PANID, sizeof(uint64), &u64PanID, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_SET_EXT_PAN_ID, sizeof(uint64), &u64PanID, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
     return E_ZB_OK;
 }
 

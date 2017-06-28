@@ -71,10 +71,10 @@ typedef enum
     E_SL_MSG_GET_VERSION                                        =   0x0010,
     E_SL_MSG_VERSION_LIST                                       =   0x8010,
  
-    E_SL_MSG_SET_EXT_PANID                                      =   0x0020,
-    E_SL_MSG_SET_CHANNELMASK                                    =   0x0021,
+    E_SL_MSG_SET_EXT_PAN_ID                                      =   0x0020,
+    E_SL_MSG_SET_CHANNEL_MASK                                    =   0x0021,
     E_SL_MSG_SET_SECURITY                                       =   0x0022,
-    E_SL_MSG_SET_DEVICETYPE                                     =   0x0023,
+    E_SL_MSG_SET_DEVICE_TYPE                                     =   0x0023,
     E_SL_MSG_START_NETWORK                                      =   0x0024,
     E_SL_MSG_NETWORK_JOINED_FORMED                              =   0x8024,
     E_SL_MSG_START_SCAN                                         =   0x0025,
@@ -83,7 +83,7 @@ typedef enum
     E_SL_MSG_ADD_AUTHENTICATE_DEVICE                            =   0x0028,
     E_SL_MSG_AUTHENTICATE_DEVICE_RESPONSE                       =   0x8028,
     E_SL_MSG_CHANNEL_REQUEST                                    =   0x0029,
-    E_SL_MSG_CHANNEL_RESPONE                                    =   0x8029,
+    E_SL_MSG_CHANNEL_RESPONSE                                    =   0x8029,
 
     E_SL_MSG_RESET                                              =   0x0011,
     E_SL_MSG_ERASE_PERSISTENT_DATA                              =   0x0012,
@@ -217,6 +217,7 @@ typedef enum
     E_SL_MSG_WINDOW_COVERING_DEVICE_OPERATOR                    =   0x00F1,
     E_SL_MSG_LOCK_UNLOCK_DOOR_UPDATE                            =   0x00F2,
     E_SL_MSG_DOOR_LOCK_SET_DOOR_STATE                           =   0x00F3,
+    E_SL_MSG_DOOR_LOCK_SET_DOOR_PASSWORD                        =   0x00F4,
 
     /* ZHA Commands */
     E_SL_MSG_READ_ATTRIBUTE_REQUEST                             =   0x0100,

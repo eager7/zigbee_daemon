@@ -130,6 +130,8 @@ teZbStatus eZCB_ZLL_MoveToHueSaturation(tsZigbeeBase *psZigbeeNode, uint16 u16Gr
 teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand );
 teZbStatus eZCB_DoorLockDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand );
 teZbStatus eZCB_ChannelRequest(uint8 *pu8Channel);
+teZbStatus eZCB_ResetNetwork(tsZigbeeBase *psZigbeeNode);
+teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload);
 
 /****************************************************************************/
 /***        Local Functions                                               ***/

@@ -160,6 +160,8 @@ typedef teZbStatus (*tpreCoordinatorGetChannel)(uint8 *pu8Channel);
 typedef teZbStatus (*tpreDeviceRemoveNetwork)(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoin, uint8 u8RemoveChildren);
 typedef teZbStatus (*tpreDeviceAddBind)(tsZigbeeBase *psSrcZigbeeNode, tsZigbeeBase *psDesZigbeeNode, uint16 u16ClusterID);
 typedef teZbStatus (*tpreDeviceRemoveBind)(tsZigbeeBase *psSrcZigbeeNode, tsZigbeeBase *psDesZigbeeNode, uint16 u16ClusterID);
+typedef teZbStatus (*tpreZCB_ResetNetwork)(tsZigbeeBase *psZigbeeNode);
+
 /* Base */
 typedef teZbStatus (*tpreDeviceSetAttribute)(tsZigbeeBase *psZigbeeNode, teZigbee_ClusterID u16ClusterID);
 typedef teZbStatus (*tpreDeviceGetAttribute)(tsZigbeeBase *psZigbeeNode, teZigbee_ClusterID u16ClusterID);
@@ -184,6 +186,7 @@ typedef void (*tprAttributeUpdate)(tsZigbeeBase *psZigbeeNode, uint16 u16Cluster
 /* Closures */
 typedef teZbStatus (*tpreDeviceSetWindowCovering)(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand);
 typedef teZbStatus (*tpreDeviceSetDoorLock)(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand);
+typedef teZbStatus (*tpreDeviceSetDoorLockPassword)(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload);
 
 typedef struct
 {
@@ -194,6 +197,8 @@ typedef struct
     tpreDeviceRemoveNetwork         preDeviceRemoveNetwork;
     tpreDeviceAddBind               preDeviceAddBind;
     tpreDeviceRemoveBind            preDeviceRemoveBind;
+    tpreZCB_ResetNetwork            preZCB_ResetNetwork;
+
     /* Base */
     tpreDeviceSetAttribute          preDeviceSetAttribute;
     tpreDeviceGetAttribute          preDeviceGetAttribute;
@@ -216,6 +221,7 @@ typedef struct
     /* Closures */
     tpreDeviceSetWindowCovering     preDeviceSetWindowCovering;
     tpreDeviceSetDoorLock           preDeviceSetDoorLock;
+    tpreDeviceSetDoorLockPassword   preDeviceSetDoorLockPassword;
 } tsZigbeeCallback;
 
 typedef struct

@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -m32")
 include_directories(
 		include
 		./
+		../link_message
         )
 include_directories(/usr/include/sys)
 link_directories(./lib)
@@ -17,7 +18,7 @@ link_directories(./lib)
 set(SOURCE_FILES
 		list.c  mthread.c  serial_link.c   zigbee_control_bridge.c  zigbee_discovery.c  zigbee_socket.c
 		main.c  serial.c   zigbee_cloud.c  zigbee_devices.c         zigbee_node.c       zigbee_sqlite.c
-
+		#../link_message/Serial_LinkCommand.c
         )
 
 #add_library(libsrp.a STATIC)
