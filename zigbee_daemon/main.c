@@ -48,24 +48,24 @@ volatile sig_atomic_t bRunning = 1;
 int verbosity = 7;
 int daemonize = 0;
 uint32 u32BaudRate = 115200;
-uint32 u32Channel = E_CHANNEL_CONFIG_DEFAULT;
+uint32 u32Channel = E_CHANNEL_DEFAULT;
 char *pSerialDevice = "/dev/ttyUSB0";
 char *pZigbeeSqlitePath = "./ZigbeeDaemon.DB";
 
 tsDeviceIDMap asDeviceIDMap[] = 
 {
-    { E_ZBD_COORDINATOR,            eControlBridgeInitalise },
-    { E_ZBD_ON_OFF_LIGHT,           eOnOffLightInitalise    },
-    { E_ZBD_DIMMER_LIGHT,           eDimmerLightInitalise   },
-    { E_ZBD_COLOUR_DIMMER_LIGHT,    eColourLightInitalise   },
-    { E_ZBD_WINDOW_COVERING_DEVICE, eWindowCoveringInitalise},
-    { E_ZBD_TEMPERATURE_SENSOR,     eTemperatureSensorInitalise},
-    { E_ZBD_LIGHT_SENSOR,           eLightSensorInitalise },
-    { E_ZBD_SIMPLE_SENSOR,          eSimpleSensorInitalise },
-    { E_ZBD_SMART_PLUG,             eColourLightInitalise },
-    { E_ZBD_DOOR_LOCK,              eDoorLockInitalise },
-    { E_ZBD_DOOR_LOCK_CONTROLLER,   eDoorLockControllerInitalise },
-    { E_ZBD_END_DEVICE_DEVICE,      eEndDeviceInitalise },
+    { E_ZBD_COORDINATOR,            eControlBridgeInitialize },
+    { E_ZBD_ON_OFF_LIGHT,           eOnOffLightInitialize    },
+    { E_ZBD_DIMMER_LIGHT,           eDimmerLightInitialize   },
+    { E_ZBD_COLOUR_DIMMER_LIGHT,    eColourLightInitialize   },
+    { E_ZBD_WINDOW_COVERING_DEVICE, eWindowCoveringInitialize},
+    { E_ZBD_TEMPERATURE_SENSOR,     eTemperatureSensorInitialize},
+    { E_ZBD_LIGHT_SENSOR,           eLightSensorInitialize },
+    { E_ZBD_SIMPLE_SENSOR,          eSimpleSensorInitialize },
+    { E_ZBD_SMART_PLUG,             eColourLightInitialize },
+    { E_ZBD_DOOR_LOCK,              eDoorLockInitialize },
+    { E_ZBD_DOOR_LOCK_CONTROLLER,   eDoorLockControllerInitialize },
+    { E_ZBD_END_DEVICE_DEVICE,      eEndDeviceInitialize },
 };
 
 /****************************************************************************/
@@ -126,13 +126,13 @@ int main(int argc, char *argv[])
             if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
                 tsZigbeeNodes *psZigbeeAdd = NULL;
                 eZigbee_AddNode(psZigbeeItem->u16ShortAddress, psZigbeeItem->u64IEEEAddress, psZigbeeItem->u16DeviceID, psZigbeeItem->u8MacCapability, &psZigbeeAdd);
-                eEndDeviceInitalise(psZigbeeAdd);
+                eEndDeviceInitialize(psZigbeeAdd);
             }
         }
         eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
         eZCB_NeighbourTableRequest(&iStart);
         //eCloudPushAllDevicesList();
-        sleep(55);
+        //sleep(55);
     }
     eZCB_Finish();
     eZigbeeSqliteFinished();
@@ -145,7 +145,9 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
+/**
+ * Parse the user's parameters, and set the progress state
+ * */
 static void vGetOption(int argc, char *argv[])
 {
     int opt = 0;
@@ -219,7 +221,9 @@ static void vGetOption(int argc, char *argv[])
         }
     }
 }
-
+/**
+ * Receive signal of ctrl + c, and exit the progress safely
+ * */
 static void vQuitSignalHandler (int sig)
 {
     DBG_vPrintln(DBG_MAIN, "Got signal %d, exit program\n", sig);
@@ -227,6 +231,9 @@ static void vQuitSignalHandler (int sig)
     
     return;
 }
+/**
+ * Fork a new progress and replaced current progress, then the progress turn to background
+ * */
 static void vDaemonizeInit(const char *cmd)
 {
     int i, fd0, fd1, fd2;

@@ -59,9 +59,9 @@ extern int verbosity;
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
-teZbStatus eControlBridgeInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eControlBridgeInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eControlBridgeInitialize\n");
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s", "CoorDinator");
     psZigbeeNode->Method.preCoordinatorPermitJoin = eZigbee_SetPermitJoining;
     psZigbeeNode->Method.preCoordinatorGetChannel = eZigbee_GetChannel;
@@ -74,9 +74,9 @@ teZbStatus eControlBridgeInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eOnOffLightInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eOnOffLightInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eOnOffLightInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eOnOffLightInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "OnOffLight", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceSetOnOff             = eZigbeeDeviceSetOnOff;
@@ -94,9 +94,9 @@ teZbStatus eOnOffLightInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eDimmerLightInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eDimmerLightInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eDimmerLightInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eDimmerLightInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DimmerLight", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceSetOnOff             = eZigbeeDeviceSetOnOff;
@@ -117,9 +117,9 @@ teZbStatus eDimmerLightInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eColourLightInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eColourLightInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eColourLightInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eColourLightInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "ColourLight", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceSetOnOff             = eZigbeeDeviceSetOnOff;
@@ -142,9 +142,9 @@ teZbStatus eColourLightInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eWindowCoveringInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eWindowCoveringInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eWindowCoveringInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eWindowCoveringInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "WindowCovering", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceSetWindowCovering    = eZigbeeDeviceSetClosuresState;
@@ -163,9 +163,9 @@ teZbStatus eWindowCoveringInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eTemperatureSensorInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eTemperatureSensorInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eTemperatureSensorInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eTemperatureSensorInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "Temp&Humi", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceGetSensorValue       = eZigbeeDeviceGetSensorValue;
@@ -183,9 +183,9 @@ teZbStatus eTemperatureSensorInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eLightSensorInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eLightSensorInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eLightSensorInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eLightSensorInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "LightSensor", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceGetSensorValue       = eZigbeeDeviceGetSensorValue;
@@ -204,9 +204,9 @@ teZbStatus eLightSensorInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eSimpleSensorInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eSimpleSensorInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eSimpleSensorInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eSimpleSensorInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "SimpleSensor", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceGetSensorValue       = eZigbeeDeviceGetSensorValue;
@@ -225,9 +225,9 @@ teZbStatus eSimpleSensorInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eEndDeviceInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eEndDeviceInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eEndDeviceInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eEndDeviceInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "EndDevice", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceGetSensorValue       = eZigbeeDeviceGetSensorValue;
@@ -238,9 +238,9 @@ teZbStatus eEndDeviceInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eDoorLockInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eDoorLockInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eDoorLockInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eDoorLockInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DoorLock", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceSetDoorLock          = eZigbeeDeviceSetDoorLockState;
@@ -258,9 +258,9 @@ teZbStatus eDoorLockInitalise(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eDoorLockControllerInitalise(tsZigbeeNodes *psZigbeeNode)
+teZbStatus eDoorLockControllerInitialize(tsZigbeeNodes *psZigbeeNode)
 {
-    NOT_vPrintln(DBG_DEVICES, "------------eDoorLockControllerInitalise\n");
+    NOT_vPrintln(DBG_DEVICES, "------------eDoorLockControllerInitialize\n");
 
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DoorLockController", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceSetDoorLock          = eZigbeeDeviceSetDoorLockState;
@@ -281,6 +281,9 @@ teZbStatus eDoorLockControllerInitalise(tsZigbeeNodes *psZigbeeNode)
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
+/**
+ * Convert the rgb value to hsv value, the color cluster only support hsv format
+ * */
 tsHSV RGB_HSV(unsigned char R, unsigned char G, unsigned char B)
 {
 	#define MAX(a,b,c) (a>b?(a>c?a:c):(b>c?b:c))

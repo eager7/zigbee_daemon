@@ -56,18 +56,28 @@ extern "C" {
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
-teZbStatus eControlBridgeInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eOnOffLightInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eDimmerLightInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eColourLightInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eWindowCoveringInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eTemperatureSensorInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eLightSensorInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eSimpleSensorInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eEndDeviceInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eDoorLockInitalise(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eDoorLockControllerInitalise(tsZigbeeNodes *psZigbeeNode);
+/*****************************************************************************
+** Prototype    : eXXXXInitialize
+** Description  : Initialize a device, set the name, address and callback func
+** Input        : psZigbeeNode, the structure of node
+** Output       : none
+** Return Value : Return E_ZB_OK
 
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
+teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eOnOffLightInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eDimmerLightInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eColourLightInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eWindowCoveringInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eTemperatureSensorInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eLightSensorInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eSimpleSensorInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eEndDeviceInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eDoorLockInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eDoorLockControllerInitialize(tsZigbeeNodes *psZigbeeNode);
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

@@ -110,8 +110,6 @@ teSL_Status eSL_Destroy(void)
 
     eThreadStop(&sSerialLink.sSerialReaderThread);
  
-    eSL_RemoveAllListener();
-    
     return E_SL_OK;
 }
 
