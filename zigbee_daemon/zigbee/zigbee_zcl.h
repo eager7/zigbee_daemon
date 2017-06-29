@@ -564,13 +564,6 @@ typedef enum
     E_CLD_DOOR_LOCK_DEVICE_CMD_GET_LOG_RECORD        = 0x04,         /* Option */
 } teCLD_DoorLock_CommandID;
 
-typedef struct{
-    uint8 u8UserID;
-    uint8 u8Available;
-    uint8 auTime[20];
-    uint8 u8PasswordLen;
-    uint8 auPassword[20];
-}tsCLD_DoorLockPayload;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
