@@ -1,25 +1,25 @@
 /****************************************************************************
  *
- * MODULE:             zigbee - zigbee daemon
+ * MODULE:             door lock controller - zigbee daemon
  *
  * COMPONENT:          zigbee devices interface
  *
  * REVISION:           $Revision: 1.0 $
  *
- * DATED:              $Date: 2016-12-02 15:13:17 +0100 (Fri, 12 Dec 2016 $
+ * DATED:              $Date: 2017-06-29 15:13:17 +0100 (Fri, 12 Dec 2016 $
  *
  * AUTHOR:             PCT
  *
  ****************************************************************************
  *
- * Copyright panchangtao@gmail.com 2016. All rights reserved
+ * Copyright panchangtao@gmail.com 2017. All rights reserved
  *
  ***************************************************************************/
 
 
 
-#ifndef __ZIGBEE_DEVICES_H__
-#define __ZIGBEE_DEVICES_H__
+#ifndef __DOOR_LOCK_CONTROLLER_H__
+#define __DOOR_LOCK_CONTROLLER_H__
 
 #if defined __cplusplus
 extern "C" {
@@ -67,16 +67,6 @@ extern "C" {
 ** Date         : 2017/2/28
 ** Author       : PCT
 *****************************************************************************/
-teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eOnOffLightInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eDimmerLightInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eColourLightInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eWindowCoveringInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eTemperatureSensorInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eLightSensorInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eSimpleSensorInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eEndDeviceInitialize(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eDoorLockInitialize(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eDoorLockControllerInitialize(tsZigbeeNodes *psZigbeeNode);
 /****************************************************************************/
 /***        Local Functions                                               ***/

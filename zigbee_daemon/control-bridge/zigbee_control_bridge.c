@@ -1989,9 +1989,17 @@ teZbStatus eZCB_ResetNetwork(tsZigbeeBase *psZigbeeNode)
 
 teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload)
 {
-    uint8 auPassword[20] = {0};
-    auPassword[0] = sDoorLockPayload.u8PasswordLen;
-    memcpy(&auPassword[1], sDoorLockPayload.auPassword, sDoorLockPayload.u8PasswordLen);
-    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_DOOR_LOCK_SET_DOOR_PASSWORD, sizeof(auPassword), auPassword, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    struct _tDoorLockSetPassword{
+        uint8 u8Sequence;
+        uint8 u8Add;
+        uint8 u8Length;
+        uint8 auPassword[20];
+    } sDoorLockSetPassword;
+
+    sDoorLockSetPassword.u8Add = T_TRUE;
+    sDoorLockSetPassword.u8Length = sDoorLockPayload.u8PasswordLen;
+    memcpy(sDoorLockSetPassword.auPassword, sDoorLockPayload.auPassword, sizeof(sDoorLockSetPassword.auPassword));
+
+    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_DOOR_LOCK_SET_DOOR_PASSWORD, sizeof(struct _tDoorLockSetPassword), &sDoorLockSetPassword, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
     return E_ZB_OK;
 }

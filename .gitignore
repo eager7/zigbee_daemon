@@ -3,3 +3,6 @@ SI/
 *.d
 
 .idea
+link_message/Serial_LinkCommand
+*.pyc
+cmake-build-debug/

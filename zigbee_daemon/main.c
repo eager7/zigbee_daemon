@@ -34,6 +34,9 @@
 #include "zigbee_socket.h"
 #include "zigbee_discovery.h"
 #include "zigbee_cloud.h"
+#include "door_lock_controller.h"
+#include "door_lock.h"
+#include "coordinator.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/

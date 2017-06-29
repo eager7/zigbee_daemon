@@ -49,11 +49,9 @@ static int iSL_TxByte(bool_t bSpecialCharacter, uint8 u8Data);
 static bool_t bSL_RxByte(uint8 *pu8Data);
 static teSL_Status eSL_WriteMessage(uint16 u16Type, uint16 u16Length, uint8 *pu8Data);
 static teSL_Status eSL_ReadMessage(uint16 *pu16Type, uint16 *pu16Length, uint16 u16MaxLength, uint8 *pu8Message);
-
 static void *pvSerialReaderThread(void *psThreadInfoVoid);
 static void *pvCallbackHandlerThread(void *psThreadInfoVoid);
 static void *pvMessageQueueHandlerThread(void *psThreadInfoVoid);
-
 /****************************************************************************/
 /***        Exported Variables                                            ***/
 /****************************************************************************/
@@ -99,7 +97,6 @@ teSL_Status eSL_Init(char *cpSerialDevice, uint32 u32BaudRate)
     return E_SL_OK;
 }
 
-
 teSL_Status eSL_Destroy(void)
 {
     eThreadStop(&sSL_CallBack.sThread);
@@ -112,7 +109,6 @@ teSL_Status eSL_Destroy(void)
  
     return E_SL_OK;
 }
-
 
 teSL_Status eSL_SendMessage(uint16 u16Type, uint16 u16Length, void *pvMessage, uint8 *pu8SequenceNo)
 {
@@ -145,7 +141,6 @@ teSL_Status eSL_SendMessage(uint16 u16Type, uint16 u16Length, void *pvMessage, u
     eLockunLock(&sSerialLink.mutex_write);
     return eStatus;
 }
-
 
 teSL_Status eSL_MessageWait(uint16 u16Type, uint32 u32WaitTimeout, uint16 *pu16Length, void **ppvMessage)
 {
@@ -212,7 +207,6 @@ teSL_Status eSL_MessageWait(uint16 u16Type, uint32 u32WaitTimeout, uint16 *pu16L
     return E_SL_ERROR;
 }
 
-
 teSL_Status eSL_AddListener(uint16 u16Type, tprSL_MessageCallback prCallback, void *pvUser)
 {
     tsSL_CallbackEntry *psNewEntry;
@@ -256,12 +250,9 @@ teSL_Status eSL_RemoveAllListener(void)
     }    
     return E_SL_OK;
 }
-
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
-
-
 static teSL_Status eSL_ReadMessage(uint16 *pu16Type, uint16 *pu16Length, uint16 u16MaxLength, uint8 *pu8Message)
 {
     static teSL_RxState eRxState = E_STATE_RX_WAIT_START;
@@ -374,7 +365,6 @@ static teSL_Status eSL_ReadMessage(uint16 *pu16Type, uint16 *pu16Length, uint16 
     return E_SL_NOMESSAGE;
 }
 
-
 /****************************************************************************
  *
  * NAME: vSL_WriteRawMessage
@@ -471,7 +461,6 @@ static int iSL_TxByte(bool_t bSpecialCharacter, uint8 u8Data)
     return eSerial_Write(u8Data);
 }
 
-
 /****************************************************************************
  *
  * NAME: bSL_RxByte
@@ -491,7 +480,6 @@ static bool_t bSL_RxByte(uint8 *pu8Data)
         return T_FALSE;
     }
 }
-
 
 static teSL_Status eSL_MessageQueue(tsSerialLink *psSerialLink, uint16 u16Type, uint16 u16Length, uint8 *pu8Message)
 {
@@ -541,7 +529,6 @@ static teSL_Status eSL_MessageQueue(tsSerialLink *psSerialLink, uint16 u16Type, 
     DBG_vPrintln(DBG_SERIAL_LINK_QUEUE, "No listeners for message type 0x%04X\n", u16Type);
     return E_SL_NOMESSAGE;
 }
-
 
 static void *pvSerialReaderThread(void *psThreadInfoVoid)
 {
@@ -643,7 +630,6 @@ static void *pvSerialReaderThread(void *psThreadInfoVoid)
     vThreadFinish(psThreadInfo);
     return NULL;
 }
-
 
 static void *pvCallbackHandlerThread(void *psThreadInfoVoid)
 {

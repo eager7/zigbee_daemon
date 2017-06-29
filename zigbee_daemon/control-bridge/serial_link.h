@@ -53,7 +53,6 @@ typedef enum
     E_SL_ERROR_NOMEM,
 } teSL_Status;
 
-
 /** Serial link message types */
 typedef enum
 {
@@ -388,7 +387,6 @@ teSL_Status eSL_Init(char *cpSerialDevice, uint32 u32BaudRate);
 
 teSL_Status eSL_Destroy(void);
 
-
 /** Send a command message to the serial device.
  *  This also listens for the returned Status message.
  *  If one is received, the status for the message is returned, otherwise
@@ -399,7 +397,6 @@ teSL_Status eSL_Destroy(void);
  *  \param pu8SequenceNo    Pointer to location to receive the outgoing sequence number. May be NULL if no sequence expected.
  */
 teSL_Status eSL_SendMessage(uint16 u16Type, uint16 u16Length, void *pvMessage, uint8 *pu8SequenceNo);
-
 
 /** Wait for a message of the given type to be received from the serial device
  *  \param u16Type          Type of message to wait for
@@ -412,7 +409,6 @@ teSL_Status eSL_SendMessage(uint16 u16Type, uint16 u16Length, void *pvMessage, u
  */
 teSL_Status eSL_MessageWait(uint16 u16Type, uint32 u32WaitTimeout, uint16 *pu16Length, void **ppvMessage);
 
-
 /** Add a callback function for a particular message type
  *  The callback function will be called in the context of a new thread that exists 
  *  only to service the incoming message and will subsequently be destroyed.
@@ -422,7 +418,6 @@ teSL_Status eSL_MessageWait(uint16 u16Type, uint32 u32WaitTimeout, uint16 *pu16L
  *  \return E_SL_OK on success.
  */
 teSL_Status eSL_AddListener(uint16 u16Type, tprSL_MessageCallback prCallback, void *pvUser);
-
 
 /** Remove a callback function for a particular message type
  *  \param u16Type          Type of message to remove a handler for

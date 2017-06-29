@@ -27,27 +27,6 @@
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
-static teZbStatus eZigbee_SetPermitJoining(uint8 u8time );
-static teZbStatus eZigbee_GetChannel(uint8 *pu8Channel );
-static teZbStatus eZigbeeDeviceSetOnOff(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Mode);
-static teZbStatus eZigbeeDeviceGetOnOff(tsZigbeeBase *psZigbeeNode, uint8 *u8Mode);
-static teZbStatus eZigbeeDeviceAddGroup(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress);
-static teZbStatus eZigbeeDeviceRemoveGroup(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress);
-static teZbStatus eZigbeeDeviceClearGroup(tsZigbeeBase *psZigbeeNode);
-static teZbStatus eZigbeeDeviceAddSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId);
-static teZbStatus eZigbeeDeviceRemoveSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId);
-static teZbStatus eZigbeeDeviceCallSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId);
-static teZbStatus eZigbeeDeviceGetSence(tsZigbeeBase *psZigbeeNode, uint16 *u16SenceId);
-static teZbStatus eZigbeeDeviceRemoveNetwork(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoin, uint8 u8RemoveChildren);
-static teZbStatus eZigbeeDeviceSetLevel(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Level, uint16 u16TransitionTime);
-static teZbStatus eZigbeeDeviceGetLevel(tsZigbeeBase *psZigbeeNode, uint8 *u8Level);
-static teZbStatus eZigbeeDeviceGetLightColour(tsZigbeeBase *psZigbeeNode, tsRGB *psRGB);
-static teZbStatus eZigbeeDeviceSetLightColour(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, tsRGB sRGB, uint16 u16TransitionTime);
-static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand);
-static teZbStatus eZigbeeDeviceGetSensorValue(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId);
-static teZbStatus eZigbeeDeviceSetDoorLockState(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand);
-static teZbStatus eZigbeeDeviceResetNetwork(tsZigbeeBase *psZigbeeNode);
-static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -59,20 +38,6 @@ extern int verbosity;
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
-teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
-{
-    NOT_vPrintln(DBG_DEVICES, "------------eControlBridgeInitialize\n");
-    snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s", "CoorDinator");
-    psZigbeeNode->Method.preCoordinatorPermitJoin = eZigbee_SetPermitJoining;
-    psZigbeeNode->Method.preCoordinatorGetChannel = eZigbee_GetChannel;
-    psZigbeeNode->Method.preDeviceSetDoorLock = eZigbeeDeviceSetDoorLockState;
-    psZigbeeNode->Method.preDeviceSetDoorLockPassword = eZigbeeDeviceSetDoorLockPassword;
-    psZigbeeNode->Method.preZCB_ResetNetwork = eZigbeeDeviceResetNetwork;
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
-    //sleep(1);psZigbeeNode->Method.preCoordinatorPermitJoin(30);
-        
-    return E_ZB_OK;
-}
 
 teZbStatus eOnOffLightInitialize(tsZigbeeNodes *psZigbeeNode)
 {
@@ -238,45 +203,6 @@ teZbStatus eEndDeviceInitialize(tsZigbeeNodes *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eDoorLockInitialize(tsZigbeeNodes *psZigbeeNode)
-{
-    NOT_vPrintln(DBG_DEVICES, "------------eDoorLockInitialize\n");
-
-    snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DoorLock", psZigbeeNode->sNode.u16ShortAddress);
-    psZigbeeNode->Method.preDeviceSetDoorLock          = eZigbeeDeviceSetDoorLockState;
-    psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
-    psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
-    psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
-    psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
-
-    return E_ZB_OK;
-}
-
-teZbStatus eDoorLockControllerInitialize(tsZigbeeNodes *psZigbeeNode)
-{
-    NOT_vPrintln(DBG_DEVICES, "------------eDoorLockControllerInitialize\n");
-
-    snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "DoorLockController", psZigbeeNode->sNode.u16ShortAddress);
-    psZigbeeNode->Method.preDeviceSetDoorLock          = eZigbeeDeviceSetDoorLockState;
-    psZigbeeNode->Method.preDeviceAddGroup             = eZigbeeDeviceAddGroup;
-    psZigbeeNode->Method.preDeviceRemoveGroup          = eZigbeeDeviceRemoveGroup;
-    psZigbeeNode->Method.preDeviceAddScene             = eZigbeeDeviceAddSence;
-    psZigbeeNode->Method.preDeviceRemoveScene          = eZigbeeDeviceRemoveSence;
-    psZigbeeNode->Method.preDeviceSetScene             = eZigbeeDeviceCallSence;
-    psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
-    psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
-    psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
-
-    return E_ZB_OK;
-}
 
 /****************************************************************************/
 /***        Local Functions                                               ***/
@@ -317,7 +243,7 @@ tsRGB HSV_RGB(float H, float S, float V)
 	return RGB;
 }
 
-static teZbStatus eZigbee_SetPermitJoining(uint8 u8time )
+teZbStatus eZigbee_SetPermitJoining(uint8 u8time )
 {
     DBG_vPrintln(DBG_DEVICES, "eZigbee_SetPermitJoining\n");
     teZbStatus ZbStatus = E_ZB_OK;
@@ -328,7 +254,7 @@ static teZbStatus eZigbee_SetPermitJoining(uint8 u8time )
     return ZbStatus;
 }
 
-static teZbStatus eZigbee_GetChannel(uint8 *pu8Channel )
+teZbStatus eZigbee_GetChannel(uint8 *pu8Channel )
 {
     DBG_vPrintln(DBG_DEVICES, "eZigbee_GetChannel\n");
     teZbStatus ZbStatus = E_ZB_OK;
@@ -340,7 +266,7 @@ static teZbStatus eZigbee_GetChannel(uint8 *pu8Channel )
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceAddGroup(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress)
+teZbStatus eZigbeeDeviceAddGroup(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -349,7 +275,7 @@ static teZbStatus eZigbeeDeviceAddGroup(tsZigbeeBase *psZigbeeNode, uint16 u16Gr
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceRemoveGroup(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress)
+teZbStatus eZigbeeDeviceRemoveGroup(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
     teZbStatus ZbStatus = E_ZB_ERROR;
@@ -360,7 +286,7 @@ static teZbStatus eZigbeeDeviceRemoveGroup(tsZigbeeBase *psZigbeeNode, uint16 u1
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceClearGroup(tsZigbeeBase *psZigbeeNode)
+teZbStatus eZigbeeDeviceClearGroup(tsZigbeeBase *psZigbeeNode)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
     teZbStatus ZbStatus = E_ZB_ERROR;
@@ -371,7 +297,7 @@ static teZbStatus eZigbeeDeviceClearGroup(tsZigbeeBase *psZigbeeNode)
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceAddSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId)
+teZbStatus eZigbeeDeviceAddSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -389,7 +315,7 @@ static teZbStatus eZigbeeDeviceAddSence(tsZigbeeBase *psZigbeeNode, uint16 u16Gr
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceRemoveSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId)
+teZbStatus eZigbeeDeviceRemoveSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -407,7 +333,7 @@ static teZbStatus eZigbeeDeviceRemoveSence(tsZigbeeBase *psZigbeeNode, uint16 u1
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceCallSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId)
+teZbStatus eZigbeeDeviceCallSence(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint16 u16SenceId)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -425,7 +351,7 @@ static teZbStatus eZigbeeDeviceCallSence(tsZigbeeBase *psZigbeeNode, uint16 u16G
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceGetSence(tsZigbeeBase *psZigbeeNode, uint16 *u16SenceId)
+teZbStatus eZigbeeDeviceGetSence(tsZigbeeBase *psZigbeeNode, uint16 *u16SenceId)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceAddGroup\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -443,7 +369,7 @@ static teZbStatus eZigbeeDeviceGetSence(tsZigbeeBase *psZigbeeNode, uint16 *u16S
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceSetOnOff(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Mode)
+teZbStatus eZigbeeDeviceSetOnOff(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Mode)
 {
     DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceSetOnOff\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -459,7 +385,7 @@ static teZbStatus eZigbeeDeviceSetOnOff(tsZigbeeBase *psZigbeeNode, uint16 u16Gr
 }
 
 /** this func is not lock, must be called by one thread in the same time */
-static teZbStatus eZigbeeDeviceGetOnOff(tsZigbeeBase *psZigbeeNode, uint8 *u8Mode)
+teZbStatus eZigbeeDeviceGetOnOff(tsZigbeeBase *psZigbeeNode, uint8 *u8Mode)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceGetOnOff\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -475,7 +401,7 @@ static teZbStatus eZigbeeDeviceGetOnOff(tsZigbeeBase *psZigbeeNode, uint8 *u8Mod
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceSetLevel(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Level, uint16 u16TransitionTime)
+teZbStatus eZigbeeDeviceSetLevel(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Level, uint16 u16TransitionTime)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceSetLevel\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -493,7 +419,7 @@ static teZbStatus eZigbeeDeviceSetLevel(tsZigbeeBase *psZigbeeNode, uint16 u16Gr
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceGetLevel(tsZigbeeBase *psZigbeeNode, uint8 *u8Level)
+teZbStatus eZigbeeDeviceGetLevel(tsZigbeeBase *psZigbeeNode, uint8 *u8Level)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceGetLevel\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -509,7 +435,7 @@ static teZbStatus eZigbeeDeviceGetLevel(tsZigbeeBase *psZigbeeNode, uint8 *u8Lev
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceSetLightColour(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, tsRGB sRGB, uint16 u16TransitionTime)
+teZbStatus eZigbeeDeviceSetLightColour(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, tsRGB sRGB, uint16 u16TransitionTime)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceSetLightColor\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -531,7 +457,7 @@ static teZbStatus eZigbeeDeviceSetLightColour(tsZigbeeBase *psZigbeeNode, uint16
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceGetLightColour(tsZigbeeBase *psZigbeeNode, tsRGB *psRGB)
+teZbStatus eZigbeeDeviceGetLightColour(tsZigbeeBase *psZigbeeNode, tsRGB *psRGB)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceGetLightColour\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -563,7 +489,7 @@ static teZbStatus eZigbeeDeviceGetLightColour(tsZigbeeBase *psZigbeeNode, tsRGB 
     return ZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceRemoveNetwork(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoin, uint8 u8RemoveChildren)
+teZbStatus eZigbeeDeviceRemoveNetwork(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoin, uint8 u8RemoveChildren)
 {
     DBG_vPrintln(DBG_DEVICES, "ZigbeeDeviceRemoveNetwork\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -581,7 +507,7 @@ static teZbStatus eZigbeeDeviceRemoveNetwork(tsZigbeeBase *psZigbeeNode, uint8 u
 /**
 ** Closures
 */
-static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand)
+teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand)
 {
     DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceSetWindowCoveringDevice\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -592,28 +518,7 @@ static teZbStatus eZigbeeDeviceSetClosuresState(tsZigbeeBase *psZigbeeNode, teCL
     return eZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceSetDoorLockState(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand)
-{
-    DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceSetDoorLockState\n");
-    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
-
-    teZbStatus eZbStatus;
-    eZbStatus = eZCB_DoorLockDeviceOperator(psZigbeeNode, eCommand);
-
-    return eZbStatus;
-}
-
-static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload)
-{
-    DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceSetDoorLockPassword\n");
-    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
-
-    teZbStatus eZbStatus = eZCB_SetDoorLockPassword(psZigbeeNode, sDoorLockPayload);
-
-    return eZbStatus;
-}
-
-static teZbStatus eZigbeeDeviceResetNetwork(tsZigbeeBase *psZigbeeNode)
+teZbStatus eZigbeeDeviceResetNetwork(tsZigbeeBase *psZigbeeNode)
 {
     DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceResetNetwork\n");
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
@@ -624,7 +529,7 @@ static teZbStatus eZigbeeDeviceResetNetwork(tsZigbeeBase *psZigbeeNode)
     return eZbStatus;
 }
 
-static teZbStatus eZigbeeDeviceGetSensorValue(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId)
+teZbStatus eZigbeeDeviceGetSensorValue(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId)
 {
     DBG_vPrintln(DBG_DEVICES, "eZigbeeDeviceGetSensorValue\n");
     if(psZigbeeNode->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD){

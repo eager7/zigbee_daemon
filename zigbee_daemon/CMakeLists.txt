@@ -8,17 +8,19 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -m32")
 include_directories(
-		include
-		./
-		../link_message
+		comm  control-bridge  devices utils  zigbee
         )
 include_directories(/usr/include/sys)
 link_directories(./lib)
 
 set(SOURCE_FILES
-		list.c  mthread.c  serial_link.c   zigbee_control_bridge.c  zigbee_discovery.c  zigbee_socket.c
-		main.c  serial.c   zigbee_cloud.c  zigbee_devices.c         zigbee_node.c       zigbee_sqlite.c
-		#../link_message/Serial_LinkCommand.c
+        main.c
+		comm/zigbee_cloud.c  comm/zigbee_discovery.c  comm/zigbee_socket.c
+        control-bridge/serial.c  control-bridge/serial_link.c  control-bridge/zigbee_control_bridge.c
+		utils/list.c  utils/mthread.c  utils/zigbee_sqlite.c
+		devices/zigbee_devices.c
+		devices/door_lock_controller.c devices/coordinator.c devices/door_lock.c
+		zigbee/zigbee_node.c
         )
 
 #add_library(libsrp.a STATIC)
