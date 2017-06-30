@@ -25,6 +25,7 @@
 #include <sys/signal.h>
 #include <errno.h>
 #include <string.h>
+#include <zigbee_node.h>
 
 #include "zigbee_control_bridge.h"
 #include "zigbee_zcl.h"
@@ -551,14 +552,9 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
         uint16    u16ClusterID;
         uint16    u16AttributeID;
         uint8     u8AttributeStatus;
-        uint8     u8Type;
+        teZCL_ZCLAttributeType     eType;
         uint16    u16SizeOfAttributesInBytes;
-        union {
-            uint8     u8Data;
-            uint16    u16Data;
-            uint32    u32Data;
-            uint64    u64Data;
-        } uData;
+        tuZcbAttributeData uData;
     } PACKED *psMessage = (struct _tsAttributeReport *)pvMessage;
     
     psMessage->u16ShortAddress  = ntohs(psMessage->u16ShortAddress);
@@ -571,120 +567,24 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
                 psMessage->u16ClusterID,
                 psMessage->u16AttributeID
             );
-    
-    switch(psMessage->u8Type)
-    {
-        case(E_ZCL_GINT8):
-        case(E_ZCL_UINT8):
-        case(E_ZCL_INT8):
-        case(E_ZCL_ENUM8):
-        case(E_ZCL_BMAP8):
-        case(E_ZCL_BOOL):
-        case(E_ZCL_OSTRING):
-        case(E_ZCL_CSTRING):
-            break;
-        
-        case(E_ZCL_LOSTRING):
-        case(E_ZCL_LCSTRING):
-        case(E_ZCL_STRUCT):
-        case(E_ZCL_INT16):
-        case(E_ZCL_UINT16):
-        case(E_ZCL_ENUM16):
-        case(E_ZCL_CLUSTER_ID):
-        case(E_ZCL_ATTRIBUTE_ID):
-            psMessage->uData.u16Data = ntohs(psMessage->uData.u16Data);
-            break;
- 
-        case(E_ZCL_UINT24):
-        case(E_ZCL_UINT32):
-        case(E_ZCL_TOD):
-        case(E_ZCL_DATE):
-        case(E_ZCL_UTCT):
-        case(E_ZCL_BACNET_OID):
-            psMessage->uData.u32Data = ntohl(psMessage->uData.u32Data);
-            break;
- 
-        case(E_ZCL_UINT40):
-        case(E_ZCL_UINT48):
-        case(E_ZCL_UINT56):
-        case(E_ZCL_UINT64):
-        case(E_ZCL_IEEE_ADDR):
-            psMessage->uData.u64Data = be64toh(psMessage->uData.u64Data);
-            break;
-            
-        default:
-            ERR_vPrintln(T_TRUE,  "Unknown attribute data type (%d) received from node 0x%04X", psMessage->u8Type, psMessage->u16ShortAddress);
-            break;
-    }
+
     tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByShortAddress(psMessage->u16ShortAddress);
     if(NULL == psZigbeeNode){
         WAR_vPrintln(T_TRUE, "Can't find this node in network.\n");
         return;
     }
-    switch(psMessage->u16ClusterID){
-        case(E_ZB_CLUSTERID_ILLUMINANCE):
-            if(psZigbeeNode->sNode.u16DeviceID == 0){
-                WAR_vPrintln(T_TRUE, "This node is not in network truly\n");
-            }else{
-                eLockLock(&psZigbeeNode->mutex);
-                INF_vPrintln(DBG_ZCB, "update illum attribute to %d\n", psMessage->uData.u16Data);
-                psZigbeeNode->sNode.sAttributeValue.u16Illum = psMessage->uData.u16Data;
-                eLockunLock(&psZigbeeNode->mutex);
-            }
-            break;
-        case(E_ZB_CLUSTERID_TEMPERATURE):
-            if(psZigbeeNode->sNode.u16DeviceID == 0){
-                WAR_vPrintln(T_TRUE, "This node is not in network truly\n");
-            }else{
-                eLockLock(&psZigbeeNode->mutex);
-                INF_vPrintln(DBG_ZCB, "update temp attribute to %d\n", psMessage->uData.u16Data);
-                psZigbeeNode->sNode.sAttributeValue.u16Temp = psMessage->uData.u16Data;
-                eLockunLock(&psZigbeeNode->mutex);
-            }
-            break;
-        case(E_ZB_CLUSTERID_HUMIDITY):
-            if(psZigbeeNode->sNode.u16DeviceID == 0){
-                WAR_vPrintln(T_TRUE, "This node is not in network truly\n");
-            }else{
-                eLockLock(&psZigbeeNode->mutex);
-                INF_vPrintln(DBG_ZCB, "update humi attribute to %d\n", psMessage->uData.u16Data);
-                psZigbeeNode->sNode.sAttributeValue.u16Humi = psMessage->uData.u16Data;
-                eLockunLock(&psZigbeeNode->mutex);
-            }
-            break;
-        case(E_ZB_CLUSTERID_BINARY_INPUT_BASIC):
-            if(psZigbeeNode->sNode.u16DeviceID == 0){
-                WAR_vPrintln(T_TRUE, "This node is not in network truly\n");
-            }else{
-                eLockLock(&psZigbeeNode->mutex);
-                INF_vPrintln(DBG_ZCB, "update binary attribute to %d\n", psMessage->uData.u8Data);
-                psZigbeeNode->sNode.sAttributeValue.u8Binary = psMessage->uData.u8Data;
-                eLockunLock(&psZigbeeNode->mutex);
-            }
-            break;
-        case(E_ZB_CLUSTERID_POWER):
-            if(psZigbeeNode->sNode.u16DeviceID == 0){
-                WAR_vPrintln(T_TRUE, "This node is not in network truly\n");
-            }else{
-                eLockLock(&psZigbeeNode->mutex);
-                INF_vPrintln(DBG_ZCB, "update power attribute to %d\n", psMessage->uData.u16Data);
-                psZigbeeNode->sNode.sAttributeValue.u16Battery= psMessage->uData.u16Data;
-                eLockunLock(&psZigbeeNode->mutex);
-            }
-            break;
-        case(E_ZB_CLUSTERID_DOOR_LOCK):
-            if(psZigbeeNode->sNode.u16DeviceID == 0){
-                WAR_vPrintln(T_TRUE, "This node is not in network truly\n");
-            }else{
-                eLockLock(&psZigbeeNode->mutex);
-                INF_vPrintln(DBG_ZCB, "update door lock attribute to %d\n", psMessage->uData.u8Data);
-                psZigbeeNode->sNode.sAttributeValue.u8State= psMessage->uData.u8Data;
-                eLockunLock(&psZigbeeNode->mutex);
-            }
-            break;
-        default:
-            WAR_vPrintln(T_TRUE, "unknow cluster id.\n");
+    if(NULL == psZigbeeNode->Method.preDeviceAttributeUpdate){
+        WAR_vPrintln(T_TRUE, "Can't find the update func in node.\n");
+        return;
     }
+    eLockLock(&psZigbeeNode->mutex);
+    psZigbeeNode->Method.preDeviceAttributeUpdate(&psZigbeeNode->sNode,
+                                                  psMessage->u16ClusterID,
+                                                  psMessage->u16AttributeID,
+                                                  psMessage->eType,
+                                                  psMessage->uData);
+    eLockunLock(&psZigbeeNode->mutex);
+
     return ;
 }
 /****************************************************************************/
@@ -1987,19 +1887,27 @@ teZbStatus eZCB_ResetNetwork(tsZigbeeBase *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload)
+teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, uint8 u8PasswordId, uint8 u8Command, uint8 u8PasswordLen,
+                                    uint8 *psPassword)
 {
     struct _tDoorLockSetPassword{
         uint8 u8Sequence;
+        uint16 u16Address;
         uint8 u8Add;
+        uint8 u8PasswordId;
         uint8 u8Length;
-        uint8 auPassword[20];
-    } sDoorLockSetPassword;
+        uint8 auPassword[DOOR_LOCK_PASSWORD_LEN];
+    }PACKED sDoorLockSetPassword = {0};
 
-    sDoorLockSetPassword.u8Add = T_TRUE;
-    sDoorLockSetPassword.u8Length = sDoorLockPayload.u8PasswordLen;
-    memcpy(sDoorLockSetPassword.auPassword, sDoorLockPayload.auPassword, sizeof(sDoorLockSetPassword.auPassword));
+    sDoorLockSetPassword.u16Address = 0x0000;
+    sDoorLockSetPassword.u8Add = u8Command;
+    sDoorLockSetPassword.u8PasswordId = u8PasswordId;
+    sDoorLockSetPassword.u8Length = u8PasswordLen;
+    memcpy(sDoorLockSetPassword.auPassword, psPassword, u8PasswordLen);
 
-    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_DOOR_LOCK_SET_DOOR_PASSWORD, sizeof(struct _tDoorLockSetPassword), &sDoorLockSetPassword, NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    CHECK_RESULT(eSL_SendMessage(E_SL_MSG_DOOR_LOCK_SET_DOOR_PASSWORD,
+                                 sizeof(struct _tDoorLockSetPassword),
+                                 &sDoorLockSetPassword,
+                                 NULL), E_SL_OK, E_ZB_COMMS_FAILED);
     return E_ZB_OK;
 }

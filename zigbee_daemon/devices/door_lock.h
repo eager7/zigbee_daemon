@@ -40,7 +40,41 @@ extern "C" {
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
+typedef enum {
+    E_DOOR_LOCK_USER_TYPE_FIGNER_PRINT = 0x00,
+    E_DOOR_LOCK_USER_TYPE_PIN_CODE = 0x01,
+    E_DOOR_LOCK_USER_TYPE_RFID = 0x02,
+} teDoorLockUserType;
 
+typedef enum {
+    E_DOOR_LOCK_USER_PERM_UNRESTRICTED = 0x00,
+    E_DOOR_LOCK_USER_YEAR_DAY_SCHEDULE = 0x01,
+    E_DOOR_LOCK_USER_WEEK_DAY_SCHEDULE = 0x02,
+    E_DOOR_LOCK_USER_MASTER = 0x03,
+    E_DOOR_LOCK_USER_NON_ACCESS_USER = 0x04,
+} teDoorLockUserPerm;
+
+typedef struct {
+    uint8 u8UserID;
+    teDoorLockUserType eUserType;
+    teDoorLockUserPerm eUserPerm;
+} tsDoorLockUser;
+
+typedef struct {
+    uint16 u16Year;
+    uint8  u8Month;
+    uint8  u8Day;
+    uint8  u8Hour;
+} tsDoorLockTime;
+
+typedef struct {
+    uint8 u8PasswordId;
+    uint8 u8AvailableNum;
+    tsDoorLockTime sTimeStart;
+    tsDoorLockTime sTimeEnd;
+    uint8 u8PasswordLen;
+    uint8 auPassword[DOOR_LOCK_PASSWORD_LEN];
+} tsTemporaryPassword;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/

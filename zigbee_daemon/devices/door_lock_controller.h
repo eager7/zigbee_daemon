@@ -36,38 +36,11 @@ extern "C" {
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
-#define DOOR_LOCK_PASSWORD_LEN 10
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
-typedef enum {
-    E_DOOR_LOCK_USER_TYPE_FIGNER_PRINT = 0x00,
-    E_DOOR_LOCK_USER_TYPE_PIN_CODE = 0x01,
-    E_DOOR_LOCK_USER_TYPE_RFID = 0x02,
-} teDoorLockUserType;
-
-typedef enum {
-    E_DOOR_LOCK_USER_PERM_UNRESTRICTED = 0x00,
-    E_DOOR_LOCK_USER_YEAR_DAY_SCHEDULE = 0x01,
-    E_DOOR_LOCK_USER_WEEK_DAY_SCHEDULE = 0x02,
-    E_DOOR_LOCK_USER_MASTER = 0x03,
-    E_DOOR_LOCK_USER_NON_ACCESS_USER = 0x04,
-} teDoorLockUserPerm;
-
-typedef struct {
-    uint8 u8UserID;
-    teDoorLockUserType eUserType;
-    teDoorLockUserPerm eUserPerm;
-} tsDoorLockUser;
 
 
-typedef struct{
-    uint8 u8UserID;
-    uint8 u8Available;
-    uint8 auTime[20];
-    uint8 u8PasswordLen;
-    uint8 auPassword[DOOR_LOCK_PASSWORD_LEN];
-}tsCLD_DoorLockPayload;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
@@ -84,8 +57,8 @@ typedef struct{
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 /*****************************************************************************
-** Prototype    : eXXXXInitialize
-** Description  : Initialize a device, set the name, address and callback func
+** Prototype    : eDoorLockControllerInitialize
+** Description  : 初始化门锁控制器设备，为设备添加通用回调函数和门锁控制函数
 ** Input        : psZigbeeNode, the structure of node
 ** Output       : none
 ** Return Value : Return E_ZB_OK

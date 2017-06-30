@@ -43,49 +43,6 @@ extern "C" {
 /***        Type Definitions                                              ***/
 /****************************************************************************/
 /** Enumerated type of statuses - This fits in with the Zigbee ZCL status codes */
-typedef enum
-{
-    /* Zigbee ZCL status codes */
-    E_ZB_OK                            = 0x00,
-    E_ZB_ERROR                         = 0x01,
-    
-    /* ZCB internal status codes */
-    E_ZB_ERROR_NO_MEM                  = 0x10,
-    E_ZB_COMMS_FAILED                  = 0x11,
-    E_ZB_UNKNOWN_NODE                  = 0x12,
-    E_ZB_UNKNOWN_ENDPOINT              = 0x13,
-    E_ZB_UNKNOWN_CLUSTER               = 0x14,
-    E_ZB_REQUEST_NOT_ACTIONED          = 0x15,
-    
-    /* Zigbee ZCL status codes */
-    E_ZB_NOT_AUTHORISED                = 0x7E, 
-    E_ZB_RESERVED_FIELD_NZERO          = 0x7F,
-    E_ZB_MALFORMED_COMMAND             = 0x80,
-    E_ZB_UNSUP_CLUSTER_COMMAND         = 0x81,
-    E_ZB_UNSUP_GENERAL_COMMAND         = 0x82,
-    E_ZB_UNSUP_MANUF_CLUSTER_COMMAND   = 0x83,
-    E_ZB_UNSUP_MANUF_GENERAL_COMMAND   = 0x84,
-    E_ZB_INVALID_FIELD                 = 0x85,
-    E_ZB_UNSUP_ATTRIBUTE               = 0x86,
-    E_ZB_INVALID_VALUE                 = 0x87,
-    E_ZB_READ_ONLY                     = 0x88,
-    E_ZB_INSUFFICIENT_SPACE            = 0x89,
-    E_ZB_DUPLICATE_EXISTS              = 0x8A,
-    E_ZB_NOT_FOUND                     = 0x8B,
-    E_ZB_UNREPORTABLE_ATTRIBUTE        = 0x8C,
-    E_ZB_INVALID_DATA_TYPE             = 0x8D,
-    E_ZB_INVALID_SELECTOR              = 0x8E,
-    E_ZB_WRITE_ONLY                    = 0x8F,
-    E_ZB_INCONSISTENT_STARTUP_STATE    = 0x90,
-    E_ZB_DEFINED_OUT_OF_BAND           = 0x91,
-    E_ZB_INCONSISTENT                  = 0x92,
-    E_ZB_ACTION_DENIED                 = 0x93,
-    E_ZB_TIMEOUT                       = 0x94,
-    
-    E_ZB_HARDWARE_FAILURE              = 0xC0,
-    E_ZB_SOFTWARE_FAILURE              = 0xC1,
-    E_ZB_CALIBRATION_ERROR             = 0xC2,
-} teZbStatus;  
 
 /** Union type for all Zigbee attribute data types */
 typedef union
@@ -182,11 +139,11 @@ typedef teZbStatus (*tpreDeviceGetLevel)(tsZigbeeBase *psZigbeeNode, uint8 *u8Le
 
 /* Sensor */
 typedef teZbStatus (*tpreDeviceGetSensorValue)(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId);
-typedef void (*tprAttributeUpdate)(tsZigbeeBase *psZigbeeNode, uint16 u16ClusterID, uint16 u16AttributeID, teZCL_ZCLAttributeType eType, tuZcbAttributeData uData);
+typedef teZbStatus (*tprDeviceAttributeUpdate)(tsZigbeeBase *psZigbeeNode, uint16 u16ClusterID, uint16 u16AttributeID, teZCL_ZCLAttributeType eType, tuZcbAttributeData uData);
 /* Closures */
 typedef teZbStatus (*tpreDeviceSetWindowCovering)(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand);
 typedef teZbStatus (*tpreDeviceSetDoorLock)(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand);
-typedef teZbStatus (*tpreDeviceSetDoorLockPassword)(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLockPayload sDoorLockPayload);
+typedef teZbStatus (*tpreDeviceSetDoorLockPassword)(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload sDoorLockPayload);
 
 typedef struct
 {
@@ -218,6 +175,7 @@ typedef struct
     tpreDeviceGetLevel              preDeviceGetLevel;
     /* Sensor */
     tpreDeviceGetSensorValue        preDeviceGetSensorValue;
+    tprDeviceAttributeUpdate        preDeviceAttributeUpdate;
     /* Closures */
     tpreDeviceSetWindowCovering     preDeviceSetWindowCovering;
     tpreDeviceSetDoorLock           preDeviceSetDoorLock;

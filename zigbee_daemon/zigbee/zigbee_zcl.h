@@ -67,6 +67,50 @@ extern "C" {
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
+typedef enum
+{
+    /* Zigbee ZCL status codes */
+            E_ZB_OK                            = 0x00,
+    E_ZB_ERROR                         = 0x01,
+
+    /* ZCB internal status codes */
+            E_ZB_ERROR_NO_MEM                  = 0x10,
+    E_ZB_COMMS_FAILED                  = 0x11,
+    E_ZB_UNKNOWN_NODE                  = 0x12,
+    E_ZB_UNKNOWN_ENDPOINT              = 0x13,
+    E_ZB_UNKNOWN_CLUSTER               = 0x14,
+    E_ZB_REQUEST_NOT_ACTIONED          = 0x15,
+
+    /* Zigbee ZCL status codes */
+            E_ZB_NOT_AUTHORISED                = 0x7E,
+    E_ZB_RESERVED_FIELD_NZERO          = 0x7F,
+    E_ZB_MALFORMED_COMMAND             = 0x80,
+    E_ZB_UNSUP_CLUSTER_COMMAND         = 0x81,
+    E_ZB_UNSUP_GENERAL_COMMAND         = 0x82,
+    E_ZB_UNSUP_MANUF_CLUSTER_COMMAND   = 0x83,
+    E_ZB_UNSUP_MANUF_GENERAL_COMMAND   = 0x84,
+    E_ZB_INVALID_FIELD                 = 0x85,
+    E_ZB_UNSUP_ATTRIBUTE               = 0x86,
+    E_ZB_INVALID_VALUE                 = 0x87,
+    E_ZB_READ_ONLY                     = 0x88,
+    E_ZB_INSUFFICIENT_SPACE            = 0x89,
+    E_ZB_DUPLICATE_EXISTS              = 0x8A,
+    E_ZB_NOT_FOUND                     = 0x8B,
+    E_ZB_UNREPORTABLE_ATTRIBUTE        = 0x8C,
+    E_ZB_INVALID_DATA_TYPE             = 0x8D,
+    E_ZB_INVALID_SELECTOR              = 0x8E,
+    E_ZB_WRITE_ONLY                    = 0x8F,
+    E_ZB_INCONSISTENT_STARTUP_STATE    = 0x90,
+    E_ZB_DEFINED_OUT_OF_BAND           = 0x91,
+    E_ZB_INCONSISTENT                  = 0x92,
+    E_ZB_ACTION_DENIED                 = 0x93,
+    E_ZB_TIMEOUT                       = 0x94,
+
+    E_ZB_HARDWARE_FAILURE              = 0xC0,
+    E_ZB_SOFTWARE_FAILURE              = 0xC1,
+    E_ZB_CALIBRATION_ERROR             = 0xC2,
+} teZbStatus;
+
 /** Enumerated type of coordinator start modes */
 typedef enum
 {
@@ -557,6 +601,30 @@ typedef enum
 } teCLD_WindowCovering_CommandID;
 
 /* Door Lock Command - Payload */
+#define DOOR_LOCK_PASSWORD_LEN 10
+/* Lock State */
+typedef enum
+{
+    E_CLD_DOOR_LOCK_LOCK_STATE_NOT_FULLY_LOCKED  = 0x00,
+    E_CLD_DOOR_LOCK_LOCK_STATE_LOCK,
+    E_CLD_DOOR_LOCK_LOCK_STATE_UNLOCK
+} teCLD_DoorLock_LockState;
+typedef enum
+{
+    /* Door Lock attribute set attribute ID's (A1) */
+    E_CLD_DOOR_LOCK_ATTR_ID_LOCK_STATE                = 0x0000,             /* 0.Mandatory */
+    E_CLD_DOOR_LOCK_ATTR_ID_LOCK_TYPE,                                      /* 1.Mandatory */
+    E_CLD_DOOR_LOCK_ATTR_ID_ACTUATOR_ENABLED,                               /* 2.Mandatory */
+    E_CLD_DOOR_LOCK_ATTR_ID_DOOR_STATE,                                     /* 3.Optional */
+    E_CLD_DOOR_LOCK_ATTR_ID_NUMBER_OF_DOOR_OPEN_EVENTS,                     /* 4.Optional */
+    E_CLD_DOOR_LOCK_ATTR_ID_NUMBER_OF_DOOR_CLOSED_EVENTS,                   /* 5.Optional */
+    E_CLD_DOOR_LOCK_ATTR_ID_NUMBER_OF_MINUTES_DOOR_OPENED,                  /* 6.Optional */
+    E_CLD_DOOR_LOCK_ATTR_ID_ZIGBEE_SECURITY_LEVEL     = 0x0034,
+    E_CLD_DOOR_LOCK_ATTR_ID_NUMBER_OF_RFID_USERS_SUPPORTED = 0x0013,
+    E_CLD_DOOR_LOCK_ATTR_ID_MAX_PIN_CODE_LENGTH = 0x0017,
+    E_CLD_DOOR_LOCK_ATTR_ID_MIN_PIN_CODE_LENGTH = 0x0018,
+} teCLD_DoorLock_Cluster_AttrID;
+
 typedef enum
 {
     E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK                  = 0x00,         /* Mandatory */
@@ -564,6 +632,13 @@ typedef enum
     E_CLD_DOOR_LOCK_DEVICE_CMD_GET_LOG_RECORD        = 0x04,         /* Option */
 } teCLD_DoorLock_CommandID;
 
+typedef struct{
+    unsigned char u8PasswordID;
+    unsigned char u8AvailableNum;
+    unsigned char auTime[20];
+    unsigned char u8PasswordLen;
+    unsigned char auPassword[DOOR_LOCK_PASSWORD_LEN];
+}tsCLD_DoorLock_Payload;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/

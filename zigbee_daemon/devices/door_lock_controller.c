@@ -18,6 +18,7 @@
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
+#include <zigbee_node.h>
 #include "door_lock_controller.h"
 #include "zigbee_devices.h"
 /****************************************************************************/
@@ -52,7 +53,13 @@ teZbStatus eDoorLockControllerInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
 
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+    psZigbeeNode->Method.preDeviceSetDoorLock          = eZCB_DoorLockDeviceOperator;
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress,
+                              psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID,
+                              psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability);
 
     return E_ZB_OK;
 }

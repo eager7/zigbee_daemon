@@ -33,6 +33,7 @@ extern "C" {
 #include "serial_link.h"
 #include "zigbee_sqlite.h"
 #include "zigbee_control_bridge.h"
+#include "door_lock_controller.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
