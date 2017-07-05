@@ -91,6 +91,7 @@ static tsSocketHandleMap sSocketHandleMap[] = {
     {E_SS_COMMAND_GET_CHANNEL,              eSocketHandleGetChannel},
     {E_SS_COMMAND_GET_DEVICES_LIST_ALL,     eSocketHandleGetAllDevicesList},
     {E_SS_COMMAND_LEAVE_NETWORK,            eSocketHandleLeaveNetwork},
+    {E_SS_COMMAND_SEARCH_DEVICE,            eSocketHandleSearchDevice},
     /** Light */
     {E_SS_COMMAND_LIGHT_SET_ON_OFF,         eSocketHandleSetLightOnOff},
     {E_SS_COMMAND_LIGHT_SET_LEVEL,          eSocketHandleSetLightLevel},
@@ -387,6 +388,17 @@ static teSS_Status eSocketHandleLeaveNetwork(int iSocketFd, struct json_object *
         return E_SS_OK;
     }
     return E_SS_INCORRECT_PARAMETERS;
+}
+
+static teSS_Status eSocketHandleSearchDevice(int iSocketFd, struct json_object *psJsonMessage)
+{
+    INF_vPrintln(DBG_SOCKET, "Client request leave a device\n");
+
+    if(sControlBridge.Method.preCoordinatorSearchDevices){
+        sControlBridge.Method.preCoordinatorSearchDevices();
+    }
+    vResponseJsonString(iSocketFd, E_SS_OK, "Success");
+    return E_SS_OK;
 }
 
 static teSS_Status eSocketHandleGetAllDevicesList(int iSocketFd, struct json_object *psJsonMessage)
