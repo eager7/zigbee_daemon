@@ -105,16 +105,23 @@ static teZbStatus eHandleCoordinatorAttributeUpdate(tsZigbeeBase *psZigbeeNode,
     return E_ZB_ERROR;
 }
 
-static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload sDoorLockPayload)
+static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload *psDoorLockPayload)
 {
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
     //TODO:Store Password into SQL
 
-    if(sDoorLockPayload.u8AvailableNum == 0){
-        eZCB_SetDoorLockPassword(psZigbeeNode, sDoorLockPayload.u8PasswordID, T_FALSE, sDoorLockPayload.u8PasswordLen, sDoorLockPayload.auPassword);
+    if(psDoorLockPayload->u8AvailableNum == 0){
+        eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_FALSE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
     } else {
-        eZCB_SetDoorLockPassword(psZigbeeNode, sDoorLockPayload.u8PasswordID, T_TRUE, sDoorLockPayload.u8PasswordLen, sDoorLockPayload.auPassword);
+        eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_TRUE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
     }
+    return E_ZB_OK;
+}
+
+static teZbStatus eZigbeeCoordinatorSearchDevices()
+{
+    static int iStart= 0;
+    eZCB_NeighbourTableRequest(&iStart);
     return E_ZB_OK;
 }
 /****************************************************************************/
@@ -125,12 +132,13 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
     NOT_vPrintln(DBG_DEVICES, "------------eControlBridgeInitialize\n");
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s", "CoorDinator");
     psZigbeeNode->Method.preCoordinatorPermitJoin       = eZigbee_SetPermitJoining;
+    psZigbeeNode->Method.preCoordinatorSearchDevices    = eZigbeeCoordinatorSearchDevices;
     psZigbeeNode->Method.preCoordinatorGetChannel       = eZigbee_GetChannel;
-    psZigbeeNode->Method.preDeviceSetDoorLock           = eZCB_DoorLockDeviceOperator;
     psZigbeeNode->Method.preZCB_ResetNetwork            = eZigbeeDeviceResetNetwork;
 
+    psZigbeeNode->Method.preDeviceSetDoorLock           = eZCB_DoorLockDeviceOperator;
     psZigbeeNode->Method.preDeviceSetDoorLockPassword   = eZigbeeDeviceSetDoorLockPassword;
-    psZigbeeNode->Method.preDeviceAttributeUpdate       = eHandleCoordinatorAttributeUpdate;
+    //psZigbeeNode->Method.preDeviceAttributeUpdate       = eHandleCoordinatorAttributeUpdate;
 
     eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress,
                               psZigbeeNode->sNode.u16ShortAddress,
@@ -139,7 +147,16 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
                               psZigbeeNode->sNode.u8MacCapability);
 
     //TODO:将还未失效的临时密码发送给协调器
+    sleep(1);
     //sleep(1);psZigbeeNode->Method.preCoordinatorPermitJoin(30);
+    tsCLD_DoorLock_Payload sPassword;
+    sPassword.u8PasswordID = 0x01;
+    sPassword.u8AvailableNum = 10;
+    sPassword.psTime = "2017/06/30/10-2017/07/30/10";
+    sPassword.u8PasswordLen = 6;
+    sPassword.psPassword = "8384*#";
+
+    sControlBridge.Method.preDeviceSetDoorLockPassword(&sControlBridge.sNode, &sPassword);
     return E_ZB_OK;
 }
 

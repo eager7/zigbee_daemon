@@ -117,29 +117,30 @@ int main(int argc, char *argv[])
         }
     }
 
-    int iStart= 0;
-    while(bRunning){
-#if 0
-        sleep(5);
-        tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
-        memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
-        eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
-        dl_list_for_each(psZigbeeItem, &psZigbeeNode.list, tsZigbeeBase, list)
-        {
-            INF_vPrintln(DBG_MAIN, "[DEVICEID]:0X%04X, [NAME]:%s, [MAC]:0X%016llX, [ADDR]:0X%04X, [OnLine]:%d, [Type]:%d",
-                psZigbeeItem->u16DeviceID, psZigbeeItem->auDeviceName, psZigbeeItem->u64IEEEAddress,
-                psZigbeeItem->u16ShortAddress, psZigbeeItem->u8DeviceOnline, psZigbeeItem->u8MacCapability);
-            //use u8DeviceOnline to avoid inited repetitive
-            if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
-                tsZigbeeNodes *psZigbeeAdd = NULL;
-                eZigbee_AddNode(psZigbeeItem->u16ShortAddress, psZigbeeItem->u64IEEEAddress, psZigbeeItem->u16DeviceID, psZigbeeItem->u8MacCapability, &psZigbeeAdd);
-                eEndDeviceInitialize(psZigbeeAdd);
-            }
+    tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
+    memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
+    eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
+    dl_list_for_each(psZigbeeItem, &psZigbeeNode.list, tsZigbeeBase, list)
+    {
+        INF_vPrintln(DBG_MAIN, "[DEVICEID]:0X%04X, [NAME]:%s, [MAC]:0X%016llX, [ADDR]:0X%04X, [OnLine]:%d, [Type]:%d",
+                     psZigbeeItem->u16DeviceID, psZigbeeItem->auDeviceName, psZigbeeItem->u64IEEEAddress,
+                     psZigbeeItem->u16ShortAddress, psZigbeeItem->u8DeviceOnline, psZigbeeItem->u8MacCapability);
+        //use u8DeviceOnline to avoid inited repetitive
+        if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
+            tsZigbeeNodes *psZigbeeAdd = NULL;
+            eZigbee_AddNode(psZigbeeItem->u16ShortAddress,
+                            psZigbeeItem->u64IEEEAddress,
+                            psZigbeeItem->u16DeviceID,
+                            psZigbeeItem->u8MacCapability,
+                            &psZigbeeAdd);
+            eEndDeviceInitialize(psZigbeeAdd);
         }
-        eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
-        eZCB_NeighbourTableRequest(&iStart);
-        //eCloudPushAllDevicesList();
-        //sleep(55);
+    }
+    eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
+
+    while(bRunning){
+#if 1
+        sleep(1);
 #else
         printf("Please input command:\n");
         printf("1, open network\n");
@@ -161,7 +162,7 @@ int main(int argc, char *argv[])
                 tsCLD_DoorLock_Payload sPassword;
                 sPassword.u8PasswordID = 0x01;
                 sPassword.u8AvailableNum = 10;
-                memcpy(sPassword.auTime, "2017/06/30/10-2017/07/30/10", sizeof("2017/06/30/10-2017/07/30/10"));
+                memcpy(sPassword.psTime, "2017/06/30/10-2017/07/30/10", sizeof("2017/06/30/10-2017/07/30/10"));
                 sPassword.u8PasswordLen = 6;
                 memcpy(sPassword.auPassword, "8384*#", sizeof("8384*#"));
 

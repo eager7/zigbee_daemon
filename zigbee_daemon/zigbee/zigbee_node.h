@@ -75,7 +75,7 @@ typedef struct
 {
     struct timeval  sLastSuccessful;        /**< Time of last successful communications */
     uint16          u16SequentialFailures;  /**< Number of sequential failures */
-} tsComms;                                  /**< Structure containing communications statistics */
+} tsComm;                                  /**< Structure containing communications statistics */
 
 typedef struct
 {
@@ -91,7 +91,7 @@ typedef struct
 
 typedef struct   /* Zigbee Node base attribute */
 { 
-    tsComms             sComms;
+    tsComm              sComm;
     char                auDeviceName[MIBF];
     uint16              u16DeviceID;
     uint8               u8DeviceOnline;
@@ -113,12 +113,12 @@ typedef struct {uint8 R,G,B;}tsRGB;
 /* Coordinator */
 typedef teZbStatus (*tpreCoordinatorReset)(tsZigbeeBase *psZigbeeNode);
 typedef teZbStatus (*tpreCoordinatorPermitJoin)(uint8 time);
+typedef teZbStatus (*tpreCoordinatorSearchDevices)(void);
 typedef teZbStatus (*tpreCoordinatorGetChannel)(uint8 *pu8Channel);
 typedef teZbStatus (*tpreDeviceRemoveNetwork)(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoin, uint8 u8RemoveChildren);
 typedef teZbStatus (*tpreDeviceAddBind)(tsZigbeeBase *psSrcZigbeeNode, tsZigbeeBase *psDesZigbeeNode, uint16 u16ClusterID);
 typedef teZbStatus (*tpreDeviceRemoveBind)(tsZigbeeBase *psSrcZigbeeNode, tsZigbeeBase *psDesZigbeeNode, uint16 u16ClusterID);
 typedef teZbStatus (*tpreZCB_ResetNetwork)(tsZigbeeBase *psZigbeeNode);
-
 /* Base */
 typedef teZbStatus (*tpreDeviceSetAttribute)(tsZigbeeBase *psZigbeeNode, teZigbee_ClusterID u16ClusterID);
 typedef teZbStatus (*tpreDeviceGetAttribute)(tsZigbeeBase *psZigbeeNode, teZigbee_ClusterID u16ClusterID);
@@ -136,26 +136,29 @@ typedef teZbStatus (*tpreDeviceSetLightColour)(tsZigbeeBase *psZigbeeNode, uint1
 typedef teZbStatus (*tpreDeviceGetLightColour)(tsZigbeeBase *psZigbeeNode, tsRGB *psRGB);
 typedef teZbStatus (*tpreDeviceSetLevel)(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, uint8 u8Level, uint16 u16TransitionTime);
 typedef teZbStatus (*tpreDeviceGetLevel)(tsZigbeeBase *psZigbeeNode, uint8 *u8Level);
-
 /* Sensor */
 typedef teZbStatus (*tpreDeviceGetSensorValue)(tsZigbeeBase *psZigbeeNode, uint16 *u16SensorValue, teZigbee_ClusterID eClusterId);
 typedef teZbStatus (*tprDeviceAttributeUpdate)(tsZigbeeBase *psZigbeeNode, uint16 u16ClusterID, uint16 u16AttributeID, teZCL_ZCLAttributeType eType, tuZcbAttributeData uData);
 /* Closures */
 typedef teZbStatus (*tpreDeviceSetWindowCovering)(tsZigbeeBase *psZigbeeNode, teCLD_WindowCovering_CommandID eCommand);
 typedef teZbStatus (*tpreDeviceSetDoorLock)(tsZigbeeBase *psZigbeeNode, teCLD_DoorLock_CommandID eCommand);
-typedef teZbStatus (*tpreDeviceSetDoorLockPassword)(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload sDoorLockPayload);
+typedef teZbStatus (*tpreDeviceSetDoorLockPassword)(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload *psDoorLockPayload);
 
+/**
+ * Zigbee设备节点的回调函数，在设备初始化时对回调函数赋值，并不是所有回调都会被初始化，
+ * 因此调用前需要先判断是否为空。
+ * */
 typedef struct
 {
     /* Coordinator */
     tpreCoordinatorReset            preCoordinatorReset;
     tpreCoordinatorPermitJoin       preCoordinatorPermitJoin;
+    tpreCoordinatorSearchDevices    preCoordinatorSearchDevices;
     tpreCoordinatorGetChannel       preCoordinatorGetChannel;
     tpreDeviceRemoveNetwork         preDeviceRemoveNetwork;
     tpreDeviceAddBind               preDeviceAddBind;
     tpreDeviceRemoveBind            preDeviceRemoveBind;
     tpreZCB_ResetNetwork            preZCB_ResetNetwork;
-
     /* Base */
     tpreDeviceSetAttribute          preDeviceSetAttribute;
     tpreDeviceGetAttribute          preDeviceGetAttribute;
@@ -206,22 +209,69 @@ typedef teZbStatus (*tpreDeviceInitialise)(tsZigbeeNodes *psZigbeeNode);
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
+/*****************************************************************************
+** Prototype    : eZigbee_AddNode
+** Description  : 在设备列表中添加一个节点，添加前需要先检测是否存在，如果存在更新节点数据
+** Input        : u16ShortAddress, 节点网络地址，必须存在的参数
+ *                u64IEEEAddress, Mac Address
+ *                u16DeviceID
+ *                u8MacCapability,设备节点类型，供电类型等
+** Output       : ppsZCBNode，返回新添加的节点指针
+** Return Value : Return E_ZB_OK
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
 teZbStatus eZigbee_AddNode(uint16 u16ShortAddress, uint64 u64IEEEAddress, uint16 u16DeviceID, uint8 u8MacCapability, tsZigbeeNodes **ppsZCBNode);
+/*****************************************************************************
+** Prototype    : eZigbee_RemoveNode
+** Description  : 在设备列表中移除一个节点
+** Input        : psZigbeeNode, 节点指针
+** Output       : none
+** Return Value : Return E_ZB_OK
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
 teZbStatus eZigbee_RemoveNode(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eZigbee_RemoveAllNodes(void);
+/*****************************************************************************
+** Prototype    : eZigbee_NodeAddEndpoint
+** Description  : 对节点添加端点数据，用于后续发送命令时查询
+** Input        : psZigbeeNode, 节点指针
+ *                u8Endpoint, 端点号，如果存在，则更新数据
+ *                u16ProfileID，协议版本
+** Output       : ppsEndpoint，返回新添加的端点指针
+** Return Value : Return E_ZB_OK
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
 teZbStatus eZigbee_NodeAddEndpoint(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ProfileID, tsNodeEndpoint **ppsEndpoint);
+/*****************************************************************************
+** Prototype    : eZigbee_NodeAddCluster
+** Description  : 对端点添加Cluster
+** Input        : psZigbeeNode, 节点指针
+ *                u8Endpoint, 端点号，如果存在，则更新数据
+ *                u16ClusterID，Cluster ID
+** Output       : none
+** Return Value : Return E_ZB_OK
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
 teZbStatus eZigbee_NodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID);
 teZbStatus eZigbee_NodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID, uint16 u16AttributeID);
 teZbStatus eZigbee_NodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID, uint8 u8CommandID); 
 teZbStatus eZigbee_GetEndpoints(tsZigbeeBase *psZigbee_Node, teZigbee_ClusterID eClusterID, uint8 *pu8Src, uint8 *pu8Dst);
-
 tsNodeEndpoint *psZigbee_NodeFindEndpoint(tsZigbeeBase *psZigbeeNode, uint16 u16ClusterID);
 tsZigbeeNodes *psZigbee_FindNodeByShortAddress(uint16 u16ShortAddress);
 tsZigbeeNodes *psZigbee_FindNodeByIEEEAddress(uint64 u64IEEEAddress);
-
-
 void vZigbee_PrintNode(tsZigbeeBase *psNode);
-
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

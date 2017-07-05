@@ -41,9 +41,11 @@ extern "C" {
 /***        Type Definitions                                              ***/
 /****************************************************************************/
 typedef enum {
-    E_DOOR_LOCK_USER_TYPE_FIGNER_PRINT = 0x00,
-    E_DOOR_LOCK_USER_TYPE_PIN_CODE = 0x01,
-    E_DOOR_LOCK_USER_TYPE_RFID = 0x02,
+    E_RECORD_TYPE_TEMPORARY_PASSWORD        = 0x01,     /*临时密码*/
+    E_RECORD_TYPE_LOCAL_OPEN_FIGNER_PRINT   = 0x02,     /*指纹*/
+    E_RECORD_TYPE_LOCAL_OPEN_FRID           = 0x03,     /*磁卡*/
+    E_RECORD_TYPE_LOCAL_OPEN_PASSWORD       = 0x04,     /*密码*/
+    E_RECORD_TYPE_LOCAL_OPEN_NON_NORMAL     = 0x05,     /*钥匙*/
 } teDoorLockUserType;
 
 typedef enum {

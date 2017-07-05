@@ -214,9 +214,11 @@ typedef enum
     /* Closures Cluster */
     E_SL_MSG_LOCK_UNLOCK_DOOR                                   =   0x00F0,
     E_SL_MSG_WINDOW_COVERING_DEVICE_OPERATOR                    =   0x00F1,
-    E_SL_MSG_LOCK_UNLOCK_DOOR_UPDATE                            =   0x00F2,
+    E_SL_MSG_LOCK_UNLOCK_DOOR_PASSWD                            =   0x00F2,
     E_SL_MSG_DOOR_LOCK_SET_DOOR_STATE                           =   0x00F3,
     E_SL_MSG_DOOR_LOCK_SET_DOOR_PASSWORD                        =   0x00F4,
+    E_SL_MSG_DOOR_LOCK_SET_DOOR_USER                            =   0x00F5,
+    E_SL_MSG_DOOR_LOCK_STATE_REPORT                             =   0x00F6,
 
     /* ZHA Commands */
     E_SL_MSG_READ_ATTRIBUTE_REQUEST                             =   0x0100,

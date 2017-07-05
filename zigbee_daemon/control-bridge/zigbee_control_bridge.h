@@ -415,8 +415,9 @@ teZbStatus eZCB_ResetNetwork(tsZigbeeBase *psZigbeeNode);
 ** Date         : 2017/2/28
 ** Author       : PCT
 *****************************************************************************/
-teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, uint8 u8PasswordId, uint8 u8Command, uint8 u8PasswordLen,
-                                    uint8 *psPassword);
+teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, uint8 u8PasswordId, uint8 u8Command,
+                                    uint8 u8PasswordLen,
+                                    const char *psPassword);
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

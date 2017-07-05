@@ -36,16 +36,42 @@ extern "C" {
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
+/**
+ * 设备数据库关键词
+ * */
 #define TABLE_DEVICE    " TABLE_DEVICES "
 
-#define INDEX           " IndexNum "
-#define DEVICE_ID       " DeviceID "
-#define DEVICE_ADDR     " DeviceAddr "
-#define DEVICE_MAC      " DeviceMAC "
-#define DEVICE_NAME     " DeviceName "
-#define DEVICE_ONLINE   " DeviceOnline "
+#define INDEX               " IndexNum "
+#define DEVICE_ID           " DeviceID "
+#define DEVICE_ADDR         " DeviceAddr "
+#define DEVICE_MAC          " DeviceMAC "
+#define DEVICE_NAME         " DeviceName "
+#define DEVICE_ONLINE       " DeviceOnline "
 #define DEVICE_CAPABILITY   " DeviceCapability "
+/**
+ * 门锁数据库关键词
+ * */
+#define TABLE_USER      "TABLE_USER"
 
+#define USER_ID             " UserID "
+#define USER_NAME           " UserName "
+#define USER_TYPE           " UserType "
+#define USER_PERM           " UserPerm "
+
+#define TABLE_PASSWORD  "TABLE_PASSWD"
+
+#define PASSWD_ID           " PasswdID "
+#define PASSWD_AVAILABLE    " Available "
+#define PASSWD_START_TIME   " StartTime "
+#define PASSWD_END_TIME     " EndTime "
+#define PASSWD_LEN          " PasswdLen "
+#define PASSWD_DATA         " Password "
+
+#define TABLE_RECORD    "TABLE_RECORD"
+
+#define RECORD_TYPE         " RecordType "
+#define RECORD_USER         " UserID "
+#define RECORD_TIME         " RecordTime "
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
@@ -99,7 +125,7 @@ typedef struct _tsZigbeeSqlite
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 /*****************************************************************************
-** Prototype    : eZigbeeSqliteOpen
+** Prototype    : eZigbeeSqliteInit
 ** Description  : Open the sqlite3 database
 ** Input        : pZigbeeSqlitePath, the path of database file
 ** Output       : None
@@ -109,9 +135,9 @@ typedef struct _tsZigbeeSqlite
 ** Date         : 2017/6/23
 ** Author       : PCT
 *****************************************************************************/
-teSQ_Status eZigbeeSqliteOpen(char *pZigbeeSqlitePath);
+teSQ_Status eZigbeeSqliteInit(char *pZigbeeSqlitePath);
 /*****************************************************************************
-** Prototype    : eZigbeeSqliteClose
+** Prototype    : eZigbeeSqliteFinished
 ** Description  : close the sqlite3 database
 ** Input        : None
 ** Output       : None
@@ -121,14 +147,35 @@ teSQ_Status eZigbeeSqliteOpen(char *pZigbeeSqlitePath);
 ** Date         : 2017/6/23
 ** Author       : PCT
 *****************************************************************************/
-teSQ_Status eZigbeeSqliteClose(void);
-
-teSQ_Status eZigbeeSqliteInit(char *pZigbeeSqlitePath);
 teSQ_Status eZigbeeSqliteFinished(void);
 teSQ_Status eZigbeeSqliteRetrieveDevicesList(tsZigbeeBase *psZigbee_Node);
 teSQ_Status eZigbeeSqliteRetrieveDevicesListFree(tsZigbeeBase *psZigbee_Node);
 teSQ_Status eZigbeeSqliteUpdateDeviceTable(tsZigbeeBase *psZigbee_Node, teSQ_UpdateType eDeviceType);
 teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddress, uint16 u16DeviceID, char *psDeviceName, uint8 u8Capability);
+/*****************************************************************************
+** Prototype    : eZigbeeSqliteAddDoorLockUser
+** Description  : 添加门锁用户
+** Input        : u8UserID,u8UserType,u8UserPerm,psUserName此用户的ID，类型，权限
+** Output       : None
+** Return Value : Return E_SQ_OK
+
+** History      :
+** Date         : 2017/6/23
+** Author       : PCT
+*****************************************************************************/
+teSQ_Status eZigbeeSqliteAddDoorLockUser(uint8 u8UserID, uint8 u8UserType, uint8 u8UserPerm, char *psUserName);
+/*****************************************************************************
+** Prototype    : eZigbeeSqliteAddDoorLockRecord
+** Description  : 添加开锁记录，时间为time函数返回的秒数
+** Input        : u8Type 开锁的形式，包括密码，指纹，临时密码，钥匙等
+** Output       : None
+** Return Value : Return E_SQ_OK
+
+** History      :
+** Date         : 2017/6/23
+** Author       : PCT
+*****************************************************************************/
+teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 u64Time);
 
 /****************************************************************************/
 /***        Local Functions                                               ***/

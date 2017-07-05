@@ -587,6 +587,103 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
 
     return ;
 }
+
+static void vZCB_HandleDoorLockSetUser(void *pvUser, uint16 u16Length, void *pvMessage)
+{
+    DBG_vPrintln(DBG_ZCB, "************[0x00F5]vZCB_HandleDoorLockSetUser\n");
+    struct _tsSetDoorLockUser {
+        uint8     u8SequenceNo;
+        uint8     u8SrcEndpoint;
+        uint16    u16ClusterID;
+        uint8     u8AddressMode;
+        uint16    u16ShortAddress;
+        uint8     u8UserType;
+        uint8     u8UserID;
+        uint8     u8UserPermStatus;
+        uint8     u8Command;
+    } PACKED *psMessage = (struct _tsSetDoorLockUser *)pvMessage;
+
+    psMessage->u16ShortAddress  = ntohs(psMessage->u16ShortAddress);
+    psMessage->u16ClusterID     = ntohs(psMessage->u16ClusterID);
+
+    DBG_vPrintln( DBG_ZCB, "Set user request from 0x%04X - Endpoint %d, user id %d, command %d.\n",
+                  psMessage->u16ShortAddress,
+                  psMessage->u8SrcEndpoint,
+                  psMessage->u8UserID,
+                  psMessage->u8Command);
+
+    //tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByShortAddress(psMessage->u16ShortAddress);
+    //if(NULL == psZigbeeNode){
+    //    WAR_vPrintln(T_TRUE, "Can't find this node in network.\n");
+    //    return;
+    //}
+
+    eZigbeeSqliteAddDoorLockUser(psMessage->u8UserID, psMessage->u8UserType, psMessage->u8UserPermStatus, "DoorLock");
+
+    return ;
+}
+
+static void vZCB_HandleDoorLockStateReport(void *pvUser, uint16 u16Length, void *pvMessage)
+{
+    DBG_vPrintln(DBG_ZCB, "************[0x00F6]vZCB_HandleDoorLockStateReport\n");
+    struct _tsDoorStateReport {
+        uint8     u8SequenceNo;
+        uint16    u16ShortAddress;
+        uint8     u8SrcEndpoint;
+        uint8     u8UserType;
+        uint8     u8UserID;
+        uint16    u16ClusterID;
+        uint16    u16AttributeID;
+        uint8     u8AttributeStatus;
+        teZCL_ZCLAttributeType     eType;
+        uint16    u16SizeOfAttributesInBytes;
+        tuZcbAttributeData uData;
+    } PACKED *psMessage = (struct _tsDoorStateReport *)pvMessage;
+
+    psMessage->u16ShortAddress  = ntohs(psMessage->u16ShortAddress);
+    psMessage->u16ClusterID     = ntohs(psMessage->u16ClusterID);
+    psMessage->u16AttributeID   = ntohs(psMessage->u16AttributeID);
+
+    DBG_vPrintln( DBG_ZCB, "Door lock state report from 0x%04X - Endpoint %d, user id %d.\n",
+                  psMessage->u16ShortAddress,
+                  psMessage->u8SrcEndpoint,
+                  psMessage->u8UserID);
+
+    eZigbeeSqliteAddDoorLockRecord(psMessage->u8UserType, psMessage->u8UserID, (uint64)time((time_t*)NULL));
+    return ;
+}
+
+static void vZCB_HandleDoorLockOpenRequest(void *pvUser, uint16 u16Length, void *pvMessage)
+{
+    DBG_vPrintln(DBG_ZCB, "************[0x00F2]vZCB_HandleDoorLockOpenRequest\n");
+    struct _tsDoorOpenRequest {
+        uint8     u8SequenceNo;
+        uint8     u8SrcEndpoint;
+        uint16    u16ClusterID;
+        uint8     u8AddressMode;
+        uint16    u16ShortAddress;
+        uint8     u8UserType;
+        uint8     u8UserID;
+        uint8     u8Command;
+        uint8     u8PasswordID;
+        uint8     u8PasswordLen;
+    } PACKED *psMessage = (struct _tsDoorOpenRequest *)pvMessage;
+    uint8 auPassword[DOOR_LOCK_PASSWORD_LEN] = {0};
+
+    psMessage->u16ShortAddress  = ntohs(psMessage->u16ShortAddress);
+    psMessage->u16ClusterID     = ntohs(psMessage->u16ClusterID);
+    memcpy(auPassword, (char*)pvMessage + sizeof(struct _tsDoorOpenRequest), psMessage->u8PasswordLen);
+
+    DBG_vPrintln( DBG_ZCB, "Door lock request open door from 0x%04X - Endpoint %d, password id %d, password %s.\n",
+                  psMessage->u16ShortAddress,
+                  psMessage->u8SrcEndpoint,
+                  psMessage->u8PasswordID,
+                  auPassword);
+
+    eZigbeeSqliteAddDoorLockRecord(psMessage->u8UserType, psMessage->u8UserID, (uint64)time((time_t*)NULL));
+    return ;
+}
+
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
@@ -609,6 +706,9 @@ teZbStatus eZCB_Init(char *cpSerialDevice, uint32 u32BaudRate)
     eSL_AddListener(E_SL_MSG_SIMPLE_DESCRIPTOR_RESPONSE,    vZCB_HandleSimpleDescriptorResponse,      NULL);
     eSL_AddListener(E_SL_MSG_NODE_NON_FACTORY_NEW_RESTART,  vZCB_HandleRestartProvisioned,            NULL);
     eSL_AddListener(E_SL_MSG_NODE_FACTORY_NEW_RESTART,      vZCB_HandleRestartFactoryNew,             NULL);
+    eSL_AddListener(E_SL_MSG_DOOR_LOCK_SET_DOOR_USER,       vZCB_HandleDoorLockSetUser,               NULL);
+    eSL_AddListener(E_SL_MSG_DOOR_LOCK_STATE_REPORT,        vZCB_HandleDoorLockStateReport,           NULL);
+    eSL_AddListener(E_SL_MSG_LOCK_UNLOCK_DOOR_PASSWD,       vZCB_HandleDoorLockOpenRequest,           NULL);
 
     return E_ZB_OK;
 }
@@ -1887,8 +1987,7 @@ teZbStatus eZCB_ResetNetwork(tsZigbeeBase *psZigbeeNode)
     return E_ZB_OK;
 }
 
-teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, uint8 u8PasswordId, uint8 u8Command, uint8 u8PasswordLen,
-                                    uint8 *psPassword)
+teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, uint8 u8PasswordId, uint8 u8Command, uint8 u8PasswordLen, const char *psPassword)
 {
     struct _tDoorLockSetPassword{
         uint8 u8Sequence;

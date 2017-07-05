@@ -36,7 +36,7 @@ extern "C" {
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <syslog.h>
-
+#include <time.h>
 #include <sqlite3.h>
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -63,7 +63,7 @@ extern "C" {
 #define CHECK_STATUS(fun,value,ret) do{ if(value!=fun){ERR_vPrintln(T_TRUE, "Error:%s\n", strerror(errno));return ret;}}while(0)
 #define CHECK_POINTER(value,ret) do{ if(value==NULL){ERR_vPrintln(T_TRUE, "Pointer is NULL\n");return ret;}}while(0)
 #define FREE(p) do{ if(p){free(p); p=NULL;} }while(0)
-#define CALL(f, x) do{ if(f){ f(x); } }while(0)
+#define JSON_FREE(p) do{ if(p){json_object_put(p); p=NULL;} }while(0)
 
 #define Swap64(ll) (((ll) >> 56) |                          \
                     (((ll) & 0x00ff000000000000) >> 40) |   \

@@ -242,13 +242,16 @@ uint8_t ManageLeaveDevice[] = {0x00,0x47,0x00,11,0x00,/*Header*/
 uint8_t Status[] = {0x80,0x00,0x00,0x00,0x00,/*Header*/};
 uint8_t CurrentPosition[] = {0x01,0x01,0x00,0x01,0x00,/*Header*/
 								0x64};
-uint8_t SystemReset[] = {0x01,0x06,0x00,0x00,0x00,/*Header*/};
-uint8_t NetworkReset[] = {0x01,0x03,0x00,0x00,0x00,/*Header*/};
-uint8_t OpenDoorLock[] = {0x01,0x04,0x00,0x0c,0x00,/*Header*/
-                            0x00,/*sequence number*/ 0x00,/*command*/ 0x01, 0x01,/*user id*/ 0x00,/*user permission*/ 0x06, 0x38, 0x33, 0x38, 0x34, 0x2A, 0x23};
-uint8_t AddUser[] = {0x01,0x07,0x00,0x04,0x00,/*Header*/
-                            0x00, 0x01, 0x01, 0x03};
-
+uint8_t SystemReset[] = {0x01,0x09,0x00,0x00,0x00,/*Header*/};
+uint8_t NetworkReset[] = {0x01,0x02,0x00,0x00,0x00,/*Header*/};
+uint8_t OpenDoorLock[] = {0x01,0x05,0x00,0x0b,0x00,/*Header*/
+                            0x00,/*sequence number*/  0x01,/*type*/ 0x01,/*user id*/ 0x00,/*command*/ 0x06,/*len*/ 0x38, 0x33, 0x38, 0x34, 0x2A, 0x23};
+uint8_t AddUser[] = {0x01,0x03,0x00,0x04,0x00,/*Header*/
+                            0x00, 0x02,/*type*/ 0x03,/*id*/ 0x03/*perm*/};
+uint8_t LocalOpenDoor[] = {0x01,0x06,0x00,0x03,0x00,/*Header*/
+                            0x00, 0x02, /*type*/0x02/*id*/};
+							
+							
 LinkMessage_t LinkMessage[] = {
 	{E_SL_MSG_PERMIT_JOINING_REQUEST,"Permit Joining Request",PermitJoiningRequest,sizeof(PermitJoiningRequest)},
 	{E_SL_MSG_READ_ATTRIBUTE_REQUEST,"Read Attribute Request",ReadAttributeRequest,sizeof(ReadAttributeRequest)},
@@ -279,10 +282,12 @@ LinkMessage_t LinkMessage[] = {
 	//Mico
 	{E_SL_MSG_STATUS,"Status",Status,sizeof(Status)},
 	{0x0101,"CurrentPosition",CurrentPosition,sizeof(CurrentPosition)},
-	{0x0106,"SystemReset",SystemReset,sizeof(SystemReset)},
-	{0x0103,"NetworkReset",NetworkReset,sizeof(NetworkReset)},
-	{0x0104,"OpenDoorLock",OpenDoorLock,sizeof(OpenDoorLock)},
-	{0x0107,"AddUser",AddUser,sizeof(AddUser)},
+	//DoorLock
+	{0x0109,"SystemReset",SystemReset,sizeof(SystemReset)},
+	{0x0102,"NetworkReset",NetworkReset,sizeof(NetworkReset)},
+	{0x0105,"OpenDoorLock",OpenDoorLock,sizeof(OpenDoorLock)},
+	{0x0103,"AddUser",AddUser,sizeof(AddUser)},
+	{0x0106,"LocalOpenDoor",LocalOpenDoor,sizeof(LocalOpenDoor)},
 
 };
 

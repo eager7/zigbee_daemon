@@ -635,9 +635,9 @@ typedef enum
 typedef struct{
     unsigned char u8PasswordID;
     unsigned char u8AvailableNum;
-    unsigned char auTime[20];
+    const char *psTime;
     unsigned char u8PasswordLen;
-    unsigned char auPassword[DOOR_LOCK_PASSWORD_LEN];
+    const char *psPassword;
 }tsCLD_DoorLock_Payload;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/

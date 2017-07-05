@@ -41,50 +41,78 @@ const char *pcDevicesTable = "CREATE TABLE IF NOT EXISTS "TABLE_DEVICE"("
                                 DEVICE_CAPABILITY" INTEGER DEFAULT 0, "
                                 DEVICE_ONLINE" INTEGER DEFAULT 0);";
 
+const char *psUserTable = "CREATE TABLE IF NOT EXISTS "TABLE_USER"("
+                                INDEX"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+                                USER_ID"INTEGER UNIQUE DEFAULT 0, "
+                                USER_NAME"TEXT NOT NULL, "
+                                USER_TYPE"INTEGER DEFAULT 0, "
+                                USER_PERM"INTEGER DEFAULT 0);";
+const char *psPasswordTable = "CREATE TABLE IF NOT EXISTS "TABLE_PASSWORD"("
+                                INDEX"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+                                PASSWD_ID"INTEGER UNIQUE DEFAULT 0, "
+                                PASSWD_AVAILABLE"INTEGER DEFAULT 0, "
+                                PASSWD_START_TIME"INTEGER DEFAULT 0, "
+                                PASSWD_END_TIME"INTEGER DEFAULT 0, "
+                                PASSWD_LEN"INTEGER DEFAULT 0, "
+                                PASSWD_DATA" TEXT NOT NULL);";
+const char *psRecordTable = "CREATE TABLE IF NOT EXISTS "TABLE_RECORD"("
+                                INDEX"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+                                RECORD_TYPE"INTEGER DEFAULT 0, "
+                                RECORD_USER"INTEGER DEFAULT 0, "
+                                RECORD_TIME"INTEGER DEFAULT 0);";
 /****************************************************************************/
-/***        Exported Functions                                            ***/
+/***        Located Functions                                            ***/
 /****************************************************************************/
-teSQ_Status eZigbeeSqliteOpen(char *pZigbeeSqlitePath)
-{ 
+static teSQ_Status eZigbeeSqliteOpen(char *pZigbeeSqlitePath)
+{
     CHECK_POINTER(pZigbeeSqlitePath, E_SQ_ERROR);
-    
-	if (!access(pZigbeeSqlitePath, 0)) {
+
+    if (!access(pZigbeeSqlitePath, 0)) {
         DBG_vPrintln(DBG_SQLITE, "Open %s \n",pZigbeeSqlitePath);
         if( SQLITE_OK != sqlite3_open( pZigbeeSqlitePath, &sZigbeeSqlite.psZgbeeDB) ) {
             ERR_vPrintln(T_TRUE, "Failed to Open SQLITE_DB \n");
             return E_SQ_OPEN_ERROR;
         }
-    } else {//Datebase does not existd, create it
+    } else {
+        /** Database does not existd, create it */
         DBG_vPrintln(DBG_SQLITE, "Create A New Database %s \n",pZigbeeSqlitePath);
-        if (SQLITE_OK != sqlite3_open_v2(pZigbeeSqlitePath, &sZigbeeSqlite.psZgbeeDB, 
-                    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL)) {
+        if (SQLITE_OK != sqlite3_open_v2(pZigbeeSqlitePath, &sZigbeeSqlite.psZgbeeDB,
+                                         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL)) {
             ERR_vPrintln(T_TRUE, "Error initialising PDM database (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
-            return E_SQ_ERROR; 
-        }     
-        
+            return E_SQ_ERROR;
+        }
+
+        /** Create Tables */
         DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", pcDevicesTable);
         char *pcErrReturn;      /*Create default table*/
-        if(SQLITE_OK != sqlite3_exec(sZigbeeSqlite.psZgbeeDB, pcDevicesTable, NULL, NULL, &pcErrReturn)) {
+        if((SQLITE_OK != sqlite3_exec(sZigbeeSqlite.psZgbeeDB, pcDevicesTable, NULL, NULL, &pcErrReturn))||
+           (SQLITE_OK != sqlite3_exec(sZigbeeSqlite.psZgbeeDB, psUserTable, NULL, NULL, &pcErrReturn))||
+           (SQLITE_OK != sqlite3_exec(sZigbeeSqlite.psZgbeeDB, psPasswordTable, NULL, NULL, &pcErrReturn))||
+           (SQLITE_OK != sqlite3_exec(sZigbeeSqlite.psZgbeeDB, psRecordTable, NULL, NULL, &pcErrReturn))
+                ) {
             ERR_vPrintln(T_TRUE, "sqlite3_exec (%s)\n", pcErrReturn);
             sqlite3_free(pcErrReturn);
             unlink(pZigbeeSqlitePath);
             return E_SQ_ERROR;
         }
-	}
-    
+    }
+
     return E_SQ_OK;
 }
 
-teSQ_Status eZigbeeSqliteClose(void)
+static teSQ_Status eZigbeeSqliteClose(void)
 {
     DBG_vPrintln(DBG_SQLITE, "eZigbeeSqliteClose\n");
-	if (NULL != sZigbeeSqlite.psZgbeeDB) {
+    if (NULL != sZigbeeSqlite.psZgbeeDB) {
         sqlite3_close(sZigbeeSqlite.psZgbeeDB);
-	}
+    }
 
     return E_SQ_OK;
 }
 
+/****************************************************************************/
+/***        Exported Functions                                            ***/
+/****************************************************************************/
 teSQ_Status eZigbeeSqliteInit(char *pZigbeeSqlitePath)
 {
     memset(&sZigbeeSqlite, 0, sizeof(sZigbeeSqlite));
@@ -147,8 +175,7 @@ teSQ_Status eZigbeeSqliteRetrieveDevicesListFree(tsZigbeeBase *psZigbee_Node)
 
     tsZigbeeBase *Temp = NULL;
     tsZigbeeBase *Temp2 = NULL;
-    dl_list_for_each_safe(Temp,Temp2,&psZigbee_Node->list,tsZigbeeBase,list)
-    {
+    dl_list_for_each_safe(Temp,Temp2,&psZigbee_Node->list,tsZigbeeBase,list) {
         dl_list_del(&Temp->list);
         FREE(Temp);
     }
@@ -164,7 +191,10 @@ teSQ_Status eZigbeeSqliteUpdateDeviceTable(tsZigbeeBase *psZigbee_Node, teSQ_Upd
     char SqlCommand[MDBF] = {0};
     teSQ_Status eSQ_Status = E_SQ_OK;
 
-#define CHECK_EXEC(f) do{if(SQLITE_OK != f){ERR_vPrintln(T_TRUE, "sqlite3_exec (%s)\n", pcErrReturn);sqlite3_free(pcErrReturn);eSQ_Status = E_SQ_ERROR;}}while(0)
+    #define CHECK_EXEC(f) do{if(SQLITE_OK != f)\
+    {ERR_vPrintln(T_TRUE, "sqlite3_exec (%s)\n", pcErrReturn);\
+    sqlite3_free(pcErrReturn);\
+    eSQ_Status = E_SQ_ERROR;}}while(0)
     if(psZigbee_Node->u64IEEEAddress)
     {
         switch(eDeviceType)
@@ -174,7 +204,8 @@ teSQ_Status eZigbeeSqliteUpdateDeviceTable(tsZigbeeBase *psZigbee_Node, teSQ_Upd
                 if(NULL != psZigbee_Node->auDeviceName)
                 {
                     memset(SqlCommand, 0, sizeof(SqlCommand));
-                    snprintf(SqlCommand, sizeof(SqlCommand), "Update "TABLE_DEVICE" SET "DEVICE_NAME"='%s' WHERE "DEVICE_MAC"=%llu",psZigbee_Node->auDeviceName, psZigbee_Node->u64IEEEAddress);
+                    snprintf(SqlCommand, sizeof(SqlCommand), "Update "TABLE_DEVICE" SET "DEVICE_NAME"='%s' WHERE "DEVICE_MAC"=%llu",
+                             psZigbee_Node->auDeviceName, psZigbee_Node->u64IEEEAddress);
                     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
                     CHECK_EXEC(sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn));
                 }
@@ -185,7 +216,8 @@ teSQ_Status eZigbeeSqliteUpdateDeviceTable(tsZigbeeBase *psZigbee_Node, teSQ_Upd
                 if(psZigbee_Node->u16ShortAddress)
                 {
                     memset(SqlCommand, 0, sizeof(SqlCommand));
-                    snprintf(SqlCommand, sizeof(SqlCommand), "Update "TABLE_DEVICE" SET "DEVICE_ADDR"=%d WHERE "DEVICE_MAC"=%llu",psZigbee_Node->u16ShortAddress, psZigbee_Node->u64IEEEAddress);
+                    snprintf(SqlCommand, sizeof(SqlCommand), "Update "TABLE_DEVICE" SET "DEVICE_ADDR"=%d WHERE "DEVICE_MAC"=%llu",
+                             psZigbee_Node->u16ShortAddress, psZigbee_Node->u64IEEEAddress);
                     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
                     
                     CHECK_EXEC(sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn));
@@ -236,22 +268,25 @@ teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddre
 
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand), 
-        "INSERT INTO "TABLE_DEVICE"("DEVICE_MAC","DEVICE_ADDR","DEVICE_ID","DEVICE_NAME","DEVICE_ONLINE","DEVICE_CAPABILITY") VALUES(%llu,%d,%d,'%s',1,%d)",
+        "INSERT INTO "TABLE_DEVICE"("
+                DEVICE_MAC","
+                DEVICE_ADDR","
+                DEVICE_ID","
+                DEVICE_NAME","
+                DEVICE_ONLINE","
+                DEVICE_CAPABILITY") VALUES(%llu,%d,%d,'%s',1,%d)",
         u64MacAddress, u16ShortAddress, u16DeviceID, psDeviceName,u8Capability);
     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
     
     char *pcErrReturn;
     int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
-    if((SQLITE_OK != ret)&&(SQLITE_CONSTRAINT == ret))
-    {
+    if((SQLITE_OK != ret)&&(SQLITE_CONSTRAINT == ret)) {
         tsZigbeeBase sZigbeeNode;
         memset(&sZigbeeNode, 0, sizeof(sZigbeeNode));
         sZigbeeNode.u64IEEEAddress = u64MacAddress;
         sZigbeeNode.u8DeviceOnline = 1;
         eZigbeeSqliteUpdateDeviceTable(&sZigbeeNode, E_SQ_DEVICE_ONLINE);
-    }
-    else
-    {
+    } else {
         sqlite3_free(pcErrReturn);
         return E_SQ_ERROR;
     }
@@ -259,3 +294,73 @@ teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddre
     return E_SQ_OK;
 }
 
+teSQ_Status eZigbeeSqliteAddDoorLockUser(uint8 u8UserID, uint8 u8UserType, uint8 u8UserPerm, char *psUserName)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "INSERT INTO "TABLE_USER"("
+                     USER_ID","
+                     USER_TYPE","
+                     USER_PERM") VALUES(%d,%d,%d)",
+             u8UserID, u8UserType, u8UserPerm);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    char *pcErrReturn;
+    int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
+    if(SQLITE_OK != ret){
+        sqlite3_free(pcErrReturn);
+        return E_SQ_ERROR;
+    }
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 u64Time)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "INSERT INTO "TABLE_RECORD"("
+                     RECORD_TYPE","
+                     RECORD_USER","
+                     RECORD_TIME") VALUES(%d,%d,%llu)",
+             u8Type, u8UserID, u64Time);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    char *pcErrReturn;
+    int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
+    if(SQLITE_OK != ret){
+        sqlite3_free(pcErrReturn);
+        return E_SQ_ERROR;
+    }
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID,
+                                             uint8 u8Available,
+                                             uint64 u64StartTime,
+                                             uint64 u64EndTime,
+                                             uint8 u8PasswordLen,
+                                             uint8 *psPassword)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "INSERT INTO "TABLE_PASSWORD"("
+                     PASSWD_ID","
+                     PASSWD_AVAILABLE","
+                     PASSWD_START_TIME","
+                     PASSWD_END_TIME","
+                     PASSWD_LEN","
+                     PASSWD_DATA") VALUES(%d,%d,%llu, %llu, %d, '%s')",
+             u8PasswordID, u8Available, u64StartTime, u64EndTime, u8PasswordLen, psPassword);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    char *pcErrReturn;
+    int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
+    if(SQLITE_OK != ret){
+        sqlite3_free(pcErrReturn);
+        return E_SQ_ERROR;
+    }
+
+    return E_SQ_OK;
+}
