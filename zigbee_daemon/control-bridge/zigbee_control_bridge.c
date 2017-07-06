@@ -682,8 +682,10 @@ static void vZCB_HandleDoorLockOpenRequest(void *pvUser, uint16 u16Length, void 
                   auPassword);
     tsTemporaryPassword sPassword = {0};
     eZigbeeSqliteDoorLockRetrievePassword(psMessage->u8PasswordID, &sPassword);
-    sPassword.u8AvailableNum--;
-    eZigbeeSqliteUpdateDoorLockPassword(psMessage->u8PasswordID, sPassword.u8AvailableNum);
+    if(sPassword.u8AvailableNum != 0xFF && sPassword.u8AvailableNum != 0){
+        sPassword.u8AvailableNum--;
+    }
+    eZigbeeSqliteUpdateDoorLockPassword(psMessage->u8PasswordID, sPassword.u8AvailableNum, sPassword.u8Worked);
     eZigbeeSqliteAddDoorLockRecord(psMessage->u8UserType, psMessage->u8UserID, (uint64)time((time_t*)NULL));
     return ;
 }

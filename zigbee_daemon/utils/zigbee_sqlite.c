@@ -18,6 +18,7 @@
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
+#include <door_lock.h>
 #include "zigbee_sqlite.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -50,6 +51,7 @@ const char *psUserTable = "CREATE TABLE IF NOT EXISTS "TABLE_USER"("
 const char *psPasswordTable = "CREATE TABLE IF NOT EXISTS "TABLE_PASSWORD"("
                                 INDEX"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                                 PASSWD_ID"INTEGER UNIQUE DEFAULT 0, "
+                                PASSWD_WORK"INTEGER UNIQUE DEFAULT 0, "
                                 PASSWD_AVAILABLE"INTEGER DEFAULT 0, "
                                 PASSWD_START_TIME"INTEGER DEFAULT 0, "
                                 PASSWD_END_TIME"INTEGER DEFAULT 0, "
@@ -339,23 +341,20 @@ teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 
     return E_SQ_OK;
 }
 
-teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID,
-                                             uint8 u8Available,
-                                             uint64 u64StartTime,
-                                             uint64 u64EndTime,
-                                             uint8 u8PasswordLen,
-                                             const char *psPassword)
+teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID, uint8 u8Worked, uint8 u8Available, uint64 u64StartTime,
+                                             uint64 u64EndTime, uint8 u8PasswordLen, const char *psPassword)
 {
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand),
              "INSERT INTO "TABLE_PASSWORD"("
                      PASSWD_ID","
                      PASSWD_AVAILABLE","
+                     PASSWD_WORK","
                      PASSWD_START_TIME","
                      PASSWD_END_TIME","
                      PASSWD_LEN","
-                     PASSWD_DATA") VALUES(%d,%d,%llu, %llu, %d, '%s')",
-             u8PasswordID, u8Available, u64StartTime, u64EndTime, u8PasswordLen, psPassword);
+                     PASSWD_DATA") VALUES(%d,%d,%d,%llu, %llu, %d, '%s')",
+             u8PasswordID, u8Worked, u8Available, u64StartTime, u64EndTime, u8PasswordLen, psPassword);
     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
 
     char *pcErrReturn;
@@ -387,7 +386,7 @@ teSQ_Status eZigbeeSqliteDelDoorLockPassword(uint8 u8PasswordID)
     return E_SQ_OK;
 }
 
-teSQ_Status eZigbeeSqliteUpdateDoorLockPassword(uint8 u8PasswordID, uint8 u8Available)
+teSQ_Status eZigbeeSqliteUpdateDoorLockPassword(uint8 u8PasswordID, uint8 u8Available, uint8 u8Worked)
 {
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand),
@@ -396,6 +395,18 @@ teSQ_Status eZigbeeSqliteUpdateDoorLockPassword(uint8 u8PasswordID, uint8 u8Avai
 
     char *pcErrReturn;
     int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
+    if(SQLITE_OK != ret){
+        sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+
+    memset(SqlCommand, 0, sizeof(SqlCommand));
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "UPDATE "TABLE_PASSWORD" SET "PASSWD_WORK"=%d WHERE "PASSWD_ID"=%d", u8Worked, u8PasswordID);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
     if(SQLITE_OK != ret){
         sqlite3_free(pcErrReturn);
         ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
@@ -420,11 +431,12 @@ teSQ_Status eZigbeeSqliteDoorLockRetrievePassword(uint8 u8PasswordID, tsTemporar
     while(sqlite3_step(stmt) == SQLITE_ROW)
     {
         psPassword->u8PasswordId    = (uint8)sqlite3_column_int(stmt, 1);
-        psPassword->u8AvailableNum  = (uint8)sqlite3_column_int(stmt, 2);
-        psPassword->u64TimeStart    = (uint64)sqlite3_column_int64(stmt, 3);
-        psPassword->u64TimeEnd      = (uint64)sqlite3_column_int64(stmt, 4);
-        psPassword->u8PasswordLen   = (uint8)sqlite3_column_int(stmt, 5);
-        memcpy(psPassword->auPassword,(char*)sqlite3_column_text(stmt, 6), (size_t)sqlite3_column_bytes(stmt,6));
+        psPassword->u8Worked        = (uint8)sqlite3_column_int(stmt, 2);
+        psPassword->u8AvailableNum  = (uint8)sqlite3_column_int(stmt, 3);
+        psPassword->u64TimeStart    = (uint64)sqlite3_column_int64(stmt, 4);
+        psPassword->u64TimeEnd      = (uint64)sqlite3_column_int64(stmt, 5);
+        psPassword->u8PasswordLen   = (uint8)sqlite3_column_int(stmt, 6);
+        memcpy(psPassword->auPassword,(char*)sqlite3_column_text(stmt, 7), (size_t)sqlite3_column_bytes(stmt,7));
     }
     sqlite3_finalize(stmt);
 
@@ -450,11 +462,12 @@ teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordList(tsTemporaryPassword *psPas
         tsTemporaryPassword *Temp = (tsTemporaryPassword *)malloc(sizeof(tsTemporaryPassword));
         memset(Temp, 0, sizeof(tsTemporaryPassword));
         Temp->u8PasswordId    = (uint8)sqlite3_column_int(stmt, 1);
-        Temp->u8AvailableNum  = (uint8)sqlite3_column_int(stmt, 2);
-        Temp->u64TimeStart    = (uint64)sqlite3_column_int64(stmt, 3);
-        Temp->u64TimeEnd      = (uint64)sqlite3_column_int64(stmt, 4);
-        Temp->u8PasswordLen   = (uint8)sqlite3_column_int(stmt, 5);
-        memcpy(Temp->auPassword,(char*)sqlite3_column_text(stmt, 6), (size_t)sqlite3_column_bytes(stmt,6));
+        Temp->u8Worked        = (uint8)sqlite3_column_int(stmt, 2);
+        Temp->u8AvailableNum  = (uint8)sqlite3_column_int(stmt, 3);
+        Temp->u64TimeStart    = (uint64)sqlite3_column_int64(stmt, 4);
+        Temp->u64TimeEnd      = (uint64)sqlite3_column_int64(stmt, 5);
+        Temp->u8PasswordLen   = (uint8)sqlite3_column_int(stmt, 6);
+        memcpy(Temp->auPassword,(char*)sqlite3_column_text(stmt, 7), (size_t)sqlite3_column_bytes(stmt,7));
         dl_list_add_tail(&psPasswordHeader->list, &Temp->list);
     }
     sqlite3_finalize(stmt);

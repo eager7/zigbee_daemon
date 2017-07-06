@@ -64,6 +64,7 @@ typedef struct {
 
 typedef struct {
     uint8 u8PasswordId;
+    uint8 u8Worked;
     uint8 u8AvailableNum;
     uint64 u64TimeStart;
     uint64 u64TimeEnd;

@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
+#include <time.h>
 #include <zigbee_node.h>
 #include <zigbee_zcl.h>
 #include <door_lock.h>
@@ -117,6 +118,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    /** Initialize End Device */
     tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
     memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
     eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
@@ -138,45 +140,26 @@ int main(int argc, char *argv[])
     }
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
 
+    /** Check temporary password per 10 seconds */
     while(bRunning){
-#if 1
-        sleep(1);
-#else
-        printf("Please input command:\n");
-        printf("1, open network\n");
-        printf("2, add password\n");
-        printf("3, del password\n");
+        sleep(10);
 
-        int index = getchar();
-        NOT_vPrintln(T_TRUE, "Input Command:%c", index);
-        switch(index){
-            case '1':{
-                if(sControlBridge.Method.preCoordinatorPermitJoin){
-                    sControlBridge.Method.preCoordinatorPermitJoin(30);
-                } else {
-                    ERR_vPrintln(T_TRUE, "sControlBridge.Method.preCoordinatorPermitJoin NULL");
+        uint64 u64TimeNow = (uint64)time((time_t*)NULL);
+        tsTemporaryPassword sPasswordTemp, sPasswordHeader, *psTemp;
+        eZigbeeSqliteDoorLockRetrievePasswordList(&sPasswordHeader);
+        dl_list_for_each(psTemp, &sPasswordHeader.list, tsTemporaryPassword, list){
+            if(psTemp->u8Worked == 0){
+                if(psTemp->u64TimeStart >= u64TimeNow && psTemp->u64TimeEnd <= u64TimeNow){
+                    eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 1);
+                    eZCB_SetDoorLockPassword(NULL,psTemp->u8PasswordId,T_TRUE,psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
+                }
+            } else {
+                if((psTemp->u8AvailableNum == 0) || (psTemp->u64TimeEnd < u64TimeNow)){
+                    eZigbeeSqliteDelDoorLockPassword(psTemp->u8PasswordId);
+                    eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
                 }
             }
-                break;
-            case '2':{
-                tsCLD_DoorLock_Payload sPassword;
-                sPassword.u8PasswordID = 0x01;
-                sPassword.u8AvailableNum = 10;
-                memcpy(sPassword.psTime, "2017/06/30/10-2017/07/30/10", sizeof("2017/06/30/10-2017/07/30/10"));
-                sPassword.u8PasswordLen = 6;
-                memcpy(sPassword.auPassword, "8384*#", sizeof("8384*#"));
-
-                sControlBridge.Method.preDeviceSetDoorLockPassword(&sControlBridge.sNode, sPassword);
-            }
-                break;
-            case '3':{
-
-            }break;
-            default:
-                printf("invaild command\n");
-                break;
         }
-#endif
     }
     eZCB_Finish();
     eZigbeeSqliteFinished();
