@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <string.h>
 #include <zigbee_node.h>
+#include <door_lock.h>
 
 #include "zigbee_control_bridge.h"
 #include "zigbee_zcl.h"
@@ -679,7 +680,10 @@ static void vZCB_HandleDoorLockOpenRequest(void *pvUser, uint16 u16Length, void 
                   psMessage->u8SrcEndpoint,
                   psMessage->u8PasswordID,
                   auPassword);
-
+    tsTemporaryPassword sPassword = {0};
+    eZigbeeSqliteDoorLockRetrievePassword(psMessage->u8PasswordID, &sPassword);
+    sPassword.u8AvailableNum--;
+    eZigbeeSqliteUpdateDoorLockPassword(psMessage->u8PasswordID, sPassword.u8AvailableNum);
     eZigbeeSqliteAddDoorLockRecord(psMessage->u8UserType, psMessage->u8UserID, (uint64)time((time_t*)NULL));
     return ;
 }
