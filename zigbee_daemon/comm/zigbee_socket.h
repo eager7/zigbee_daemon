@@ -91,6 +91,7 @@ typedef enum
     /* Manage */
     E_SS_COMMAND_STATUS                     = 0x8000,
     E_SS_COMMAND_GET_MAC                    = 0x0010,
+    E_SS_COMMAND_GET_MAC_RESPONSE           = 0x8010,
     E_SS_COMMAND_GET_VERSION                = 0x0011,
     E_SS_COMMAND_VERSION_LIST               = 0x8011,
     E_SS_COMMAND_OPEN_NETWORK               = 0x0012,

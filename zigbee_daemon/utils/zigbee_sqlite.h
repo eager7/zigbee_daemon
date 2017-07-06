@@ -32,6 +32,7 @@ extern "C" {
 #include "utils.h"
 #include "serial_link.h"
 #include "zigbee_node.h"
+#include "door_lock.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -176,6 +177,29 @@ teSQ_Status eZigbeeSqliteAddDoorLockUser(uint8 u8UserID, uint8 u8UserType, uint8
 ** Author       : PCT
 *****************************************************************************/
 teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 u64Time);
+/*****************************************************************************
+** Prototype    : eZigbeeSqliteAddDoorLockPassword
+** Description  : 添加一个临时密码
+** Input        : u8PasswordID，密码的ID
+ *                u8Available，密码可用次数
+ *                u64StartTime，密码起始时间，值为1970年至今的秒数
+ *                u64EndTime，密码结束时间，值为1970年至今的秒数
+ *                u8PasswordLen，密码长度
+ *                psPassword，密码值
+** Output       : None
+** Return Value : Return E_SQ_OK
+
+** History      :
+** Date         : 2017/6/23
+** Author       : PCT
+*****************************************************************************/
+teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID, uint8 u8Available, uint64 u64StartTime,
+                                             uint64 u64EndTime, uint8 u8PasswordLen, const char *psPassword);
+teSQ_Status eZigbeeSqliteDelDoorLockPassword(uint8 u8PasswordID);
+teSQ_Status eZigbeeSqliteUpdateDoorLockPassword(uint8 u8PasswordID, uint8 u8Available);
+teSQ_Status eZigbeeSqliteDoorLockRetrievePassword(uint8 u8PasswordID, tsTemporaryPassword *psPassword);
+teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordList(tsTemporaryPassword *psPasswordHeader);
+teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordListFree(tsTemporaryPassword *psPasswordHeader);
 
 /****************************************************************************/
 /***        Local Functions                                               ***/

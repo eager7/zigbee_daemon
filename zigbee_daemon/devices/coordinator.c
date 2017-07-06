@@ -21,6 +21,7 @@
 #include <zigbee_zcl.h>
 #include "door_lock_controller.h"
 #include "zigbee_devices.h"
+#include "zigbee_sqlite.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -108,11 +109,37 @@ static teZbStatus eHandleCoordinatorAttributeUpdate(tsZigbeeBase *psZigbeeNode,
 static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload *psDoorLockPayload)
 {
     CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
-    //TODO:Store Password into SQL
 
     if(psDoorLockPayload->u8AvailableNum == 0){
+        eZigbeeSqliteDelDoorLockPassword(psDoorLockPayload->u8PasswordID);
         eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_FALSE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
     } else {
+        //TODO:Store Password into SQL
+        char auTime[MIBF] = {0};
+        memcpy(auTime, psDoorLockPayload->psTime, strlen(psDoorLockPayload->psTime));
+        char *psStart = strtok(auTime, "-");
+        char *psEnd = strtok(NULL, "-");
+        DBG_vPrintln(DBG_DEVICES, "start:%s, end:%s\n", psStart, psEnd);
+        struct tm sStart = {0};
+        sscanf(psStart, "%4d/%2d/%2d/%2d/%2d", &sStart.tm_year, &sStart.tm_mon, &sStart.tm_mday, &sStart.tm_hour, &sStart.tm_min);
+        sStart.tm_year -= 1900;
+        sStart.tm_mon --;
+        sStart.tm_isdst=-1;
+
+        struct tm sEnd = {0};
+        sscanf(psEnd, "%4d/%2d/%2d/%2d/%2d", &sEnd.tm_year, &sEnd.tm_mon, &sEnd.tm_mday, &sEnd.tm_hour, &sEnd.tm_min);
+        sEnd.tm_year -= 1900;
+        sEnd.tm_mon --;
+        sEnd.tm_isdst=-1;
+
+        time_t tStart = mktime(&sStart);
+        time_t tEnd = mktime(&sEnd);
+        eZigbeeSqliteAddDoorLockPassword(psDoorLockPayload->u8PasswordID,
+                                         psDoorLockPayload->u8AvailableNum,
+                                         (uint64)tStart,
+                                         (uint64)tEnd,
+                                         psDoorLockPayload->u8PasswordLen,
+                                         psDoorLockPayload->psPassword);
         eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_TRUE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
     }
     return E_ZB_OK;

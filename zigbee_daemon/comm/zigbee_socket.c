@@ -31,7 +31,8 @@
 #include <signal.h>
 #include <arpa/inet.h>
 #include <zigbee_node.h>
-#include <zigbee_zcl.h>
+#include <zigbee_sqlite.h>
+#include <door_lock.h>
 
 #include "utils.h"
 #include "zigbee_socket.h"
@@ -70,6 +71,7 @@ static teSS_Status eSocketHandleDoorLockDelPassword(int iSocketFd, struct json_o
 static teSS_Status eSocketHandleDoorLockGetPassword(int iSocketFd, struct json_object *psJsonMessage);
 static teSS_Status eSocketHandleDoorLockGetRecord(int iSocketFd, struct json_object *psJsonMessage);
 static teSS_Status eSocketHandleDoorLockGetUser(int iSocketFd, struct json_object *psJsonMessage);
+static teSS_Status eSocketHandleSearchDevice(int iSocketFd, struct json_object *psJsonMessage);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -312,7 +314,7 @@ static teSS_Status eSocketHandleGetMac(int iSocketFd, struct json_object *psJson
         ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
         return E_SS_ERROR;
     }
-    json_object_object_add(psJsonReturn, JSON_TYPE,json_object_new_int(E_SS_COMMAND_GET_MAC));
+    json_object_object_add(psJsonReturn, JSON_TYPE,json_object_new_int(E_SS_COMMAND_GET_MAC_RESPONSE));
     json_object_object_add(psJsonReturn, JSON_SEQUENCE,json_object_new_int(iSequenceNumber));
     json_object_object_add(psJsonReturn, JSON_MAC,json_object_new_int64((int64_t)sControlBridge.sNode.u64IEEEAddress));
     INF_vPrintln(DBG_SOCKET, "return message is ----%s\n",json_object_get_string(psJsonReturn));
@@ -394,10 +396,10 @@ static teSS_Status eSocketHandleSearchDevice(int iSocketFd, struct json_object *
 {
     INF_vPrintln(DBG_SOCKET, "Client request leave a device\n");
 
+    vResponseJsonString(iSocketFd, E_SS_OK, "Success");
     if(sControlBridge.Method.preCoordinatorSearchDevices){
         sControlBridge.Method.preCoordinatorSearchDevices();
     }
-    vResponseJsonString(iSocketFd, E_SS_OK, "Success");
     return E_SS_OK;
 }
 
@@ -823,11 +825,62 @@ static teSS_Status eSocketHandleDoorLockGetPassword(int iSocketFd, struct json_o
     {
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
         uint8 u8PasswordID = (uint8)json_object_get_int(psJsonID);
-        if(u8PasswordID == 0xff){//All Password
-            //TODO:
-        } else {
 
+        struct json_object *psJsonResult, *psJsonPassword, *psJsonArray = NULL;
+        if(NULL == (psJsonResult = json_object_new_object())) {
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
+            return E_SS_ERROR;
         }
+        if(NULL == (psJsonPassword = json_object_new_object())) {
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
+            json_object_put(psJsonResult);
+            return E_SS_ERROR;
+        }
+        if(NULL == (psJsonArray = json_object_new_array())){
+            json_object_put(psJsonResult);
+            json_object_put(psJsonPassword);
+            return E_SS_ERROR;
+        }
+
+        json_object_object_add(psJsonResult, JSON_TYPE,json_object_new_int(E_SS_COMMAND_DOOR_LOCK_GET_PASSWORD_RESPONSE));
+        json_object_object_add(psJsonResult, JSON_SEQUENCE,json_object_new_int(iSequenceNumber));
+        json_object_object_add(psJsonResult, JSON_MAC,json_object_new_int64((int64_t)u64DeviceAddress));
+
+        tsTemporaryPassword sPasswordHeader = {0};
+        if(u8PasswordID == 0xff){//All Password
+            eZigbeeSqliteDoorLockRetrievePasswordList(&sPasswordHeader);
+            tsTemporaryPassword *Temp = NULL;
+            dl_list_for_each(Temp, &sPasswordHeader.list, tsTemporaryPassword, list){
+                struct json_object *psJosnTemp = json_object_new_object();
+                json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8PasswordId));
+                json_object_object_add(psJosnTemp, JSON_PASSWORD_AVAILABLE,json_object_new_int(Temp->u8AvailableNum));
+                //json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_int(Temp->u8AvailableNum));
+                json_object_object_add(psJosnTemp, JSON_PASSWORD_LEN,json_object_new_int(Temp->u8PasswordLen));
+                json_object_object_add(psJosnTemp, JSON_PASSWORD,json_object_new_string((const char*)Temp->auPassword));
+                json_object_array_add(psJsonArray, psJosnTemp);
+            }
+            eZigbeeSqliteDoorLockRetrievePasswordListFree(&sPasswordHeader);
+        } else {
+            eZigbeeSqliteDoorLockRetrievePassword(u8PasswordID, &sPasswordHeader);
+            struct json_object *psJosnTemp = json_object_new_object();
+            json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(sPasswordHeader.u8PasswordId));
+            json_object_object_add(psJosnTemp, JSON_PASSWORD_AVAILABLE,json_object_new_int(sPasswordHeader.u8AvailableNum));
+            //json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_int(Temp->u8AvailableNum));
+            json_object_object_add(psJosnTemp, JSON_PASSWORD_LEN,json_object_new_int(sPasswordHeader.u8PasswordLen));
+            json_object_object_add(psJosnTemp, JSON_PASSWORD,json_object_new_string((const char*)sPasswordHeader.auPassword));
+            json_object_array_add(psJsonArray, psJosnTemp);
+        }
+        json_object_object_add(psJsonResult, JSON_PASSWORD,psJsonArray);
+        DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
+                     json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
+        if(-1 == send(iSocketFd,
+                      json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0))
+        {
+            ERR_vPrintln(T_TRUE, "send data to client error\n");
+            json_object_put(psJsonResult);
+            return E_SS_ERROR;
+        }
+        json_object_put(psJsonResult);
         return E_SS_OK;
     }
     return E_SS_INCORRECT_PARAMETERS;

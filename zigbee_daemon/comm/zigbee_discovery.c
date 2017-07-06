@@ -158,11 +158,11 @@ static void *pvDiscoveryHandleThread(void *psThreadInfoVoid)
             if(NULL != (psJsonMessage = json_tokener_parse((const char*)paRecvBuffer)))
             {
                 struct json_object *psJsonTemp  = NULL;
-                if(json_object_object_get_ex(psJsonMessage,"command", &psJsonTemp)){
-                    uint16 u16Command = json_object_get_int(psJsonTemp);
+                if(json_object_object_get_ex(psJsonMessage,"type", &psJsonTemp)){
+                    uint16 u16Command = (uint16)json_object_get_int(psJsonTemp);
                     if(E_SS_COMMAND_DISCOVERY == u16Command){
                         char auResponse[MDBF] = {0};
-                        snprintf(auResponse, sizeof(auResponse), "{\"status\":0,\"description\":{\"port\":%d}}", SOCKET_SERVER_PORT);
+                        snprintf(auResponse, sizeof(auResponse), "{\"port\":%d}", SOCKET_SERVER_PORT);
                         if(sendto(psZigbeeDiscovery->iSocketFd, auResponse, strlen(auResponse), 0, 
                                     (struct sockaddr*)&psZigbeeDiscovery->server_addr, sizeof(psZigbeeDiscovery->server_addr)) < 0)
                         {

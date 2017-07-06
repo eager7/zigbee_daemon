@@ -288,6 +288,7 @@ teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddre
         eZigbeeSqliteUpdateDeviceTable(&sZigbeeNode, E_SQ_DEVICE_ONLINE);
     } else {
         sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
         return E_SQ_ERROR;
     }
 
@@ -309,6 +310,7 @@ teSQ_Status eZigbeeSqliteAddDoorLockUser(uint8 u8UserID, uint8 u8UserType, uint8
     int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
     if(SQLITE_OK != ret){
         sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
         return E_SQ_ERROR;
     }
 
@@ -330,6 +332,7 @@ teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 
     int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
     if(SQLITE_OK != ret){
         sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
         return E_SQ_ERROR;
     }
 
@@ -341,7 +344,7 @@ teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID,
                                              uint64 u64StartTime,
                                              uint64 u64EndTime,
                                              uint8 u8PasswordLen,
-                                             uint8 *psPassword)
+                                             const char *psPassword)
 {
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand),
@@ -359,7 +362,115 @@ teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID,
     int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
     if(SQLITE_OK != ret){
         sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
         return E_SQ_ERROR;
+    }
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDelDoorLockPassword(uint8 u8PasswordID)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "DELETE FROM "TABLE_PASSWORD" WHERE "PASSWD_ID"=%d", u8PasswordID);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    char *pcErrReturn;
+    int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
+    if(SQLITE_OK != ret){
+        sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteUpdateDoorLockPassword(uint8 u8PasswordID, uint8 u8Available)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "UPDATE "TABLE_PASSWORD" SET "PASSWD_AVAILABLE"=%d WHERE "PASSWD_ID"=%d", u8Available, u8PasswordID);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    char *pcErrReturn;
+    int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
+    if(SQLITE_OK != ret){
+        sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDoorLockRetrievePassword(uint8 u8PasswordID, tsTemporaryPassword *psPassword)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "SELECT * FROM "TABLE_PASSWORD" WHERE "PASSWD_ID"=%d", u8PasswordID);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    sqlite3_stmt * stmt = NULL;
+    if(SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+    while(sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        psPassword->u8PasswordId    = (uint8)sqlite3_column_int(stmt, 1);
+        psPassword->u8AvailableNum  = (uint8)sqlite3_column_int(stmt, 2);
+        psPassword->u64TimeStart    = (uint64)sqlite3_column_int64(stmt, 3);
+        psPassword->u64TimeEnd      = (uint64)sqlite3_column_int64(stmt, 4);
+        psPassword->u8PasswordLen   = (uint8)sqlite3_column_int(stmt, 5);
+        memcpy(psPassword->auPassword,(char*)sqlite3_column_text(stmt, 6), (size_t)sqlite3_column_bytes(stmt,6));
+    }
+    sqlite3_finalize(stmt);
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordList(tsTemporaryPassword *psPasswordHeader)
+{
+    CHECK_POINTER(psPasswordHeader, E_SQ_ERROR);
+
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_PASSWORD"");
+    DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
+
+    sqlite3_stmt * stmt = NULL;
+    if(SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+    dl_list_init(&psPasswordHeader->list);
+    while(sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        tsTemporaryPassword *Temp = (tsTemporaryPassword *)malloc(sizeof(tsTemporaryPassword));
+        memset(Temp, 0, sizeof(tsTemporaryPassword));
+        Temp->u8PasswordId    = (uint8)sqlite3_column_int(stmt, 1);
+        Temp->u8AvailableNum  = (uint8)sqlite3_column_int(stmt, 2);
+        Temp->u64TimeStart    = (uint64)sqlite3_column_int64(stmt, 3);
+        Temp->u64TimeEnd      = (uint64)sqlite3_column_int64(stmt, 4);
+        Temp->u8PasswordLen   = (uint8)sqlite3_column_int(stmt, 5);
+        memcpy(Temp->auPassword,(char*)sqlite3_column_text(stmt, 6), (size_t)sqlite3_column_bytes(stmt,6));
+        dl_list_add_tail(&psPasswordHeader->list, &Temp->list);
+    }
+    sqlite3_finalize(stmt);
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordListFree(tsTemporaryPassword *psPasswordHeader)
+{
+    CHECK_POINTER(psPasswordHeader, E_SQ_ERROR);
+
+    tsTemporaryPassword *Temp = NULL;
+    tsTemporaryPassword *Temp2 = NULL;
+    dl_list_for_each_safe(Temp,Temp2,&psPasswordHeader->list,tsTemporaryPassword,list) {
+        dl_list_del(&Temp->list);
+        FREE(Temp);
     }
 
     return E_SQ_OK;

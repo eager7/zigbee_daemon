@@ -426,17 +426,21 @@ tsZigbeeNodes *psZigbee_FindNodeByShortAddress(uint16 u16ShortAddress)
 }
 
 tsZigbeeNodes *psZigbee_FindNodeByIEEEAddress(uint64 u64IEEEAddress)
-{    
-    eLockLock(&sControlBridge.mutex);
-    tsZigbeeNodes *psZigbeeRet = NULL;
-    tsZigbeeNodes *psZigbeeTemp;
-    dl_list_for_each(psZigbeeTemp, &sControlBridge.list, tsZigbeeNodes, list){  //Search List
-        if(u64IEEEAddress == psZigbeeTemp->sNode.u64IEEEAddress){
-            psZigbeeRet = psZigbeeTemp;
+{
+    if(0x0000 == u64IEEEAddress){
+        return &sControlBridge;
+    } else {
+        eLockLock(&sControlBridge.mutex);
+        tsZigbeeNodes *psZigbeeRet = NULL;
+        tsZigbeeNodes *psZigbeeTemp;
+        dl_list_for_each(psZigbeeTemp, &sControlBridge.list, tsZigbeeNodes, list){  //Search List
+            if(u64IEEEAddress == psZigbeeTemp->sNode.u64IEEEAddress){
+                psZigbeeRet = psZigbeeTemp;
+            }
         }
+        eLockunLock(&sControlBridge.mutex);
+        return psZigbeeRet;
     }
-    eLockunLock(&sControlBridge.mutex);
-    return psZigbeeRet;
 }
 
 void vZigbee_PrintNode(tsZigbeeBase *psNode)

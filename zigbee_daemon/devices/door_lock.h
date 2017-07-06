@@ -31,8 +31,8 @@ extern "C" {
 #include <stdint.h>
 #include "utils.h"
 #include "serial_link.h"
-#include "zigbee_sqlite.h"
-#include "zigbee_control_bridge.h"
+#include "zigbee_zcl.h"
+#include "zigbee_node.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -63,19 +63,13 @@ typedef struct {
 } tsDoorLockUser;
 
 typedef struct {
-    uint16 u16Year;
-    uint8  u8Month;
-    uint8  u8Day;
-    uint8  u8Hour;
-} tsDoorLockTime;
-
-typedef struct {
     uint8 u8PasswordId;
     uint8 u8AvailableNum;
-    tsDoorLockTime sTimeStart;
-    tsDoorLockTime sTimeEnd;
+    uint64 u64TimeStart;
+    uint64 u64TimeEnd;
     uint8 u8PasswordLen;
     uint8 auPassword[DOOR_LOCK_PASSWORD_LEN];
+    struct dl_list list;
 } tsTemporaryPassword;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
