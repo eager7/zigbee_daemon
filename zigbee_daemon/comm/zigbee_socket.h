@@ -48,6 +48,8 @@ extern "C" {
 #define JSON_MAC "mac"
 #define JSON_VERSION "version"
 #define JSON_TIME "time"
+#define JSON_TIME_START "time_start"
+#define JSON_TIME_END "time_end"
 #define JSON_CHANNEL "channel"
 #define JSON_DEVICES "devices"
 #define JSON_NAME "name"

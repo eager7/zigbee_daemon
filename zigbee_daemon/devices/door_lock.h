@@ -68,8 +68,8 @@ typedef struct {
     uint8 u8PasswordId;
     uint8 u8Worked;
     uint8 u8AvailableNum;
-    uint64 u64TimeStart;
-    uint64 u64TimeEnd;
+    uint32 u32TimeStart;
+    uint32 u32TimeEnd;
     uint8 u8PasswordLen;
     uint8 auPassword[DOOR_LOCK_PASSWORD_LEN];
     struct dl_list list;

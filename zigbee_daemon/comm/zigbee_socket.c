@@ -33,6 +33,7 @@
 #include <zigbee_node.h>
 #include <zigbee_sqlite.h>
 #include <door_lock.h>
+#include <zigbee_zcl.h>
 
 #include "utils.h"
 #include "zigbee_socket.h"
@@ -760,11 +761,12 @@ static teSS_Status eSocketHandleSetDoorLockState(int iSocketFd, struct json_obje
 static teSS_Status eSocketHandleDoorLockAddPassword(int iSocketFd, struct json_object *psJsonMessage)
 {
     INF_vPrintln(DBG_SOCKET, "Client request add a password into door lock:");
-    json_object *psJsonAddr, *psJsonID, *psJsonAvailable, *psJsonTime, *psJsonLen, *psJsonPassword = NULL;
+    json_object *psJsonAddr, *psJsonID, *psJsonAvailable, *psJsonTimeStart, *psJsonTimeEnd, *psJsonLen, *psJsonPassword = NULL;
     if(json_object_object_get_ex(psJsonMessage,JSON_MAC, &psJsonAddr)&&
        json_object_object_get_ex(psJsonMessage,JSON_ID, &psJsonID)&&
        json_object_object_get_ex(psJsonMessage,JSON_PASSWORD_AVAILABLE, &psJsonAvailable)&&
-       json_object_object_get_ex(psJsonMessage,JSON_TIME, &psJsonTime)&&
+       json_object_object_get_ex(psJsonMessage,JSON_TIME_START, &psJsonTimeStart)&&
+       json_object_object_get_ex(psJsonMessage,JSON_TIME_END, &psJsonTimeEnd)&&
        json_object_object_get_ex(psJsonMessage,JSON_PASSWORD_LEN, &psJsonLen)&&
        json_object_object_get_ex(psJsonMessage,JSON_PASSWORD, &psJsonPassword))
     {
@@ -773,7 +775,8 @@ static teSS_Status eSocketHandleDoorLockAddPassword(int iSocketFd, struct json_o
         tsCLD_DoorLock_Payload sPayload = {0};
         sPayload.u8PasswordID = (uint8)json_object_get_int(psJsonID);
         sPayload.u8AvailableNum = (uint8)json_object_get_int(psJsonAvailable);
-        sPayload.psTime = json_object_get_string(psJsonTime);
+        sPayload.u32TimeStart = (uint32)json_object_get_int(psJsonTimeStart);
+        sPayload.u32TimeEnd = (uint32)json_object_get_int(psJsonTimeEnd);
         sPayload.u8PasswordLen = (uint8)json_object_get_int(psJsonLen);
         sPayload.psPassword = json_object_get_string(psJsonPassword);
         INF_vPrintln(DBG_SOCKET, "[id:%d][available:%d][passwd:%s]\n",sPayload.u8PasswordID, sPayload.u8AvailableNum, sPayload.psPassword);
@@ -855,15 +858,8 @@ static teSS_Status eSocketHandleDoorLockGetPassword(int iSocketFd, struct json_o
                 struct json_object *psJosnTemp = json_object_new_object();
                 json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8PasswordId));
                 json_object_object_add(psJosnTemp, JSON_PASSWORD_AVAILABLE,json_object_new_int(Temp->u8AvailableNum));
-                char auTime[MIBF] = {0};
-                long int lStart = (long int)sPasswordHeader.u64TimeStart;
-                long int lEnd = (long int)sPasswordHeader.u64TimeEnd;
-                struct tm *pStart = gmtime(&lStart);
-                struct tm *pEnd = gmtime(&lEnd);
-                snprintf(auTime, sizeof(auTime),"%04d/%02d/%02d/%02d/%02d-%04d/%02d/%02d/%02d/%02d",
-                         (1830+pStart->tm_year),(1+pStart->tm_mon), pStart->tm_mday,pStart->tm_hour,pStart->tm_min,
-                         (1830+pEnd->tm_year),(1+pEnd->tm_mon), pEnd->tm_mday,pEnd->tm_hour,pEnd->tm_min);
-                json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_string(auTime));
+                json_object_object_add(psJosnTemp, JSON_TIME_START,json_object_new_int(Temp->u32TimeStart));
+                json_object_object_add(psJosnTemp, JSON_TIME_END,json_object_new_int(Temp->u32TimeEnd));
                 json_object_object_add(psJosnTemp, JSON_PASSWORD_LEN,json_object_new_int(Temp->u8PasswordLen));
                 json_object_object_add(psJosnTemp, JSON_PASSWORD,json_object_new_string((const char*)Temp->auPassword));
                 json_object_array_add(psJsonArray, psJosnTemp);
@@ -874,15 +870,8 @@ static teSS_Status eSocketHandleDoorLockGetPassword(int iSocketFd, struct json_o
             struct json_object *psJosnTemp = json_object_new_object();
             json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(sPasswordHeader.u8PasswordId));
             json_object_object_add(psJosnTemp, JSON_PASSWORD_AVAILABLE,json_object_new_int(sPasswordHeader.u8AvailableNum));
-            char auTime[MIBF] = {0};
-            long int lStart = (long int)sPasswordHeader.u64TimeStart;
-            long int lEnd = (long int)sPasswordHeader.u64TimeEnd;
-            struct tm *pStart = gmtime(&lStart);
-            struct tm *pEnd = gmtime(&lEnd);
-            snprintf(auTime, sizeof(auTime),"%04d/%02d/%02d/%02d/%02d-%04d/%02d/%02d/%02d/%02d",
-                     (1830+pStart->tm_year),(1+pStart->tm_mon), pStart->tm_mday,pStart->tm_hour,pStart->tm_min,
-                     (1830+pEnd->tm_year),(1+pEnd->tm_mon), pEnd->tm_mday,pEnd->tm_hour,pEnd->tm_min);
-            json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_string(auTime));
+            json_object_object_add(psJosnTemp, JSON_TIME_START,json_object_new_int(sPasswordHeader.u32TimeStart));
+            json_object_object_add(psJosnTemp, JSON_TIME_END,json_object_new_int(sPasswordHeader.u32TimeEnd));
             json_object_object_add(psJosnTemp, JSON_PASSWORD_LEN,json_object_new_int(sPasswordHeader.u8PasswordLen));
             json_object_object_add(psJosnTemp, JSON_PASSWORD,json_object_new_string((const char*)sPasswordHeader.auPassword));
             json_object_array_add(psJsonArray, psJosnTemp);
