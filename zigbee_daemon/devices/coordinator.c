@@ -176,15 +176,7 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
 
     //TODO:将还未失效的临时密码发送给协调器
     sleep(1);
-    //sleep(1);psZigbeeNode->Method.preCoordinatorPermitJoin(30);
-    tsCLD_DoorLock_Payload sPassword;
-    sPassword.u8PasswordID = 0x01;
-    sPassword.u8AvailableNum = 10;
-    sPassword.psTime = "2017/06/30/10-2017/07/30/10";
-    sPassword.u8PasswordLen = 6;
-    sPassword.psPassword = "8384*#";
-
-    sControlBridge.Method.preDeviceSetDoorLockPassword(&sControlBridge.sNode, &sPassword);
+    eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);
     return E_ZB_OK;
 }
 

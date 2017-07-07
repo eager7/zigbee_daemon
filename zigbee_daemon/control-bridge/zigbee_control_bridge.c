@@ -687,6 +687,8 @@ static void vZCB_HandleDoorLockOpenRequest(void *pvUser, uint16 u16Length, void 
     }
     eZigbeeSqliteUpdateDoorLockPassword(psMessage->u8PasswordID, sPassword.u8AvailableNum, sPassword.u8Worked);
     eZigbeeSqliteAddDoorLockRecord(psMessage->u8UserType, psMessage->u8UserID, (uint64)time((time_t*)NULL));
+    sleep(1);/* Lock Door */
+    eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);
     return ;
 }
 

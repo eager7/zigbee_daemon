@@ -28,18 +28,13 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
-#include <time.h>
-#include <zigbee_node.h>
-#include <zigbee_zcl.h>
-#include <door_lock.h>
-#include "utils.h"
-#include "serial_link.h"
+
+#include "zigbee_node.h"
+#include "door_lock.h"
 #include "zigbee_devices.h"
 #include "zigbee_socket.h"
 #include "zigbee_discovery.h"
 #include "zigbee_cloud.h"
-#include "door_lock_controller.h"
-#include "door_lock.h"
 #include "coordinator.h"
 
 /****************************************************************************/
