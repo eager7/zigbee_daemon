@@ -63,7 +63,6 @@ const char *psRecordTable = "CREATE TABLE IF NOT EXISTS "TABLE_RECORD"("
                                 INDEX"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                                 RECORD_TYPE"INTEGER DEFAULT 0, "
                                 RECORD_USER"INTEGER DEFAULT 0, "
-                                RECORD_WORK"INTEGER DEFAULT 0, "
                                 RECORD_TIME"INTEGER DEFAULT 0);";
 /****************************************************************************/
 /***        Located Functions                                            ***/
@@ -384,15 +383,15 @@ teSQ_Status eZigbeeSqliteDoorLockRetrieveUserListFree(tsDoorLockUser *psPassword
     return E_SQ_OK;
 }
 
-teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 u64Time)
+teSQ_Status eZigbeeSqliteAddDoorLockRecord(teDoorLockUserType eType, uint8 u8UserID, uint32 u32Time)
 {
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand),
              "INSERT INTO "TABLE_RECORD"("
                      RECORD_TYPE","
                      RECORD_USER","
-                     RECORD_TIME") VALUES(%d,%d,%llu)",
-             u8Type, u8UserID, u64Time);
+                     RECORD_TIME") VALUES(%d,%d,%d)",
+             eType, u8UserID, u32Time);
     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
 
     char *pcErrReturn;
@@ -402,6 +401,55 @@ teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 
         ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
         return E_SQ_ERROR;
     }
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDoorLockRetrieveRecord(uint8 u8UserID, tsDoorLockRecord *psRecord)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_RECORD" WHERE "USER_ID"=%d", u8UserID);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    sqlite3_stmt *stmt = NULL;
+    if (SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        psRecord->u8UserId = (uint8) sqlite3_column_int(stmt, 1);
+        psRecord->eType = (teDoorLockUserType) sqlite3_column_int(stmt, 2);
+        psRecord->u32Time = (uint32) sqlite3_column_int(stmt, 3);
+    }
+    sqlite3_finalize(stmt);
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(tsDoorLockRecord *psRecordHeader)
+{
+    CHECK_POINTER(psRecordHeader, E_SQ_ERROR);
+
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_RECORD"");
+    DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
+
+    sqlite3_stmt * stmt = NULL;
+    if(SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+    dl_list_init(&psRecordHeader->list);
+    while(sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        tsDoorLockRecord *Temp = (tsDoorLockRecord *)malloc(sizeof(tsDoorLockRecord));
+        memset(Temp, 0, sizeof(tsDoorLockRecord));
+        Temp->u8UserId = (uint8) sqlite3_column_int(stmt, 1);
+        Temp->eType = (teDoorLockUserType) sqlite3_column_int(stmt, 2);
+        Temp->u32Time = (uint32) sqlite3_column_int(stmt, 3);
+        dl_list_add_tail(&psRecordHeader->list, &Temp->list);
+    }
+    sqlite3_finalize(stmt);
 
     return E_SQ_OK;
 }

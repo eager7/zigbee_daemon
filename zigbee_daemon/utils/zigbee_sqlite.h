@@ -73,7 +73,6 @@ extern "C" {
 
 #define RECORD_TYPE         " RecordType "
 #define RECORD_USER         " UserID "
-#define RECORD_WORK         " Worked "
 #define RECORD_TIME         " RecordTime "
 /****************************************************************************/
 /***        Type Definitions                                              ***/
@@ -182,7 +181,10 @@ teSQ_Status eZigbeeSqliteDoorLockRetrieveUserListFree(tsDoorLockUser *psPassword
 ** Date         : 2017/6/23
 ** Author       : PCT
 *****************************************************************************/
-teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 u64Time);
+teSQ_Status eZigbeeSqliteAddDoorLockRecord(teDoorLockUserType eType, uint8 u8UserID, uint32 u32Time);
+teSQ_Status eZigbeeSqliteDoorLockRetrieveRecord(uint8 u8UserID, tsDoorLockRecord *psRecord);
+teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(tsDoorLockRecord *psRecordHeader);
+
 /*****************************************************************************
 ** Prototype    : eZigbeeSqliteAddDoorLockPassword
 ** Description  : 添加一个临时密码

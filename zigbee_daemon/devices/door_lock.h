@@ -46,6 +46,7 @@ typedef enum {
     E_RECORD_TYPE_LOCAL_OPEN_FRID           = 0x03,     /*磁卡*/
     E_RECORD_TYPE_LOCAL_OPEN_PASSWORD       = 0x04,     /*密码*/
     E_RECORD_TYPE_LOCAL_OPEN_NON_NORMAL     = 0x05,     /*钥匙*/
+    E_RECORD_TYPE_LOCAL_OPEN_VIOLENCE       = 0x06,     /*暴力撬锁*/
 } teDoorLockUserType;
 
 typedef enum {
@@ -63,6 +64,13 @@ typedef struct {
     teDoorLockUserPerm eUserPerm;
     struct dl_list list;
 } tsDoorLockUser;
+
+typedef struct {
+    uint8 u8UserId;
+    teDoorLockUserType eType;
+    uint32 u32Time;
+    struct dl_list list;
+} tsDoorLockRecord;
 
 typedef struct {
     uint8 u8PasswordId;
