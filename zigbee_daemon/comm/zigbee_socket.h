@@ -62,6 +62,7 @@ extern "C" {
 #define JSON_PASSWORD_AVAILABLE "available"
 #define JSON_PASSWORD_LEN "length"
 #define JSON_PASSWORD "password"
+#define JSON_USER   "users"
 #define JSON_ALARM "alarm"
 #define JSON_RECORDS "records"
 #define JSON_NUM "number"

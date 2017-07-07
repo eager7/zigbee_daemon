@@ -319,6 +319,67 @@ teSQ_Status eZigbeeSqliteAddDoorLockUser(uint8 u8UserID, uint8 u8UserType, uint8
     return E_SQ_OK;
 }
 
+teSQ_Status eZigbeeSqliteDelDoorLockUser(uint8 u8UserID)
+{
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand),
+             "DELETE FROM "TABLE_USER"WHERE"USER_ID"=%d", u8UserID);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+
+    char *pcErrReturn;
+    int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
+    if(SQLITE_OK != ret){
+        sqlite3_free(pcErrReturn);
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDelDoorLockRetrieveUserList(tsDoorLockUser *psUserHeader)
+{
+    CHECK_POINTER(psUserHeader, E_SQ_ERROR);
+
+    char SqlCommand[MDBF] = {0};
+    snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_USER"");
+    DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
+
+    sqlite3_stmt * stmt = NULL;
+    if(SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
+        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
+        return E_SQ_ERROR;
+    }
+    dl_list_init(&psUserHeader->list);
+    while(sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        tsDoorLockUser *Temp = (tsDoorLockUser *)malloc(sizeof(tsDoorLockUser));
+        memset(Temp, 0, sizeof(tsDoorLockUser));
+        Temp->u8UserID    = (uint8)sqlite3_column_int(stmt, 1);
+        memcpy(Temp->auName,(char*)sqlite3_column_text(stmt, 2), (size_t)sqlite3_column_bytes(stmt,2));
+        Temp->eUserType  = (teDoorLockUserType)sqlite3_column_int(stmt, 3);
+        Temp->eUserPerm    = (teDoorLockUserPerm)sqlite3_column_int(stmt, 4);
+        dl_list_add_tail(&psUserHeader->list, &Temp->list);
+    }
+    sqlite3_finalize(stmt);
+
+    return E_SQ_OK;
+}
+
+teSQ_Status eZigbeeSqliteDoorLockRetrieveUserListFree(tsDoorLockUser *psPasswordHeader)
+{
+    CHECK_POINTER(psPasswordHeader, E_SQ_ERROR);
+
+    tsDoorLockUser *Temp = NULL;
+    tsDoorLockUser *Temp2 = NULL;
+    dl_list_for_each_safe(Temp,Temp2,&psPasswordHeader->list,tsDoorLockUser,list) {
+        dl_list_del(&Temp->list);
+        FREE(Temp);
+    }
+
+    return E_SQ_OK;
+}
+
 teSQ_Status eZigbeeSqliteAddDoorLockRecord(uint8 u8Type, uint8 u8UserID, uint64 u64Time)
 {
     char SqlCommand[MDBF] = {0};

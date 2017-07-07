@@ -58,8 +58,10 @@ typedef enum {
 
 typedef struct {
     uint8 u8UserID;
+    char  auName[MIBF];
     teDoorLockUserType eUserType;
     teDoorLockUserPerm eUserPerm;
+    struct dl_list list;
 } tsDoorLockUser;
 
 typedef struct {

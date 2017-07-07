@@ -629,7 +629,22 @@ typedef enum
 {
     E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK                  = 0x00,         /* Mandatory */
     E_CLD_DOOR_LOCK_DEVICE_CMD_UNLOCK                = 0x01,         /* Mandatory */
-    E_CLD_DOOR_LOCK_DEVICE_CMD_GET_LOG_RECORD        = 0x04,         /* Option */
+    /** PCT Add */
+    E_CLD_DOOR_LOCK_CMD_TOGGLE                      = 0x02,
+    E_CLD_DOOR_LOCK_CMD_UNLOCK_WITH_TIMEOUT         = 0x03,
+    E_CLD_DOOR_LOCK_CMD_GET_LOG_RECORD              = 0x04,
+    E_CLD_DOOR_LOCK_CMD_SET_PIN_CODE                = 0x05,
+    E_CLD_DOOR_LOCK_CMD_GET_PIN_CODE                = 0x06,
+    E_CLD_DOOR_LOCK_CMD_CLEAR_PIN_CODE              = 0x07,
+    E_CLD_DOOR_LOCK_CMD_CLEAR_ALL_PIN_CODES         = 0x08,
+    E_CLD_DOOR_LOCK_CMD_SET_USER_STATUS             = 0x09,
+    E_CLD_DOOR_LOCK_CMD_GET_USER_STATUS             = 0x0a,
+    E_CLD_DOOR_LOCK_CMD_SET_USER_TYPE               = 0x14,
+    E_CLD_DOOR_LOCK_CMD_GET_USER_TYPE               = 0x15,
+    E_CLD_DOOR_LOCK_CMD_SET_RFID_CODE               = 0x16,
+    E_CLD_DOOR_LOCK_CMD_GET_RFID_CODE               = 0x17,
+    E_CLD_DOOR_LOCK_CMD_CLEAR_RFID_CODE             = 0x18,
+    E_CLD_DOOR_LOCK_CMD_CLEAR_ALL_RFID_CODES        = 0x19,
 } teCLD_DoorLock_CommandID;
 
 typedef struct{

@@ -619,7 +619,11 @@ static void vZCB_HandleDoorLockSetUser(void *pvUser, uint16 u16Length, void *pvM
     //    return;
     //}
 
-    eZigbeeSqliteAddDoorLockUser(psMessage->u8UserID, psMessage->u8UserType, psMessage->u8UserPermStatus, "DoorLock");
+    if(E_CLD_DOOR_LOCK_CMD_SET_USER_STATUS == psMessage->u8Command){
+        eZigbeeSqliteDelDoorLockUser(psMessage->u8UserID);
+    } else if(E_CLD_DOOR_LOCK_CMD_SET_USER_TYPE == psMessage->u8Command){
+        eZigbeeSqliteAddDoorLockUser(psMessage->u8UserID, psMessage->u8UserType, psMessage->u8UserPermStatus, "DoorLock");
+    }
 
     return ;
 }

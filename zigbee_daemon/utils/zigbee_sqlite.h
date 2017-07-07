@@ -166,6 +166,10 @@ teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddre
 ** Author       : PCT
 *****************************************************************************/
 teSQ_Status eZigbeeSqliteAddDoorLockUser(uint8 u8UserID, uint8 u8UserType, uint8 u8UserPerm, char *psUserName);
+teSQ_Status eZigbeeSqliteDelDoorLockUser(uint8 u8UserID);
+teSQ_Status eZigbeeSqliteDelDoorLockRetrieveUserList(tsDoorLockUser *psUserHeader);
+teSQ_Status eZigbeeSqliteDoorLockRetrieveUserListFree(tsDoorLockUser *psPasswordHeader);
+
 /*****************************************************************************
 ** Prototype    : eZigbeeSqliteAddDoorLockRecord
 ** Description  : 添加开锁记录，时间为time函数返回的秒数

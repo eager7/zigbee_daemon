@@ -914,6 +914,50 @@ static teSS_Status eSocketHandleDoorLockGetUser(int iSocketFd, struct json_objec
     if(json_object_object_get_ex(psJsonMessage,JSON_MAC, &psJsonAddr))
     {
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
+        struct json_object *psJsonResult, *psJsonUser, *psJsonArray = NULL;
+        if(NULL == (psJsonResult = json_object_new_object())) {
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
+            return E_SS_ERROR;
+        }
+        if(NULL == (psJsonUser = json_object_new_object())) {
+            ERR_vPrintln(T_TRUE, "json_object_new_object error\n");
+            json_object_put(psJsonResult);
+            return E_SS_ERROR;
+        }
+        if(NULL == (psJsonArray = json_object_new_array())){
+            json_object_put(psJsonResult);
+            json_object_put(psJsonUser);
+            return E_SS_ERROR;
+        }
+
+        json_object_object_add(psJsonResult, JSON_TYPE,json_object_new_int(E_SS_COMMAND_DOOR_LOCK_GET_USER_RESPONSE));
+        json_object_object_add(psJsonResult, JSON_SEQUENCE,json_object_new_int(iSequenceNumber));
+        json_object_object_add(psJsonResult, JSON_MAC,json_object_new_int64((int64_t)u64DeviceAddress));
+
+        tsDoorLockUser sUserHeader = {0};
+        eZigbeeSqliteDelDoorLockRetrieveUserList(&sUserHeader);
+        tsDoorLockUser *Temp = NULL;
+        dl_list_for_each(Temp, &sUserHeader.list, tsDoorLockUser, list){
+            struct json_object *psJosnTemp = json_object_new_object();
+            json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8UserID));
+            json_object_object_add(psJosnTemp, JSON_TYPE,json_object_new_int(Temp->eUserType));
+            json_object_object_add(psJosnTemp, JSON_PERM,json_object_new_int(Temp->eUserPerm));
+            json_object_array_add(psJsonArray, psJosnTemp);
+        }
+        eZigbeeSqliteDoorLockRetrieveUserListFree(&sUserHeader);
+
+        json_object_object_add(psJsonResult, JSON_USER,psJsonArray);
+        DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
+                     json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
+        if(-1 == send(iSocketFd,
+                      json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0))
+        {
+            ERR_vPrintln(T_TRUE, "send data to client error\n");
+            json_object_put(psJsonResult);
+            return E_SS_ERROR;
+        }
+        json_object_put(psJsonResult);
+
         return E_SS_OK;
     }
     return E_SS_INCORRECT_PARAMETERS;
