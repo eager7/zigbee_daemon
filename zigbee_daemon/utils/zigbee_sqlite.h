@@ -73,6 +73,7 @@ extern "C" {
 
 #define RECORD_TYPE         " RecordType "
 #define RECORD_USER         " UserID "
+#define RECORD_WORK         " Worked "
 #define RECORD_TIME         " RecordTime "
 /****************************************************************************/
 /***        Type Definitions                                              ***/

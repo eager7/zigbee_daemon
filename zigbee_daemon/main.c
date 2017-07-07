@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
+#include <door_lock.h>
 
 #include "zigbee_node.h"
 #include "door_lock.h"
@@ -140,16 +141,20 @@ int main(int argc, char *argv[])
         sleep(10);
 
         uint64 u64TimeNow = (uint64)time((time_t*)NULL);
+
         tsTemporaryPassword sPasswordTemp, sPasswordHeader, *psTemp;
         eZigbeeSqliteDoorLockRetrievePasswordList(&sPasswordHeader);
         dl_list_for_each(psTemp, &sPasswordHeader.list, tsTemporaryPassword, list){
             if(psTemp->u8Worked == 0){
-                if(psTemp->u64TimeStart >= u64TimeNow && psTemp->u64TimeEnd <= u64TimeNow){
+                //DBG_vPrintln(DBG_MAIN, "Now time:%llu, Start:%llu, End:%llu\n", u64TimeNow,psTemp->u64TimeStart,psTemp->u64TimeEnd);
+                if(psTemp->u64TimeStart <= u64TimeNow && psTemp->u64TimeEnd >= u64TimeNow){
+                    //DBG_vPrintln(DBG_MAIN, "Update Password:[%d][%d]\n", psTemp->u8PasswordId, psTemp->u8AvailableNum);
                     eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 1);
                     eZCB_SetDoorLockPassword(NULL,psTemp->u8PasswordId,T_TRUE,psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
                 }
             } else {
                 if((psTemp->u8AvailableNum == 0) || (psTemp->u64TimeEnd < u64TimeNow)){
+                    //DBG_vPrintln(DBG_MAIN, "Delete Password:[%d][%llu]\n", psTemp->u8AvailableNum, psTemp->u64TimeEnd);
                     eZigbeeSqliteDelDoorLockPassword(psTemp->u8PasswordId);
                     eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
                 }

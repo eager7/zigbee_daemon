@@ -126,7 +126,7 @@ def SearchDevices():
 def DoorLockAddPassword():
     id = raw_input("input password id:")
     available = raw_input("input password available:")
-    time = "2017/01/01/12-2018/01/01/12"
+    time = "2017/01/01/12/00-2018/01/01/12/00"
     length = raw_input("input password length:")
     password = raw_input("input password data:")
     command = type+str(E_SS_COMMAND_DOOR_LOCK_ADD_PASSWORD)+',"sequence":0,"mac":0,"id":'+str(id)+\

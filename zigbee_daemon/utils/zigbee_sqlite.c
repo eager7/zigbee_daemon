@@ -48,6 +48,7 @@ const char *psUserTable = "CREATE TABLE IF NOT EXISTS "TABLE_USER"("
                                 USER_NAME"TEXT NOT NULL, "
                                 USER_TYPE"INTEGER DEFAULT 0, "
                                 USER_PERM"INTEGER DEFAULT 0);";
+
 const char *psPasswordTable = "CREATE TABLE IF NOT EXISTS "TABLE_PASSWORD"("
                                 INDEX"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                                 PASSWD_ID"INTEGER UNIQUE DEFAULT 0, "
@@ -57,10 +58,12 @@ const char *psPasswordTable = "CREATE TABLE IF NOT EXISTS "TABLE_PASSWORD"("
                                 PASSWD_END_TIME"INTEGER DEFAULT 0, "
                                 PASSWD_LEN"INTEGER DEFAULT 0, "
                                 PASSWD_DATA" TEXT NOT NULL);";
+
 const char *psRecordTable = "CREATE TABLE IF NOT EXISTS "TABLE_RECORD"("
                                 INDEX"INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
                                 RECORD_TYPE"INTEGER DEFAULT 0, "
                                 RECORD_USER"INTEGER DEFAULT 0, "
+                                RECORD_WORK"INTEGER DEFAULT 0, "
                                 RECORD_TIME"INTEGER DEFAULT 0);";
 /****************************************************************************/
 /***        Located Functions                                            ***/
@@ -303,9 +306,10 @@ teSQ_Status eZigbeeSqliteAddDoorLockUser(uint8 u8UserID, uint8 u8UserType, uint8
     snprintf(SqlCommand, sizeof(SqlCommand),
              "INSERT INTO "TABLE_USER"("
                      USER_ID","
+                     USER_NAME","
                      USER_TYPE","
-                     USER_PERM") VALUES(%d,%d,%d)",
-             u8UserID, u8UserType, u8UserPerm);
+                     USER_PERM") VALUES(%d,'%s',%d,%d)",
+             u8UserID, psUserName, u8UserType, u8UserPerm);
     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
 
     char *pcErrReturn;
@@ -409,8 +413,8 @@ teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID, uint8 u8Worked,
     snprintf(SqlCommand, sizeof(SqlCommand),
              "INSERT INTO "TABLE_PASSWORD"("
                      PASSWD_ID","
-                     PASSWD_AVAILABLE","
                      PASSWD_WORK","
+                     PASSWD_AVAILABLE","
                      PASSWD_START_TIME","
                      PASSWD_END_TIME","
                      PASSWD_LEN","
