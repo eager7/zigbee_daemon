@@ -650,8 +650,8 @@ typedef enum
 typedef struct{
     unsigned char u8PasswordID;
     unsigned char u8AvailableNum;
-    uint32  u32TimeStart;
-    uint32  u32TimeEnd;
+    unsigned int  u32TimeStart;
+    unsigned int  u32TimeEnd;
     unsigned char u8PasswordLen;
     const char *psPassword;
 }tsCLD_DoorLock_Payload;

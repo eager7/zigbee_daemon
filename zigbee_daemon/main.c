@@ -149,13 +149,13 @@ int main(int argc, char *argv[])
                 //DBG_vPrintln(DBG_MAIN, "Now time:%llu, Start:%llu, End:%llu\n", u32TimeNow,psTemp->u32TimeStart,psTemp->u32TimeEnd);
                 if(psTemp->u32TimeStart <= u32TimeNow && psTemp->u32TimeEnd >= u32TimeNow){
                     //DBG_vPrintln(DBG_MAIN, "Update Password:[%d][%d]\n", psTemp->u8PasswordId, psTemp->u8AvailableNum);
-                    eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 1);
+                    eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 1, psTemp->u8UseNum);
                     eZCB_SetDoorLockPassword(NULL,psTemp->u8PasswordId,T_TRUE,psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
                 }
             } else {
                 if((psTemp->u8AvailableNum == 0) || (psTemp->u32TimeEnd < u32TimeNow)){
                     //DBG_vPrintln(DBG_MAIN, "Delete Password:[%d][%llu]\n", psTemp->u8AvailableNum, psTemp->u32TimeEnd);
-                    eZigbeeSqliteDelDoorLockPassword(psTemp->u8PasswordId);
+                    //eZigbeeSqliteDelDoorLockPassword(psTemp->u8PasswordId);
                     eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
                 }
             }

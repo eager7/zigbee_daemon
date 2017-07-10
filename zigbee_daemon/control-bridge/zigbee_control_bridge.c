@@ -654,7 +654,8 @@ static void vZCB_HandleDoorLockStateReport(void *pvUser, uint16 u16Length, void 
                   psMessage->u8SrcEndpoint,
                   psMessage->u8UserID);
 
-    eZigbeeSqliteAddDoorLockRecord((teDoorLockUserType)psMessage->u8UserType, psMessage->u8UserID, (uint32)time((time_t*)NULL));
+    eZigbeeSqliteAddDoorLockRecord((teDoorLockUserType) psMessage->u8UserType, psMessage->u8UserID,
+                                   (uint32) time((time_t *) NULL), NULL);
     return ;
 }
 
@@ -689,8 +690,10 @@ static void vZCB_HandleDoorLockOpenRequest(void *pvUser, uint16 u16Length, void 
     if(sPassword.u8AvailableNum != 0xFF && sPassword.u8AvailableNum != 0){
         sPassword.u8AvailableNum--;
     }
-    eZigbeeSqliteUpdateDoorLockPassword(psMessage->u8PasswordID, sPassword.u8AvailableNum, sPassword.u8Worked);
-    eZigbeeSqliteAddDoorLockRecord((teDoorLockUserType)psMessage->u8UserType, psMessage->u8UserID, (uint32)time((time_t*)NULL));
+    sPassword.u8UseNum += 1;
+    eZigbeeSqliteUpdateDoorLockPassword(psMessage->u8PasswordID, sPassword.u8AvailableNum, sPassword.u8Worked, sPassword.u8UseNum);
+    eZigbeeSqliteAddDoorLockRecord((teDoorLockUserType) psMessage->u8UserType, psMessage->u8UserID,
+                                   (uint32) time((time_t *) NULL), (const char*)sPassword.auPassword);
     sleep(1);/* Lock Door */
     eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);
     return ;

@@ -61,13 +61,15 @@ extern "C" {
 
 #define TABLE_PASSWORD  "TABLE_PASSWD"
 
-#define PASSWD_ID           " PasswdID "
-#define PASSWD_WORK         " Worked "
-#define PASSWD_AVAILABLE    " Available "
-#define PASSWD_START_TIME   " StartTime "
-#define PASSWD_END_TIME     " EndTime "
-#define PASSWD_LEN          " PasswdLen "
-#define PASSWD_DATA         " Password "
+#define PASSWORD_ID           " PasswdID "
+#define PASSWORD_WORK         " Worked "
+#define PASSWORD_AVAILABLE    " Available "
+#define PASSWORD_USED         " Used "
+#define PASSWORD_CREATION_TIME " CreationTime "
+#define PASSWORD_START_TIME   " StartTime "
+#define PASSWORD_END_TIME     " EndTime "
+#define PASSWORD_LEN          " PasswdLen "
+#define PASSWORD_DATA         " Password "
 
 #define TABLE_RECORD    "TABLE_RECORD"
 
@@ -181,9 +183,11 @@ teSQ_Status eZigbeeSqliteDoorLockRetrieveUserListFree(tsDoorLockUser *psPassword
 ** Date         : 2017/6/23
 ** Author       : PCT
 *****************************************************************************/
-teSQ_Status eZigbeeSqliteAddDoorLockRecord(teDoorLockUserType eType, uint8 u8UserID, uint32 u32Time);
+teSQ_Status
+eZigbeeSqliteAddDoorLockRecord(teDoorLockUserType eType, uint8 u8UserID, uint32 u32Time, const char *psPassword);
 teSQ_Status eZigbeeSqliteDoorLockRetrieveRecord(uint8 u8UserID, tsDoorLockRecord *psRecord);
 teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(tsDoorLockRecord *psRecordHeader);
+teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordListFree(tsDoorLockRecord *psRecordHeader);
 
 /*****************************************************************************
 ** Prototype    : eZigbeeSqliteAddDoorLockPassword
@@ -204,7 +208,7 @@ teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(tsDoorLockRecord *psRecordHe
 teSQ_Status eZigbeeSqliteAddDoorLockPassword(uint8 u8PasswordID, uint8 u8Worked, uint8 u8Available, uint32 u32StartTime,
                                              uint32 u32EndTime, uint8 u8PasswordLen, const char *psPassword);
 teSQ_Status eZigbeeSqliteDelDoorLockPassword(uint8 u8PasswordID);
-teSQ_Status eZigbeeSqliteUpdateDoorLockPassword(uint8 u8PasswordID, uint8 u8Available, uint8 u8Worked);
+teSQ_Status eZigbeeSqliteUpdateDoorLockPassword(uint8 u8PasswordID, uint8 u8Available, uint8 u8Worked, uint8 u8UsedNum);
 teSQ_Status eZigbeeSqliteDoorLockRetrievePassword(uint8 u8PasswordID, tsTemporaryPassword *psPassword);
 teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordList(tsTemporaryPassword *psPasswordHeader);
 teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordListFree(tsTemporaryPassword *psPasswordHeader);

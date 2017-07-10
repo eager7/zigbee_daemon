@@ -69,17 +69,20 @@ typedef struct {
     uint8 u8UserId;
     teDoorLockUserType eType;
     uint32 u32Time;
+    uint8 auPassword[DOOR_LOCK_PASSWORD_LEN];
     struct dl_list list;
 } tsDoorLockRecord;
 
 typedef struct {
-    uint8 u8PasswordId;
-    uint8 u8Worked;
-    uint8 u8AvailableNum;
+    uint8  u8PasswordId;
+    uint8  u8Worked;
+    uint8  u8AvailableNum;
+    uint8  u8UseNum;
+    uint32 u32TimeCreation;
     uint32 u32TimeStart;
     uint32 u32TimeEnd;
-    uint8 u8PasswordLen;
-    uint8 auPassword[DOOR_LOCK_PASSWORD_LEN];
+    uint8  u8PasswordLen;
+    uint8  auPassword[DOOR_LOCK_PASSWORD_LEN];
     struct dl_list list;
 } tsTemporaryPassword;
 /****************************************************************************/

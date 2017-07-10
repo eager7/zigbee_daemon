@@ -858,6 +858,8 @@ static teSS_Status eSocketHandleDoorLockGetPassword(int iSocketFd, struct json_o
                 struct json_object *psJosnTemp = json_object_new_object();
                 json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8PasswordId));
                 json_object_object_add(psJosnTemp, JSON_PASSWORD_AVAILABLE,json_object_new_int(Temp->u8AvailableNum));
+                json_object_object_add(psJosnTemp, JSON_PASSWORD_USED,json_object_new_int(Temp->u8UseNum));
+                json_object_object_add(psJosnTemp, JSON_TIME_CREATION,json_object_new_int(Temp->u32TimeCreation));
                 json_object_object_add(psJosnTemp, JSON_TIME_START,json_object_new_int(Temp->u32TimeStart));
                 json_object_object_add(psJosnTemp, JSON_TIME_END,json_object_new_int(Temp->u32TimeEnd));
                 json_object_object_add(psJosnTemp, JSON_PASSWORD_LEN,json_object_new_int(Temp->u8PasswordLen));
@@ -870,6 +872,8 @@ static teSS_Status eSocketHandleDoorLockGetPassword(int iSocketFd, struct json_o
             struct json_object *psJosnTemp = json_object_new_object();
             json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(sPasswordHeader.u8PasswordId));
             json_object_object_add(psJosnTemp, JSON_PASSWORD_AVAILABLE,json_object_new_int(sPasswordHeader.u8AvailableNum));
+            json_object_object_add(psJosnTemp, JSON_PASSWORD_USED,json_object_new_int(sPasswordHeader.u8UseNum));
+            json_object_object_add(psJosnTemp, JSON_TIME_CREATION,json_object_new_int(sPasswordHeader.u32TimeCreation));
             json_object_object_add(psJosnTemp, JSON_TIME_START,json_object_new_int(sPasswordHeader.u32TimeStart));
             json_object_object_add(psJosnTemp, JSON_TIME_END,json_object_new_int(sPasswordHeader.u32TimeEnd));
             json_object_object_add(psJosnTemp, JSON_PASSWORD_LEN,json_object_new_int(sPasswordHeader.u8PasswordLen));
@@ -901,7 +905,7 @@ static teSS_Status eSocketHandleDoorLockGetRecord(int iSocketFd, struct json_obj
             json_object_object_get_ex(psJsonMessage,JSON_NUM, &psJsonNum))
     {
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
-        uint8 u8RecordID = (uint8)json_object_get_int(psJsonID);
+        uint8 u8UserID = (uint8)json_object_get_int(psJsonID);
         uint8 u8Number = (uint8)json_object_get_int(psJsonNum);
 
         struct json_object *psJsonResult, *psJsonRecord, *psJsonArray = NULL;
@@ -925,10 +929,32 @@ static teSS_Status eSocketHandleDoorLockGetRecord(int iSocketFd, struct json_obj
         json_object_object_add(psJsonResult, JSON_MAC,json_object_new_int64((int64_t)u64DeviceAddress));
 
         tsDoorLockRecord sRecordHeader = {0};
-        if(u8RecordID == 0xff){//All Users' Record
-            //eZigbeeSqliteDoorLockRetrieveRecordList();
+        if(u8UserID == 0xff){//All Users' Record
+            eZigbeeSqliteDoorLockRetrieveRecordList(&sRecordHeader);
+            tsDoorLockRecord *Temp = NULL;
+            dl_list_for_each(Temp, &sRecordHeader.list, tsDoorLockRecord, list){
+                struct json_object *psJosnTemp = json_object_new_object();
+                json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8UserId));
+                json_object_object_add(psJosnTemp, JSON_TYPE,json_object_new_int(Temp->eType));
+                long int lTime = Temp->u32Time;
+                struct tm *pTime = localtime(&lTime);
+                json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_string(asctime(pTime)));
+                if(Temp->eType == E_RECORD_TYPE_TEMPORARY_PASSWORD)
+                    json_object_object_add(psJosnTemp, PASSWORD_DATA,json_object_new_string((const char *)Temp->auPassword));
+                json_object_array_add(psJsonArray, psJosnTemp);
+            }
+            eZigbeeSqliteDoorLockRetrieveRecordListFree(&sRecordHeader);
         } else {
-            //eZigbeeSqliteDoorLockRetrieveRecord();
+            eZigbeeSqliteDoorLockRetrieveRecord(u8UserID, &sRecordHeader);
+            struct json_object *psJosnTemp = json_object_new_object();
+            json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(sRecordHeader.u8UserId));
+            json_object_object_add(psJosnTemp, JSON_TYPE,json_object_new_int(sRecordHeader.eType));
+            long int lTime = sRecordHeader.u32Time;
+            struct tm *pTime = localtime(&lTime);
+            json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_string(asctime(pTime)));
+            if(sRecordHeader.eType == E_RECORD_TYPE_TEMPORARY_PASSWORD)
+                json_object_object_add(psJosnTemp, PASSWORD_DATA,json_object_new_string((const char *)sRecordHeader.auPassword));
+            json_object_array_add(psJsonArray, psJosnTemp);
         }
         json_object_object_add(psJsonResult, JSON_RECORDS,psJsonArray);
         DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
