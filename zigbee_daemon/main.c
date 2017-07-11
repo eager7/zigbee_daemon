@@ -28,16 +28,12 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
-#include <door_lock.h>
-
-#include "zigbee_node.h"
 #include "door_lock.h"
 #include "zigbee_devices.h"
 #include "zigbee_socket.h"
 #include "zigbee_discovery.h"
 #include "zigbee_cloud.h"
 #include "coordinator.h"
-
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -74,104 +70,44 @@ tsDeviceIDMap asDeviceIDMap[] =
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
-static void vPrintUsage(char *argv[]);
-static void vQuitSignalHandler (int sig);
-static void vDaemonizeInit(const char *cmd);
-static void vGetOption(int argc, char *argv[]);
 /****************************************************************************/
 /***        Locate   Functions                                            ***/
 /****************************************************************************/
-int main(int argc, char *argv[])
+static void vPrintUsage(char *argv[])
 {
-    DBG_vPrintln(DBG_MAIN, "This is zigbee daemon program...\n");
-    vGetOption(argc, argv);
-    
-    if ((!pSerialDevice) || (0 == u32BaudRate)){
-        vPrintUsage(argv);
-    }
-    
-    if (daemonize){
-        WAR_vPrintln(T_TRUE, "Enter Daemon Mode...\n");
-        vDaemonizeInit("ZigbeeDaemon");
-    }
+    fprintf(stderr, "\t******************************************************\n");
+    fprintf(stderr, "\t*         zigbee-daemon pVersion: %s              *\n", pVersion);
+    fprintf(stderr, "\t******************************************************\n");
+    fprintf(stderr, "\t************************Release***********************\n");
 
-    signal(SIGINT,  vQuitSignalHandler);/* Install signal handlers */
-    signal(SIGTERM, vQuitSignalHandler);
-    mLogInitSetPid("[TB]");
-        
-    DBG_vPrintln(DBG_MAIN, "Init The Program with dev = %s, baud = %d\n", pSerialDevice, u32BaudRate);
-    CHECK_RESULT(eZCB_Init(pSerialDevice, u32BaudRate), E_ZB_OK, -1);
-    CHECK_RESULT(eZigbeeSqliteInit(pZigbeeSqlitePath), E_SQ_OK, -1);
-    CHECK_RESULT(eSocketServer_Init(), E_SS_OK, -1);
-    CHECK_RESULT(eZigbeeDiscoveryInit(), E_DISCOVERY_OK, -1);
-    CHECK_RESULT(eZigbeeCloudInit(), E_CLOUD_OK, -1);
+    fprintf(stderr, "Usage: %s\n", argv[0]);
+    fprintf(stderr, "  Arguments:\n");
+    fprintf(stderr, "    -s --serial        <serial device>     Serial device for 15.4 module, e.g. /dev/tts/1\n");
+    fprintf(stderr, "  Options:\n");
+    fprintf(stderr, "    -h --help                              Print this help.\n");
+    fprintf(stderr, "    -f --front                             Run in front.\n");
+    fprintf(stderr, "    -v --DBG_MAIN     <DBG_MAIN>         Verbosity level. Increases amount of debug information. Default off.\n");
+    fprintf(stderr, "    \t 01----main \n");
+    fprintf(stderr, "    \t 03----discovery \n");
+    fprintf(stderr, "    \t 04----sqlite \n");
+    fprintf(stderr, "    \t 05----devices init & operator\n");
+    fprintf(stderr, "    \t 06----host & node communication\n");
+    fprintf(stderr, "    \t 07----socket\n");
+    fprintf(stderr, "    \t 07----control bridge & node\n");
+    fprintf(stderr, "    \t 08----print node\n");
+    fprintf(stderr, "    \t 10----queue\n");
+    fprintf(stderr, "    \t 11----thread & lock \n");
+    fprintf(stderr, "    \t 12----serial communication & serial callback\n");
+    fprintf(stderr, "    \t 13----serial\n");
 
-    while(bRunning){
-        DBG_vPrintln(DBG_MAIN, "Communication with Coordinator...\n");
-        if(E_ZB_OK == eZCB_EstablishComm()){
-            DBG_vPrintln(DBG_MAIN, "eZCB_EstablishComm Success\n");
-            break;
-        }
-    }
+    fprintf(stderr, "    -B --baud          <baud rate>         Baud rate to communicate with border router node at. Default 230400\n");
+    fprintf(stderr, "    -D --datebase      <sqlite>            Datebase of sqlite3. Default None\n");
 
-    /** Initialize End Device */
-    tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
-    memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
-    eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
-    dl_list_for_each(psZigbeeItem, &psZigbeeNode.list, tsZigbeeBase, list)
-    {
-        INF_vPrintln(DBG_MAIN, "[DEVICEID]:0X%04X, [NAME]:%s, [MAC]:0X%016llX, [ADDR]:0X%04X, [OnLine]:%d, [Type]:%d",
-                     psZigbeeItem->u16DeviceID, psZigbeeItem->auDeviceName, psZigbeeItem->u64IEEEAddress,
-                     psZigbeeItem->u16ShortAddress, psZigbeeItem->u8DeviceOnline, psZigbeeItem->u8MacCapability);
-        //use u8DeviceOnline to avoid inited repetitive
-        if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
-            tsZigbeeNodes *psZigbeeAdd = NULL;
-            eZigbee_AddNode(psZigbeeItem->u16ShortAddress,
-                            psZigbeeItem->u64IEEEAddress,
-                            psZigbeeItem->u16DeviceID,
-                            psZigbeeItem->u8MacCapability,
-                            &psZigbeeAdd);
-            eEndDeviceInitialize(psZigbeeAdd);
-        }
-    }
-    eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
-
-    /** Check temporary password per 10 seconds */
-    while(bRunning){
-        sleep(10);
-
-        uint32 u32TimeNow = (uint32)time((time_t*)NULL);
-
-        tsTemporaryPassword sPasswordTemp, sPasswordHeader, *psTemp;
-        eZigbeeSqliteDoorLockRetrievePasswordList(&sPasswordHeader);
-        dl_list_for_each(psTemp, &sPasswordHeader.list, tsTemporaryPassword, list){
-            if(psTemp->u8Worked == 0){
-                //DBG_vPrintln(DBG_MAIN, "Now time:%llu, Start:%llu, End:%llu\n", u32TimeNow,psTemp->u32TimeStart,psTemp->u32TimeEnd);
-                if(psTemp->u32TimeStart <= u32TimeNow && psTemp->u32TimeEnd >= u32TimeNow){
-                    //DBG_vPrintln(DBG_MAIN, "Update Password:[%d][%d]\n", psTemp->u8PasswordId, psTemp->u8AvailableNum);
-                    eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 1, psTemp->u8UseNum);
-                    eZCB_SetDoorLockPassword(NULL,psTemp->u8PasswordId,T_TRUE,psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
-                }
-            } else {
-                if((psTemp->u8AvailableNum == 0) || (psTemp->u32TimeEnd < u32TimeNow)){
-                    //DBG_vPrintln(DBG_MAIN, "Delete Password:[%d][%llu]\n", psTemp->u8AvailableNum, psTemp->u32TimeEnd);
-                    //eZigbeeSqliteDelDoorLockPassword(psTemp->u8PasswordId);
-                    eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
-                }
-            }
-        }
-    }
-    eZCB_Finish();
-    eZigbeeSqliteFinished();
-    eSocketServer_Destroy();
-    eZigbeeDiscoveryFinished();
-    eZigbeeCloudFinished();
-
-    sleep(1);
-    DBG_vPrintln(DBG_MAIN, "Main thread will exiting\n");
-
-	return 0;
+    fprintf(stderr, "  Zigbee Network options:\n");
+    fprintf(stderr, "    -c --channel       <channel>           802.15.4 channel to run on. Default %d.\n", u32Channel);
+    exit(0);
 }
+
 /**
  * Parse the user's parameters, and set the progress state
  * */
@@ -318,39 +254,89 @@ static void vDaemonizeInit(const char *cmd)
     }
 }
 
-static void vPrintUsage(char *argv[])
+int main(int argc, char *argv[])
 {
-    fprintf(stderr, "\t******************************************************\n");
-    fprintf(stderr, "\t*         zigbee-daemon pVersion: %s              *\n", pVersion);
-    fprintf(stderr, "\t******************************************************\n");
-    fprintf(stderr, "\t************************Release***********************\n");
-    
-    fprintf(stderr, "Usage: %s\n", argv[0]);
-    fprintf(stderr, "  Arguments:\n");
-    fprintf(stderr, "    -s --serial        <serial device>     Serial device for 15.4 module, e.g. /dev/tts/1\n");
-    fprintf(stderr, "  Options:\n");
-    fprintf(stderr, "    -h --help                              Print this help.\n");
-    fprintf(stderr, "    -f --front                             Run in front.\n");
-    fprintf(stderr, "    -v --DBG_MAIN     <DBG_MAIN>         Verbosity level. Increases amount of debug information. Default off.\n");
-    fprintf(stderr, "    \t 01----main \n");
-    fprintf(stderr, "    \t 03----discovery \n");
-    fprintf(stderr, "    \t 04----sqlite \n");
-    fprintf(stderr, "    \t 05----devices init & operator\n");
-    fprintf(stderr, "    \t 06----host & node communication\n");
-    fprintf(stderr, "    \t 07----socket\n");
-    fprintf(stderr, "    \t 07----control bridge & node\n");
-    fprintf(stderr, "    \t 08----print node\n");
-    fprintf(stderr, "    \t 10----queue\n");
-    fprintf(stderr, "    \t 11----thread & lock \n");
-    fprintf(stderr, "    \t 12----serial communication & serial callback\n");
-    fprintf(stderr, "    \t 13----serial\n");
-    
-    fprintf(stderr, "    -B --baud          <baud rate>         Baud rate to communicate with border router node at. Default 230400\n");
-    fprintf(stderr, "    -D --datebase      <sqlite>            Datebase of sqlite3. Default None\n");
+    DBG_vPrintln(DBG_MAIN, "This is zigbee daemon program...\n");
+    vGetOption(argc, argv);
 
-    fprintf(stderr, "  Zigbee Network options:\n");
-    fprintf(stderr, "    -c --channel       <channel>           802.15.4 channel to run on. Default %d.\n", u32Channel);
-    exit(0);
+    if ((!pSerialDevice) || (0 == u32BaudRate)){
+        vPrintUsage(argv);
+    }
+
+    if (daemonize){
+        WAR_vPrintln(T_TRUE, "Enter Daemon Mode...\n");
+        vDaemonizeInit("ZigbeeDaemon");
+    }
+
+    signal(SIGINT,  vQuitSignalHandler);/* Install signal handlers */
+    signal(SIGTERM, vQuitSignalHandler);
+    mLogInitSetPid("[TB]");
+
+    DBG_vPrintln(DBG_MAIN, "Init The Program with dev = %s, baud = %d\n", pSerialDevice, u32BaudRate);
+    CHECK_RESULT(eZCB_Init(pSerialDevice, u32BaudRate), E_ZB_OK, -1);
+    CHECK_RESULT(eZigbeeSqliteInit(pZigbeeSqlitePath), E_SQ_OK, -1);
+    CHECK_RESULT(eSocketServer_Init(), E_SS_OK, -1);
+    CHECK_RESULT(eZigbeeDiscoveryInit(), E_DISCOVERY_OK, -1);
+    CHECK_RESULT(eZigbeeCloudInit(), E_CLOUD_OK, -1);
+
+    while(bRunning){
+        DBG_vPrintln(DBG_MAIN, "Communication with Coordinator...\n");
+        if(E_ZB_OK == eZCB_EstablishComm()){
+            DBG_vPrintln(DBG_MAIN, "eZCB_EstablishComm Success\n");
+            break;
+        }
+        sleep(1);
+    }
+
+    /** Initialize End Device */
+    tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
+    memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
+    eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
+    dl_list_for_each(psZigbeeItem, &psZigbeeNode.list, tsZigbeeBase, list)
+    {
+        INF_vPrintln(DBG_MAIN, "[DEVICEID]:0X%04X, [NAME]:%s, [MAC]:0X%016llX, [ADDR]:0X%04X, [OnLine]:%d, [Type]:%d",
+                     psZigbeeItem->u16DeviceID, psZigbeeItem->auDeviceName, psZigbeeItem->u64IEEEAddress,
+                     psZigbeeItem->u16ShortAddress, psZigbeeItem->u8DeviceOnline, psZigbeeItem->u8MacCapability);
+        /** use u8DeviceOnline to avoid inited repetitive */
+        if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
+            tsZigbeeNodes *psZigbeeAdd = NULL;
+            eZigbee_AddNode(psZigbeeItem->u16ShortAddress,
+                            psZigbeeItem->u64IEEEAddress,
+                            psZigbeeItem->u16DeviceID,
+                            psZigbeeItem->u8MacCapability,
+                            &psZigbeeAdd);
+            eEndDeviceInitialize(psZigbeeAdd);
+        }
+    }
+    eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
+
+    /** Check temporary password per 10 seconds */
+    while(bRunning){
+        sleep(10);
+
+        uint32 u32TimeNow = (uint32)time((time_t*)NULL);
+        tsTemporaryPassword sPasswordTemp, sPasswordHeader, *psTemp;
+        eZigbeeSqliteDoorLockRetrievePasswordList(&sPasswordHeader);
+        dl_list_for_each(psTemp, &sPasswordHeader.list, tsTemporaryPassword, list){
+            if(psTemp->u8Worked == 0){
+                if(psTemp->u32TimeStart <= u32TimeNow && psTemp->u32TimeEnd >= u32TimeNow){
+                    eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 1, psTemp->u8UseNum);
+                    eZCB_SetDoorLockPassword(NULL,psTemp->u8PasswordId,T_TRUE,psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
+                }
+            } else {
+                if((psTemp->u8AvailableNum == 0) || (psTemp->u32TimeEnd < u32TimeNow)){
+                    eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
+                }
+            }
+        }
+    }
+    eZCB_Finish();
+    eZigbeeSqliteFinished();
+    eSocketServer_Destroy();
+    eZigbeeDiscoveryFinished();
+    eZigbeeCloudFinished();
+
+    DBG_vPrintln(DBG_MAIN, "Main thread will exiting\n");
+
+    return 0;
 }
-
-
