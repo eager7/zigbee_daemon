@@ -540,6 +540,36 @@ static void vZCB_HandleDeviceLeave(void *pvUser, uint16 u16Length, void *pvMessa
     
     return;
 }
+
+static void vZCB_HandleAlarm(void *pvUser, uint16 u16Length, void *pvMessage)
+{
+    DBG_vPrintln(DBG_ZCB, "************[0x004D]vZCB_HandleDeviceLeave\n");
+    struct _tsAlarm {
+        uint8     u8Sequence;
+        uint8     u8SrcEndpoint;
+        uint16    u16ClusterID;
+        uint16    u16ShortAddress;
+        uint8     u8AlarmCode;
+        uint16    u16AlarmCluster;
+    } PACKED *psMessage = (struct _tsAlarm *)pvMessage;
+
+    psMessage->u16ClusterID   = ntohs(psMessage->u16ClusterID);
+    psMessage->u16ShortAddress   = ntohs(psMessage->u16ShortAddress);
+    psMessage->u16AlarmCluster   = ntohs(psMessage->u16AlarmCluster);
+
+    tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(psMessage->u16ShortAddress);
+    if(NULL == psZigbeeNode){
+        ERR_vPrintln(T_TRUE, "Can't find this node in the network!\n");
+        return;
+    }
+    //TODO:将报警信息存入数据库并通知云端
+    if(psMessage->u8AlarmCode == E_RECORD_TYPE_LOCAL_OPEN_THREATE){
+        eZigbeeSqliteAddDoorLockRecord(E_RECORD_TYPE_LOCAL_OPEN_THREATE, 0, (uint32)time((time_t*)NULL),NULL);
+    } else if(psMessage->u8AlarmCode == E_RECORD_TYPE_LOCAL_OPEN_VIOLENCE){
+        eZigbeeSqliteAddDoorLockRecord(E_RECORD_TYPE_LOCAL_OPEN_VIOLENCE, 0, (uint32)time((time_t*)NULL),NULL);
+    }
+    return;
+}
 /**
  * 处理节点主动上报的属性
  * */
@@ -724,6 +754,7 @@ teZbStatus eZCB_Init(char *cpSerialDevice, uint32 u32BaudRate)
     eSL_AddListener(E_SL_MSG_DOOR_LOCK_SET_DOOR_USER,       vZCB_HandleDoorLockSetUser,               NULL);
     eSL_AddListener(E_SL_MSG_DOOR_LOCK_STATE_REPORT,        vZCB_HandleDoorLockStateReport,           NULL);
     eSL_AddListener(E_SL_MSG_LOCK_UNLOCK_DOOR_PASSWD,       vZCB_HandleDoorLockOpenRequest,           NULL);
+    eSL_AddListener(E_SL_MSG_ALARM,                         vZCB_HandleAlarm,                         NULL);
 
     return E_ZB_OK;
 }

@@ -315,15 +315,10 @@ def GetDeviceSensorValue(address, sensor):
         mLog(E, "Error Communication with server")
         print msg
 def HandlePermitjoin():
-    command = '{"command":' + str(0x0001) + ',"sequence":0,"time":60}'
+    command = type + str(E_SS_COMMAND_OPEN_NETWORK) + ',"sequence":0,"time":60}'
     SocketSend(command)
     msg = eval(SocketReceive())
-    if msg['status'] == 0:
-        mLog(N, "HandlePermitjoin Success")
-        print msg
-    else:
-        mLog(E, "Error Communication with server")
-        print msg
+    print msg
 def RemoveDeviceNetwork(address):
     command = '{"command":' + str(0x0002) + ',"sequence":0,"device_address":' + address + ',"rejoin":0,"remove_children":1}'                                                                                        '"remove_children":1}'
     SocketSend(command)
