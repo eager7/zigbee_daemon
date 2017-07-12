@@ -300,11 +300,11 @@ int main(int argc, char *argv[])
         /** use u8DeviceOnline to avoid inited repetitive */
         if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
             tsZigbeeNodes *psZigbeeAdd = NULL;
-            eZigbee_AddNode(psZigbeeItem->u16ShortAddress,
-                            psZigbeeItem->u64IEEEAddress,
-                            psZigbeeItem->u16DeviceID,
-                            psZigbeeItem->u8MacCapability,
-                            &psZigbeeAdd);
+            eZigbeeAddNode(psZigbeeItem->u16ShortAddress,
+                           psZigbeeItem->u64IEEEAddress,
+                           psZigbeeItem->u16DeviceID,
+                           psZigbeeItem->u8MacCapability,
+                           &psZigbeeAdd);
             eEndDeviceInitialize(psZigbeeAdd);
         }
     }

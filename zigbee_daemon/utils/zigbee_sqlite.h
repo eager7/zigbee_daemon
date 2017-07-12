@@ -43,12 +43,13 @@ extern "C" {
 #define TABLE_DEVICE    " TABLE_DEVICES "
 
 #define INDEX               " IndexNum "
-#define DEVICE_ID           " DeviceID "
-#define DEVICE_ADDR         " DeviceAddr "
 #define DEVICE_MAC          " DeviceMAC "
+#define DEVICE_ADDR         " DeviceAddr "
+#define DEVICE_ID           " DeviceID "
 #define DEVICE_NAME         " DeviceName "
-#define DEVICE_ONLINE       " DeviceOnline "
 #define DEVICE_CAPABILITY   " DeviceCapability "
+#define DEVICE_ONLINE       " DeviceOnline "
+#define DEVICE_INFO         " Information "
 /**
  * 门锁数据库关键词
  * */
@@ -105,6 +106,7 @@ typedef enum
     E_SQ_DEVICE_ADDR,
     E_SQ_DEVICE_ID,
     E_SQ_DEVICE_ONLINE,
+    E_SQ_DEVICE_INFO,
 } teSQ_UpdateType;
 
 typedef struct _tsZigbeeSqlite
@@ -154,8 +156,10 @@ teSQ_Status eZigbeeSqliteInit(char *pZigbeeSqlitePath);
 teSQ_Status eZigbeeSqliteFinished(void);
 teSQ_Status eZigbeeSqliteRetrieveDevicesList(tsZigbeeBase *psZigbee_Node);
 teSQ_Status eZigbeeSqliteRetrieveDevicesListFree(tsZigbeeBase *psZigbee_Node);
-teSQ_Status eZigbeeSqliteUpdateDeviceTable(tsZigbeeBase *psZigbee_Node, teSQ_UpdateType eDeviceType);
-teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddress, uint16 u16DeviceID, char *psDeviceName, uint8 u8Capability);
+teSQ_Status eZigbeeSqliteUpdateDeviceTable(tsZigbeeBase *psZigbee_Node);
+teSQ_Status eZigbeeSqliteUpdateDeviceOnline(uint64 u64IEEEAddress, uint8 u8DeviceOnline);
+teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddress, uint16 u16DeviceID, char *psDeviceName,
+                                      uint8 u8Capability, const char *psInformation);
 /*****************************************************************************
 ** Prototype    : eZigbeeSqliteAddDoorLockUser
 ** Description  : 添加门锁用户

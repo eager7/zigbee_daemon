@@ -380,7 +380,7 @@ static teSS_Status eSocketHandleLeaveNetwork(int iSocketFd, struct json_object *
         uint8 u8Rejoin = (uint8)json_object_get_int(psJsonRejoin);
         uint8 u8RemoveChildren = (uint8)json_object_get_int(psJsonChildren);
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonTemp);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceRemoveNetwork) ||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceRemoveNetwork(&psZigbeeNode->sNode, u8Rejoin, u8RemoveChildren)))
         {
@@ -466,7 +466,7 @@ static teSS_Status eSocketHandleSetLightOnOff(int iSocketFd, struct json_object 
         uint8  u8Mode = (uint8)json_object_get_int(psJsonMode);
         uint16 u16GroupID = (uint16)json_object_get_int(psJsonGroup);
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceSetOnOff)) {
             ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.DeviceSetOnOff error\n");
             return E_SS_ERROR;
@@ -494,7 +494,7 @@ static teSS_Status eSocketHandleSetLightLevel(int iSocketFd, struct json_object 
         uint8 u8Level = (uint8)json_object_get_int(psJsonLevel);
         uint16 u16GroupID = (uint16)json_object_get_int(psJsonGroup);
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode)||(NULL == psZigbeeNode->Method.preDeviceSetLevel)||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceSetLevel(&psZigbeeNode->sNode, u16GroupID, u8Level, 5)))
         {
@@ -525,7 +525,7 @@ static teSS_Status eSocketHandleSetLightRGB(int iSocketFd, struct json_object *p
         sRGB.R = (uint8)json_object_get_int(psJsonR);
         sRGB.G = (uint8)json_object_get_int(psJsonG);
         sRGB.B = (uint8)json_object_get_int(psJsonB);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode)||(NULL == psZigbeeNode->Method.preDeviceSetLightColour)||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceSetLightColour(&psZigbeeNode->sNode, u16GroupID, sRGB, 5)))
         {
@@ -549,7 +549,7 @@ static teSS_Status eSocketHandleSetClosuresState(int iSocketFd, struct json_obje
         uint8 u8Operator = (uint8)json_object_get_int(psJsonOperator);
         uint64 u64DeviceAddress = (uint8)json_object_get_int64(psJsonAddr);
 
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         if((NULL == psZigbeeNode)||(NULL == psZigbeeNode->Method.preDeviceSetWindowCovering)||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceSetWindowCovering(&psZigbeeNode->sNode, (teCLD_WindowCovering_CommandID)u8Operator)))
         {
@@ -570,7 +570,7 @@ static teSS_Status eSocketHandleGetLightLevel(int iSocketFd, struct json_object 
     if(json_object_object_get_ex(psJsonMessage,JSON_MAC, &psJsonAddr))
     {
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         uint8 u8level = 0;
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceGetLevel) ||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceGetLevel(&psZigbeeNode->sNode, &u8level)))
@@ -610,7 +610,7 @@ static teSS_Status eSocketHandleGetLightStatus(int iSocketFd, struct json_object
     if(json_object_object_get_ex(psJsonMessage,JSON_MAC, &psJsonAddr))
     {
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         uint8 u8mode = 0;
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceGetLevel) ||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceGetOnOff(&psZigbeeNode->sNode, &u8mode)))
@@ -650,7 +650,7 @@ static teSS_Status eSocketHandleGetLightRGB(int iSocketFd, struct json_object *p
     if(json_object_object_get_ex(psJsonMessage,JSON_MAC, &psJsonAddr))
     {
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         tsRGB sRGB;
         if((NULL == psZigbeeNode) || (NULL == psZigbeeNode->Method.preDeviceGetLevel) ||
            (E_ZB_OK != psZigbeeNode->Method.preDeviceGetLightColour(&psZigbeeNode->sNode, &sRGB))) {
@@ -698,7 +698,7 @@ static teSS_Status eSocketHandleGetSensorValue(int iSocketFd, struct json_object
     {
         teZigbee_ClusterID eSensorType = (teZigbee_ClusterID)json_object_get_int(psJsonSensor);
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         if(NULL == psZigbeeNode) {
             ERR_vPrintln(T_TRUE, "preDeviceGetOnOff callback failed\n");
             return E_SS_ERROR;
@@ -743,7 +743,7 @@ static teSS_Status eSocketHandleSetDoorLockState(int iSocketFd, struct json_obje
         uint8 u8Operator = (uint8)json_object_get_int(psJsonOperator);
         uint64 u64DeviceAddress = (uint64)json_object_get_int64(psJsonAddr);
 
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         CHECK_POINTER(psZigbeeNode, E_SS_ERROR);
         CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLock, E_SS_ERROR);
         if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLock(&psZigbeeNode->sNode, (teCLD_DoorLock_CommandID)u8Operator))
@@ -781,7 +781,7 @@ static teSS_Status eSocketHandleDoorLockAddPassword(int iSocketFd, struct json_o
         sPayload.psPassword = json_object_get_string(psJsonPassword);
         INF_vPrintln(DBG_SOCKET, "[id:%d][available:%d][passwd:%s]\n",sPayload.u8PasswordID, sPayload.u8AvailableNum, sPayload.psPassword);
 
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         CHECK_POINTER(psZigbeeNode, E_SS_ERROR);
         CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLockPassword, E_SS_ERROR);
         if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLockPassword(&psZigbeeNode->sNode, &sPayload)) {
@@ -807,7 +807,7 @@ static teSS_Status eSocketHandleDoorLockDelPassword(int iSocketFd, struct json_o
         sPayload.u8PasswordID = (uint8)json_object_get_int(psJsonID);
         sPayload.u8AvailableNum = 0;
 
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(u64DeviceAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         CHECK_POINTER(psZigbeeNode, E_SS_ERROR);
         CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLockPassword, E_SS_ERROR);
         if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLockPassword(&psZigbeeNode->sNode, &sPayload)) {

@@ -19,6 +19,7 @@
 /***        Include files                                                 ***/
 /****************************************************************************/
 #include <zigbee_zcl.h>
+#include <zigbee_node.h>
 #include "door_lock_controller.h"
 #include "zigbee_devices.h"
 #include "zigbee_sqlite.h"
@@ -147,13 +148,27 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
 
     psZigbeeNode->Method.preDeviceSetDoorLock           = eZCB_DoorLockDeviceOperator;
     psZigbeeNode->Method.preDeviceSetDoorLockPassword   = eZigbeeDeviceSetDoorLockPassword;
-    //psZigbeeNode->Method.preDeviceAttributeUpdate       = eHandleCoordinatorAttributeUpdate;
 
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress,
-                              psZigbeeNode->sNode.u16ShortAddress,
-                              psZigbeeNode->sNode.u16DeviceID,
-                              psZigbeeNode->sNode.auDeviceName,
-                              psZigbeeNode->sNode.u8MacCapability);
+    json_object *psJsonDevice = json_object_new_object();
+    json_object *psArrayEndpoint = json_object_new_array();
+    for (int i = 0; i < psZigbeeNode->sNode.u32NumEndpoints; ++i) {
+        json_object *psJsonEndpoint = json_object_new_object();
+        json_object_object_add(psJsonEndpoint, "id", json_object_new_int(psZigbeeNode->sNode.pasEndpoints[i].u8Endpoint));
+        json_object *psArrayCluster = json_object_new_array();
+        for (int j = 0; j < psZigbeeNode->sNode.pasEndpoints[i].u32NumClusters; ++j) {
+            json_object *psJsonCluster = json_object_new_object();
+            json_object_object_add(psJsonCluster, "id", json_object_new_int(psZigbeeNode->sNode.pasEndpoints[i].pasClusters[j].u16ClusterID));
+            json_object_array_add(psArrayCluster, psJsonCluster);
+        }
+        json_object_object_add(psJsonEndpoint, "cluster", psArrayCluster);
+        json_object_array_add(psArrayEndpoint, psJsonEndpoint);
+    }
+    json_object_object_add(psJsonDevice, "endpoint", psArrayEndpoint);
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, json_object_get_string(psJsonDevice));
+    json_object_put(psJsonDevice);
 
     //TODO:将还未失效的临时密码发送给协调器
     sleep(1);

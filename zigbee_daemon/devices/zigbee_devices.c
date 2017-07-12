@@ -54,7 +54,9 @@ teZbStatus eOnOffLightInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
     
     return E_ZB_OK;
 }
@@ -77,7 +79,9 @@ teZbStatus eDimmerLightInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
 
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
 
     return E_ZB_OK;
 }
@@ -101,8 +105,10 @@ teZbStatus eColourLightInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-    
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
 
     return E_ZB_OK;
 }
@@ -122,8 +128,10 @@ teZbStatus eWindowCoveringInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-    
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
 
     return E_ZB_OK;
 }
@@ -142,8 +150,10 @@ teZbStatus eTemperatureSensorInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-    
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
 
     return E_ZB_OK;
 }
@@ -163,8 +173,10 @@ teZbStatus eLightSensorInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-    
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
 
     return E_ZB_OK;
 }
@@ -184,8 +196,10 @@ teZbStatus eSimpleSensorInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-    
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
 
     return E_ZB_OK;
 }
@@ -197,8 +211,10 @@ teZbStatus eEndDeviceInitialize(tsZigbeeNodes *psZigbeeNode)
     snprintf(psZigbeeNode->sNode.auDeviceName, sizeof(psZigbeeNode->sNode.auDeviceName), "%s-%04X", "EndDevice", psZigbeeNode->sNode.u16ShortAddress);
     psZigbeeNode->Method.preDeviceGetSensorValue       = eZigbeeDeviceGetSensorValue;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
-    
-    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress, psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName, psZigbeeNode->sNode.u8MacCapability);
+
+    eZigbeeSqliteAddNewDevice(psZigbeeNode->sNode.u64IEEEAddress, psZigbeeNode->sNode.u16ShortAddress,
+                              psZigbeeNode->sNode.u16DeviceID, psZigbeeNode->sNode.auDeviceName,
+                              psZigbeeNode->sNode.u8MacCapability, NULL);
 
     return E_ZB_OK;
 }

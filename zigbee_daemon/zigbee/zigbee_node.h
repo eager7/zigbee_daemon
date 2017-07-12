@@ -105,6 +105,7 @@ typedef struct   /* Zigbee Node base attribute */
     
     uint32              u32NumGroups;
     uint16              *pau16Groups;
+    char *              psInfo;
     struct dl_list      list;
 } tsZigbeeBase;
 
@@ -223,7 +224,8 @@ typedef teZbStatus (*tpreDeviceInitialise)(tsZigbeeNodes *psZigbeeNode);
 ** Date         : 2017/2/28
 ** Author       : PCT
 *****************************************************************************/
-teZbStatus eZigbee_AddNode(uint16 u16ShortAddress, uint64 u64IEEEAddress, uint16 u16DeviceID, uint8 u8MacCapability, tsZigbeeNodes **ppsZCBNode);
+teZbStatus eZigbeeAddNode(uint16 u16ShortAddress, uint64 u64IEEEAddress, uint16 u16DeviceID, uint8 u8MacCapability,
+                          tsZigbeeNodes **ppsZCBNode);
 /*****************************************************************************
 ** Prototype    : eZigbee_RemoveNode
 ** Description  : 在设备列表中移除一个节点
@@ -235,8 +237,8 @@ teZbStatus eZigbee_AddNode(uint16 u16ShortAddress, uint64 u64IEEEAddress, uint16
 ** Date         : 2017/2/28
 ** Author       : PCT
 *****************************************************************************/
-teZbStatus eZigbee_RemoveNode(tsZigbeeNodes *psZigbeeNode);
-teZbStatus eZigbee_RemoveAllNodes(void);
+teZbStatus eZigbeeRemoveNode(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eZigbeeRemoveAllNodes(void);
 /*****************************************************************************
 ** Prototype    : eZigbee_NodeAddEndpoint
 ** Description  : 对节点添加端点数据，用于后续发送命令时查询
@@ -250,7 +252,8 @@ teZbStatus eZigbee_RemoveAllNodes(void);
 ** Date         : 2017/2/28
 ** Author       : PCT
 *****************************************************************************/
-teZbStatus eZigbee_NodeAddEndpoint(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ProfileID, tsNodeEndpoint **ppsEndpoint);
+teZbStatus eZigbeeNodeAddEndpoint(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ProfileID,
+                                  tsNodeEndpoint **ppsEndpoint);
 /*****************************************************************************
 ** Prototype    : eZigbee_NodeAddCluster
 ** Description  : 对端点添加Cluster
@@ -264,14 +267,27 @@ teZbStatus eZigbee_NodeAddEndpoint(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint,
 ** Date         : 2017/2/28
 ** Author       : PCT
 *****************************************************************************/
-teZbStatus eZigbee_NodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID);
-teZbStatus eZigbee_NodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID, uint16 u16AttributeID);
-teZbStatus eZigbee_NodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID, uint8 u8CommandID); 
-teZbStatus eZigbee_GetEndpoints(tsZigbeeBase *psZigbee_Node, teZigbee_ClusterID eClusterID, uint8 *pu8Src, uint8 *pu8Dst);
-tsNodeEndpoint *psZigbee_NodeFindEndpoint(tsZigbeeBase *psZigbeeNode, uint16 u16ClusterID);
-tsZigbeeNodes *psZigbee_FindNodeByShortAddress(uint16 u16ShortAddress);
-tsZigbeeNodes *psZigbee_FindNodeByIEEEAddress(uint64 u64IEEEAddress);
-void vZigbee_PrintNode(tsZigbeeBase *psNode);
+teZbStatus eZigbeeNodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID);
+teZbStatus eZigbeeNodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID,
+                                   uint16 u16AttributeID);
+teZbStatus eZigbeeNodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID, uint8 u8CommandID);
+teZbStatus eZigbeeGetEndpoints(tsZigbeeBase *psZigbee_Node, teZigbee_ClusterID eClusterID, uint8 *pu8Src, uint8 *pu8Dst);
+/*****************************************************************************
+** Prototype    : psZigbeeNodeFindEndpoint
+** Description  : 检查节点是否支持Cluster，如果支持返回cluster所在的endpoint结构体
+** Input        : psZigbeeNode, 节点指针
+ *                u16ClusterID，Cluster ID
+** Output       : none
+** Return Value : 成功，返回cluster所在的endpoint指针，否则返回NULL
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
+tsNodeEndpoint *psZigbeeNodeFindEndpoint(tsZigbeeBase *psZigbeeNode, uint16 u16ClusterID);
+tsZigbeeNodes *psZigbeeFindNodeByShortAddress(uint16 u16ShortAddress);
+tsZigbeeNodes *psZigbeeFindNodeByIEEEAddress(uint64 u64IEEEAddress);
+void vZigbeePrintNode(tsZigbeeBase *psNode);
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

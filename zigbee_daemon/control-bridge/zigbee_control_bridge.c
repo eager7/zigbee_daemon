@@ -165,14 +165,14 @@ static void vZCB_InitZigbeeNodeInfo(tsZigbeeNodes *psZigbeeNode, uint16 u16Devic
 static void vZCB_AddNodeIntoNetwork(uint16 u16ShortAddress, uint64 u64IEEEAddress, uint8 u8MacCapability)
 {
     tsZigbeeNodes *psZigbeeNodeTemp = NULL;
-    psZigbeeNodeTemp = psZigbee_FindNodeByShortAddress(u16ShortAddress);
+    psZigbeeNodeTemp = psZigbeeFindNodeByShortAddress(u16ShortAddress);
     
     if ((NULL != psZigbeeNodeTemp)&&(0 != psZigbeeNodeTemp->sNode.u16DeviceID) ){//New Nodes
         DBG_vPrintln(DBG_ZCB, "The Node:0x%04x already in the network\n", psZigbeeNodeTemp->sNode.u16ShortAddress);
         return;
     }
-    
-    eZigbee_AddNode(u16ShortAddress, u64IEEEAddress, 0x0000, u8MacCapability, &psZigbeeNodeTemp);
+
+    eZigbeeAddNode(u16ShortAddress, u64IEEEAddress, 0x0000, u8MacCapability, &psZigbeeNodeTemp);
     if(u8MacCapability & E_ZB_MAC_CAPABILITY_FFD){ //router, we need get its' device id
         if(0 == psZigbeeNodeTemp->sNode.u16DeviceID){ //unfinished node
             DBG_vPrintln(DBG_ZCB, "eZCB_MatchDescriptorRequest\n");
@@ -207,13 +207,14 @@ static void vZCB_HandleNodeClusterList(void *pvUser, uint16 u16Length, void *pvM
                 psClusterList->u16ProfileID);
     
     eLockLock(&sControlBridge.mutex); //lock Coordinator Node
-    if (eZigbee_NodeAddEndpoint(&sControlBridge.sNode, psClusterList->u8Endpoint, psClusterList->u16ProfileID, NULL) != E_ZB_OK) {
+    if (eZigbeeNodeAddEndpoint(&sControlBridge.sNode, psClusterList->u8Endpoint, psClusterList->u16ProfileID, NULL) != E_ZB_OK) {
         goto done;
     }
     iPosition = sizeof(uint8) + sizeof(uint16);
     while(iPosition < u16Length)
     {
-        if (eZigbee_NodeAddCluster(&sControlBridge.sNode, psClusterList->u8Endpoint, ntohs(psClusterList->au16ClusterList[iCluster])) != E_ZB_OK) {
+        if (eZigbeeNodeAddCluster(&sControlBridge.sNode, psClusterList->u8Endpoint,
+                                  ntohs(psClusterList->au16ClusterList[iCluster])) != E_ZB_OK) {
             goto done;
         }
         iPosition += sizeof(uint16);
@@ -250,8 +251,9 @@ static void vZCB_HandleNodeClusterAttributeList(void *pvUser, uint16 u16Length, 
     iPosition = sizeof(uint8) + sizeof(uint16) + sizeof(uint16);
     while(iPosition < u16Length)
     {
-        if (eZigbee_NodeAddAttribute(&sControlBridge.sNode, psClusterAttributeList->u8Endpoint, 
-            psClusterAttributeList->u16ClusterID, ntohs(psClusterAttributeList->au16AttributeList[iAttribute])) != E_ZB_OK) {
+        if (eZigbeeNodeAddAttribute(&sControlBridge.sNode, psClusterAttributeList->u8Endpoint,
+                                    psClusterAttributeList->u16ClusterID,
+                                    ntohs(psClusterAttributeList->au16AttributeList[iAttribute])) != E_ZB_OK) {
             goto done;
         }
         iPosition += sizeof(uint16);
@@ -289,10 +291,10 @@ static void vZCB_HandleNodeCommandIDList(void *pvUser, uint16 u16Length, void *p
     iPosition = sizeof(uint8) + sizeof(uint16) + sizeof(uint16);
     while(iPosition < u16Length)
     {
-        if (eZigbee_NodeAddCommand(&sControlBridge.sNode,
-                                   psCommandIDList->u8Endpoint,
-                                   psCommandIDList->u16ClusterID,
-                                   psCommandIDList->au8CommandList[iCommand]) != E_ZB_OK) {
+        if (eZigbeeNodeAddCommand(&sControlBridge.sNode,
+                                  psCommandIDList->u8Endpoint,
+                                  psCommandIDList->u16ClusterID,
+                                  psCommandIDList->au8CommandList[iCommand]) != E_ZB_OK) {
             goto done;
         }
         iPosition += sizeof(uint8);
@@ -392,9 +394,9 @@ static void vZCB_HandleNetworkJoined(void *pvUser, uint16 u16Length, void *pvMes
 
     DBG_vPrintln(DBG_ZCB, "Node Joined 0x%04X (0x%016llX)\n",
                         sControlBridge.sNode.u16ShortAddress, 
-                        (unsigned long long int)sControlBridge.sNode.u64IEEEAddress);    
+                        (unsigned long long int)sControlBridge.sNode.u64IEEEAddress);
 
-    vZigbee_PrintNode(&sControlBridge.sNode);
+    vZigbeePrintNode(&sControlBridge.sNode);
     asDeviceIDMap[0].prInitializeRoutine(&sControlBridge);
     eLockunLock(&sControlBridge.mutex);
 }
@@ -442,14 +444,14 @@ static void vZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, v
 
     psMatchDescriptorResponse->u16ShortAddress  = ntohs(psMatchDescriptorResponse->u16ShortAddress);
     if (psMatchDescriptorResponse->u8NumEndpoints) /* if endpoint's number is 0, this is a invaild device */{
-        tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByShortAddress(psMatchDescriptorResponse->u16ShortAddress);
+        tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psMatchDescriptorResponse->u16ShortAddress);
         if((NULL == psZigbeeNode) || (psZigbeeNode->sNode.u16DeviceID != 0)){
             return ;
         }
         eLockLock(&psZigbeeNode->mutex);
         for (int i = 0; i < psMatchDescriptorResponse->u8NumEndpoints; i++) {
             /* Add an endpoint to the device for each response in the match descriptor response */
-            eZigbee_NodeAddEndpoint(&psZigbeeNode->sNode, psMatchDescriptorResponse->au8Endpoints[i], 0, NULL);            
+            eZigbeeNodeAddEndpoint(&psZigbeeNode->sNode, psMatchDescriptorResponse->au8Endpoints[i], 0, NULL);
         }
         eLockunLock(&psZigbeeNode->mutex);    
         
@@ -458,7 +460,7 @@ static void vZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, v
                 usleep(500);
                 if (eZCB_SimpleDescriptorRequest(&psZigbeeNode->sNode, psZigbeeNode->sNode.pasEndpoints[i].u8Endpoint) != E_ZB_OK){
                     ERR_vPrintln(T_TRUE, "Failed to read endpoint simple descriptor - requeue\n");
-                    eZigbee_RemoveNode(psZigbeeNode);
+                    eZigbeeRemoveNode(psZigbeeNode);
                     return ;
                 }
             }
@@ -494,22 +496,23 @@ static void vZCB_HandleSimpleDescriptorResponse(void *pvUser, uint16 u16Length, 
     DBG_vPrintln(DBG_ZCB, "Get Simple Desciptor response for Endpoint %d to 0x%04X\n",
         psSimpleDescriptorResponse->u8Endpoint, psSimpleDescriptorResponse->u16ShortAddress);
 
-    tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByShortAddress(psSimpleDescriptorResponse->u16ShortAddress);
+    tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psSimpleDescriptorResponse->u16ShortAddress);
     if((NULL == psZigbeeNode) || (psZigbeeNode->sNode.u16DeviceID != 0)){
         return ;
     }
-    if (eZigbee_NodeAddEndpoint(&psZigbeeNode->sNode, 
-        psSimpleDescriptorResponse->u8Endpoint, ntohs(psSimpleDescriptorResponse->u16ProfileID), NULL) != E_ZB_OK) {
-        ERR_vPrintln(T_TRUE, "eZigbee_NodeAddEndpoint error\n");
-        eZigbee_RemoveNode(psZigbeeNode);
+    if (eZigbeeNodeAddEndpoint(&psZigbeeNode->sNode,
+                               psSimpleDescriptorResponse->u8Endpoint, ntohs(psSimpleDescriptorResponse->u16ProfileID),
+                               NULL) != E_ZB_OK) {
+        ERR_vPrintln(T_TRUE, "eZigbeeNodeAddEndpoint error\n");
+        eZigbeeRemoveNode(psZigbeeNode);
         return ;
     }
 
     for (int i = 0; i < psSimpleDescriptorResponse->sInputClusters.u8ClusterCount; i++){
         uint16 u16ClusterID = ntohs(psSimpleDescriptorResponse->sInputClusters.au16Clusters[i]);
-        if (eZigbee_NodeAddCluster(&psZigbeeNode->sNode, psSimpleDescriptorResponse->u8Endpoint, u16ClusterID) != E_ZB_OK){
-            ERR_vPrintln(T_TRUE, "eZigbee_NodeAddCluster error\n");
-            eZigbee_RemoveNode(psZigbeeNode);
+        if (eZigbeeNodeAddCluster(&psZigbeeNode->sNode, psSimpleDescriptorResponse->u8Endpoint, u16ClusterID) != E_ZB_OK){
+            ERR_vPrintln(T_TRUE, "eZigbeeNodeAddCluster error\n");
+            eZigbeeRemoveNode(psZigbeeNode);
             return ;
         }
     }
@@ -528,15 +531,14 @@ static void vZCB_HandleDeviceLeave(void *pvUser, uint16 u16Length, void *pvMessa
     
     psMessage->u64IEEEAddress   = be64toh(psMessage->u64IEEEAddress);
 
-    tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(psMessage->u64IEEEAddress);
+    tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(psMessage->u64IEEEAddress);
     if(NULL == psZigbeeNode){
         ERR_vPrintln(T_TRUE, "Can't find this node in the network!\n");
         return;
     }
-    psZigbeeNode->sNode.u8DeviceOnline = 0;
-    eZigbeeSqliteUpdateDeviceTable(&psZigbeeNode->sNode, E_SQ_DEVICE_ONLINE);
-    
-    if(psZigbeeNode) eZigbee_RemoveNode(psZigbeeNode);
+    eZigbeeSqliteUpdateDeviceOnline(psZigbeeNode->sNode.u64IEEEAddress, 0);
+
+    if(psZigbeeNode) eZigbeeRemoveNode(psZigbeeNode);
     
     return;
 }
@@ -557,7 +559,7 @@ static void vZCB_HandleAlarm(void *pvUser, uint16 u16Length, void *pvMessage)
     psMessage->u16ShortAddress   = ntohs(psMessage->u16ShortAddress);
     psMessage->u16AlarmCluster   = ntohs(psMessage->u16AlarmCluster);
 
-    tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByIEEEAddress(psMessage->u16ShortAddress);
+    tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(psMessage->u16ShortAddress);
     if(NULL == psZigbeeNode){
         ERR_vPrintln(T_TRUE, "Can't find this node in the network!\n");
         return;
@@ -599,7 +601,7 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
                 psMessage->u16AttributeID
             );
 
-    tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByShortAddress(psMessage->u16ShortAddress);
+    tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psMessage->u16ShortAddress);
     if(NULL == psZigbeeNode){
         WAR_vPrintln(T_TRUE, "Can't find this node in network.\n");
         return;
@@ -643,7 +645,7 @@ static void vZCB_HandleDoorLockSetUser(void *pvUser, uint16 u16Length, void *pvM
                   psMessage->u8UserID,
                   psMessage->u8Command);
 
-    //tsZigbeeNodes *psZigbeeNode = psZigbee_FindNodeByShortAddress(psMessage->u16ShortAddress);
+    //tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psMessage->u16ShortAddress);
     //if(NULL == psZigbeeNode){
     //    WAR_vPrintln(T_TRUE, "Can't find this node in network.\n");
     //    return;
@@ -980,7 +982,7 @@ teZbStatus eZCB_ZLL_OnOff(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, ui
     } PACKED sOnOffMessage;
 
     /** Just read control bridge, not need lock */
-    psSourceEndpoint = psZigbee_NodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_ONOFF);
+    psSourceEndpoint = psZigbeeNodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_ONOFF);
     if (!psSourceEndpoint) {
         DBG_vPrintln(DBG_ZCB, "Cluster ID 0x%04X not found on control bridge\n", E_ZB_CLUSTERID_ONOFF);
         return E_ZB_ERROR;
@@ -994,7 +996,7 @@ teZbStatus eZCB_ZLL_OnOff(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, ui
             sOnOffMessage.u8TargetAddressMode   = E_ZB_ADDRESS_MODE_SHORT_NO_ACK;
         }
         sOnOffMessage.u16TargetAddress = htons(psZigbeeNode->u16ShortAddress);
-        psDestinationEndpoint = psZigbee_NodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_ONOFF);
+        psDestinationEndpoint = psZigbeeNodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_ONOFF);
         if (psDestinationEndpoint) {
             sOnOffMessage.u8DestinationEndpoint = psDestinationEndpoint->u8Endpoint;
         } else {
@@ -1048,8 +1050,9 @@ teZbStatus eZCB_AddGroupMembership(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAd
     }
     sAddGroupMembershipRequest.u16TargetAddress     = htons(psZigbeeNode->u16ShortAddress);
 
-    if ((eStatus = eZigbee_GetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_GROUPS,
-                                        &sAddGroupMembershipRequest.u8SourceEndpoint, &sAddGroupMembershipRequest.u8DestinationEndpoint)) != E_ZB_OK) {
+    if ((eStatus = eZigbeeGetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_GROUPS,
+                                       &sAddGroupMembershipRequest.u8SourceEndpoint,
+                                       &sAddGroupMembershipRequest.u8DestinationEndpoint)) != E_ZB_OK) {
         return eStatus;
     }
 
@@ -1120,7 +1123,8 @@ teZbStatus eZCB_RemoveGroupMembership(tsZigbeeBase *psZigbeeNode, uint16 u16Grou
     }
     sRemoveGroupMembershipRequest.u16TargetAddress      = htons(psZigbeeNode->u16ShortAddress);
 
-    if (eZigbee_GetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_GROUPS, &sRemoveGroupMembershipRequest.u8SourceEndpoint, &sRemoveGroupMembershipRequest.u8DestinationEndpoint) != E_ZB_OK) {
+    if (eZigbeeGetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_GROUPS, &sRemoveGroupMembershipRequest.u8SourceEndpoint,
+                            &sRemoveGroupMembershipRequest.u8DestinationEndpoint) != E_ZB_OK) {
         return E_ZB_ERROR;
     }
 
@@ -1179,7 +1183,8 @@ teZbStatus eZCB_ClearGroupMembership(tsZigbeeBase *psZigbeeNode)
     }
     sClearGroupMembershipRequest.u16TargetAddress      = htons(psZigbeeNode->u16ShortAddress);
 
-    if (eZigbee_GetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_GROUPS, &sClearGroupMembershipRequest.u8SourceEndpoint, &sClearGroupMembershipRequest.u8DestinationEndpoint) != E_ZB_OK) {
+    if (eZigbeeGetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_GROUPS, &sClearGroupMembershipRequest.u8SourceEndpoint,
+                            &sClearGroupMembershipRequest.u8DestinationEndpoint) != E_ZB_OK) {
         return E_ZB_ERROR;
     }
 
@@ -1227,8 +1232,8 @@ teZbStatus eZCB_StoreScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, u
         }
         sStoreSceneRequest.u16TargetAddress     = htons(psZigbeeNode->u16ShortAddress);
 
-        if (eZigbee_GetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_SCENES,
-                                 &sStoreSceneRequest.u8SourceEndpoint, &sStoreSceneRequest.u8DestinationEndpoint) != E_ZB_OK) {
+        if (eZigbeeGetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_SCENES,
+                                &sStoreSceneRequest.u8SourceEndpoint, &sStoreSceneRequest.u8DestinationEndpoint) != E_ZB_OK) {
             return E_ZB_ERROR;
         }
     } else {
@@ -1236,7 +1241,7 @@ teZbStatus eZCB_StoreScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, u
         sStoreSceneRequest.u16TargetAddress      = htons(u16GroupAddress);
         sStoreSceneRequest.u8DestinationEndpoint = ZB_DEFAULT_ENDPOINT_ZLL;
 
-        if (eZigbee_GetEndpoints(NULL, E_ZB_CLUSTERID_SCENES, &sStoreSceneRequest.u8SourceEndpoint, NULL) != E_ZB_OK) {
+        if (eZigbeeGetEndpoints(NULL, E_ZB_CLUSTERID_SCENES, &sStoreSceneRequest.u8SourceEndpoint, NULL) != E_ZB_OK) {
             return E_ZB_ERROR;
         }
     }
@@ -1311,7 +1316,8 @@ teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, 
         }
         sRemoveSceneRequest.u16TargetAddress     = htons(psZigbeeNode->u16ShortAddress);
 
-        if (eZigbee_GetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_SCENES, &sRemoveSceneRequest.u8SourceEndpoint, &sRemoveSceneRequest.u8DestinationEndpoint) != E_ZB_OK) {
+        if (eZigbeeGetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_SCENES, &sRemoveSceneRequest.u8SourceEndpoint,
+                                &sRemoveSceneRequest.u8DestinationEndpoint) != E_ZB_OK) {
             return E_ZB_ERROR;
         }
     } else {
@@ -1319,7 +1325,7 @@ teZbStatus eZCB_RemoveScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, 
         sRemoveSceneRequest.u16TargetAddress      = htons(u16GroupAddress);
         sRemoveSceneRequest.u8DestinationEndpoint = ZB_DEFAULT_ENDPOINT_ZLL;
 
-        if (eZigbee_GetEndpoints(NULL, E_ZB_CLUSTERID_SCENES, &sRemoveSceneRequest.u8SourceEndpoint, NULL) != E_ZB_OK) {
+        if (eZigbeeGetEndpoints(NULL, E_ZB_CLUSTERID_SCENES, &sRemoveSceneRequest.u8SourceEndpoint, NULL) != E_ZB_OK) {
             return E_ZB_ERROR;
         }
     }
@@ -1385,8 +1391,8 @@ teZbStatus eZCB_RecallScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, 
         }
         sRecallSceneRequest.u16TargetAddress     = htons(psZigbeeNode->u16ShortAddress);
 
-        if (eZigbee_GetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_SCENES,
-                                 &sRecallSceneRequest.u8SourceEndpoint, &sRecallSceneRequest.u8DestinationEndpoint) != E_ZB_OK) {
+        if (eZigbeeGetEndpoints(psZigbeeNode, E_ZB_CLUSTERID_SCENES,
+                                &sRecallSceneRequest.u8SourceEndpoint, &sRecallSceneRequest.u8DestinationEndpoint) != E_ZB_OK) {
             return E_ZB_ERROR;
         }
     } else {
@@ -1394,7 +1400,7 @@ teZbStatus eZCB_RecallScene(tsZigbeeBase *psZigbeeNode, uint16 u16GroupAddress, 
         sRecallSceneRequest.u16TargetAddress     = htons(u16GroupAddress);
         sRecallSceneRequest.u8DestinationEndpoint= ZB_DEFAULT_ENDPOINT_ZLL;
 
-        if (eZigbee_GetEndpoints(NULL, E_ZB_CLUSTERID_SCENES, &sRecallSceneRequest.u8SourceEndpoint, NULL) != E_ZB_OK) {
+        if (eZigbeeGetEndpoints(NULL, E_ZB_CLUSTERID_SCENES, &sRecallSceneRequest.u8SourceEndpoint, NULL) != E_ZB_OK) {
             return E_ZB_ERROR;
         }
     }
@@ -1467,8 +1473,9 @@ teZbStatus eZCB_ReadAttributeRequest(tsZigbeeBase *psZigbee_Node,
     }
     sReadAttributeRequest.u16TargetAddress      = htons(psZigbee_Node->u16ShortAddress);
 
-    if ((eStatus = eZigbee_GetEndpoints(psZigbee_Node, u16ClusterID,
-                                        &sReadAttributeRequest.u8SourceEndpoint, &sReadAttributeRequest.u8DestinationEndpoint)) != E_ZB_OK) {
+    if ((eStatus = eZigbeeGetEndpoints(psZigbee_Node, u16ClusterID,
+                                       &sReadAttributeRequest.u8SourceEndpoint,
+                                       &sReadAttributeRequest.u8DestinationEndpoint)) != E_ZB_OK) {
         ERR_vPrintln(T_TRUE, "Can't Find Endpoint\n");
         goto done;
     }
@@ -1587,10 +1594,8 @@ teZbStatus eZCB_ManagementLeaveRequest(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoi
     uint8 u8SequenceNo;
     teZbStatus eStatus = E_ZB_ERROR;
 
-
     if (psZigbeeNode) {
-        DBG_vPrintln(DBG_ZCB, "Send management Leave (u64TargetAddress %llu)\n",
-                     psZigbeeNode->u64IEEEAddress);
+        DBG_vPrintln(DBG_ZCB, "Send management Leave (u64TargetAddress %llu)\n", psZigbeeNode->u64IEEEAddress);
         sManagementLeaveRequest.u16TargetShortAddress = 0x0000;
         sManagementLeaveRequest.u8Rejoin = u8Rejoin;
         sManagementLeaveRequest.u8RemoveChildren = u8RemoveChildren;
@@ -1613,12 +1618,13 @@ teZbStatus eZCB_ManagementLeaveRequest(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoi
 
     eStatus = (teZbStatus)psManagementLeaveResponse->u8Status;
 
-    psZigbeeNode->u8DeviceOnline = 0;
-    eZigbeeSqliteUpdateDeviceTable(psZigbeeNode, E_SQ_DEVICE_ONLINE);
+    //psZigbeeNode->u8DeviceOnline = 0;
+    //eZigbeeSqliteUpdateDeviceTable(psZigbeeNode);
+    eZigbeeSqliteUpdateDeviceOnline(psZigbeeNode->u64IEEEAddress, 0);
 
     tsZigbeeNodes *psZigbeeNodeT = NULL;
-    psZigbeeNodeT = psZigbee_FindNodeByIEEEAddress(psZigbeeNode->u64IEEEAddress);
-    if(psZigbeeNodeT) eZigbee_RemoveNode(psZigbeeNodeT);
+    psZigbeeNodeT = psZigbeeFindNodeByIEEEAddress(psZigbeeNode->u64IEEEAddress);
+    if(psZigbeeNodeT) eZigbeeRemoveNode(psZigbeeNodeT);
     done:
     //vZigbee_NodeUpdateComms(psZigbeeNode, eStatus);
     FREE(psManagementLeaveResponse);
@@ -1649,7 +1655,7 @@ teZbStatus eZCB_ZLL_MoveToLevel(tsZigbeeBase *psZigbeeNode,
         u8Level = 254;
     }
 
-    psSourceEndpoint = psZigbee_NodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_LEVEL_CONTROL);
+    psSourceEndpoint = psZigbeeNodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_LEVEL_CONTROL);
     if (!psSourceEndpoint) {
         DBG_vPrintln(DBG_ZCB, "Cluster ID 0x%04X not found on control bridge\n", E_ZB_CLUSTERID_LEVEL_CONTROL);
         return E_ZB_ERROR;
@@ -1664,7 +1670,7 @@ teZbStatus eZCB_ZLL_MoveToLevel(tsZigbeeBase *psZigbeeNode,
         }
         sLevelMessage.u16TargetAddress      = htons(psZigbeeNode->u16ShortAddress);
 
-        psDestinationEndpoint = psZigbee_NodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_LEVEL_CONTROL);
+        psDestinationEndpoint = psZigbeeNodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_LEVEL_CONTROL);
 
         if (psDestinationEndpoint) {
             sLevelMessage.u8DestinationEndpoint = psDestinationEndpoint->u8Endpoint;
@@ -1713,7 +1719,7 @@ teZbStatus eZCB_ZLL_MoveToHueSaturation(tsZigbeeBase *psZigbeeNode,
 
     DBG_vPrintln(DBG_ZCB, "Set Hue %d, Saturation %d\n", u8Hue, u8Saturation);
 
-    psSourceEndpoint = psZigbee_NodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_COLOR_CONTROL);
+    psSourceEndpoint = psZigbeeNodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_COLOR_CONTROL);
     if (!psSourceEndpoint) {
         DBG_vPrintln(DBG_ZCB, "Cluster ID 0x%04X not found on control bridge\n", E_ZB_CLUSTERID_COLOR_CONTROL);
         return E_ZB_ERROR;
@@ -1728,7 +1734,7 @@ teZbStatus eZCB_ZLL_MoveToHueSaturation(tsZigbeeBase *psZigbeeNode,
         }
         sMoveToHueSaturationMessage.u16TargetAddress      = htons(psZigbeeNode->u16ShortAddress);
 
-        psDestinationEndpoint = psZigbee_NodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_COLOR_CONTROL);
+        psDestinationEndpoint = psZigbeeNodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_COLOR_CONTROL);
 
         if (psDestinationEndpoint) {
             sMoveToHueSaturationMessage.u8DestinationEndpoint = psDestinationEndpoint->u8Endpoint;
@@ -1902,7 +1908,7 @@ teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_W
     } PACKED sWindowCoveringDeviceMessage;
 
     /* Just read control bridge, not need lock */
-    psSourceEndpoint = psZigbee_NodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_WINDOW_COVERING_DEVICE);
+    psSourceEndpoint = psZigbeeNodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_WINDOW_COVERING_DEVICE);
     if (!psSourceEndpoint) {
         ERR_vPrintln(T_TRUE, "Cluster ID 0x%04X not found on control bridge\n", E_ZB_CLUSTERID_WINDOW_COVERING_DEVICE);
         return E_ZB_ERROR;
@@ -1916,7 +1922,7 @@ teZbStatus eZCB_WindowCoveringDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_W
             sWindowCoveringDeviceMessage.u8TargetAddressMode   = E_ZB_ADDRESS_MODE_SHORT_NO_ACK;
         }
         sWindowCoveringDeviceMessage.u16TargetAddress = htons(psZigbeeNode->u16ShortAddress);
-        psDestinationEndpoint = psZigbee_NodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_WINDOW_COVERING_DEVICE);
+        psDestinationEndpoint = psZigbeeNodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_WINDOW_COVERING_DEVICE);
         if (psDestinationEndpoint) {
             sWindowCoveringDeviceMessage.u8DestinationEndpoint = psDestinationEndpoint->u8Endpoint;
         } else {
@@ -1954,7 +1960,7 @@ teZbStatus eZCB_DoorLockDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_DoorLoc
     } PACKED sDoorLockDeviceMessage;
 
     /* Just read control bridge, not need lock */
-    psSourceEndpoint = psZigbee_NodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_DOOR_LOCK);
+    psSourceEndpoint = psZigbeeNodeFindEndpoint(&sControlBridge.sNode, E_ZB_CLUSTERID_DOOR_LOCK);
     if (!psSourceEndpoint) {
         ERR_vPrintln(T_TRUE, "Cluster ID 0x%04X not found on control bridge\n", E_ZB_CLUSTERID_DOOR_LOCK);
         return E_ZB_ERROR;
@@ -1968,7 +1974,7 @@ teZbStatus eZCB_DoorLockDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_DoorLoc
             sDoorLockDeviceMessage.u8TargetAddressMode   = E_ZB_ADDRESS_MODE_SHORT_NO_ACK;
         }
         sDoorLockDeviceMessage.u16TargetAddress = htons(psZigbeeNode->u16ShortAddress);
-        psDestinationEndpoint = psZigbee_NodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_DOOR_LOCK);
+        psDestinationEndpoint = psZigbeeNodeFindEndpoint(psZigbeeNode, E_ZB_CLUSTERID_DOOR_LOCK);
         if (psDestinationEndpoint) {
             sDoorLockDeviceMessage.u8DestinationEndpoint = psDestinationEndpoint->u8Endpoint;
         } else {
