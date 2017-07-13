@@ -45,7 +45,7 @@ const char *pVersion = "1.0";
 volatile sig_atomic_t bRunning = 1;
 
 int verbosity = 7;
-int daemonize = 0;
+int daemonize = 1;
 uint32 u32BaudRate = 115200;
 uint32 u32Channel = E_CHANNEL_DEFAULT;
 char *pSerialDevice = "/dev/ttyUSB0";
@@ -118,8 +118,8 @@ static void vGetOption(int argc, char *argv[])
     static struct option long_options[] = {
         {"serial",                  required_argument,  NULL, 's'},
         {"help",                    no_argument,        NULL, 'h'},
-        {"front",                   no_argument,        NULL, 'f'},
-        {"DBG_MAIN",                required_argument,  NULL, 'v'},
+        {"front",                   required_argument,  NULL, 'f'},
+        {"verbosity",               required_argument,  NULL, 'v'},
         {"baud",                    required_argument,  NULL, 'B'},
         {"channel",                 required_argument,  NULL, 'c'},
         {"database",                required_argument,  NULL, 'D'},
@@ -134,7 +134,7 @@ static void vGetOption(int argc, char *argv[])
                 vPrintUsage(argv);
             break;
             case 'f':
-                daemonize = 0;
+                daemonize = atoi(optarg);
             break;
             case 'v':
                 verbosity = atoi(optarg);
