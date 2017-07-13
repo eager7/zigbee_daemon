@@ -13,12 +13,23 @@
 # Copyright panchangtao@gmail.com 2016. All rights reserved
 #
 ###########################################################################
-TARGET := zigbee-daemon
+TARGET := zigbee_daemon
 
-SRC_DIR := .
-SOURCE := $(wildcard $(SRC_DIR)/*.c)
+SRC_ROOT := $(shell pwd)
 
-CFLAGS += -I./include/
+SOURCE := $(wildcard $(SRC_ROOT)/*.c)
+SOURCE += $(wildcard $(SRC_ROOT)/zigbee/*.c)
+SOURCE += $(wildcard $(SRC_ROOT)/comm/*.c)
+SOURCE += $(wildcard $(SRC_ROOT)/control-bridge/*.c)
+SOURCE += $(wildcard $(SRC_ROOT)/utils/*.c)
+SOURCE += $(wildcard $(SRC_ROOT)/devices/*.c)
+
+CFLAGS += -I./zigbee
+CFLAGS += -I./comm
+CFLAGS += -I./control-bridge
+CFLAGS += -I./utils
+CFLAGS += -I./devices
+
 PROJ_DFLAGS := -D_REENTRANT
 PROJ_LIBS ?= -L./lib
 PROJ_LIBS += -lpthread -ljson-c -lsqlite3 -lzmq
@@ -46,6 +57,9 @@ $(TARGET):$(OBJS)
 	rm $@.$$$$
 -include $(SOURCE:.c=.d)
 
+test:
+	@echo $(SRC_ROOT)
+	@echo $(SOURCE)
 clean:
 	$(RM) $(TARGET) $(OBJS) $(DEPS) *.d* 
  
