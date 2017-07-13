@@ -127,7 +127,7 @@ static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, t
 static teZbStatus eZigbeeCoordinatorSearchDevices()
 {
     static int iStart= 0;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 2; ++i) {
         eZCB_NeighbourTableRequest(&iStart);
         iStart++;
         sleep(1);

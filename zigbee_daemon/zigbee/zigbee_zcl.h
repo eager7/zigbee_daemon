@@ -161,7 +161,6 @@ typedef enum
     E_ZB_BROADCAST_ADDRESS_LOWPOWERROUTERS  = 0xFFFB,
 } teZigbee_BroadcastAddress;
 
-
 /** Enumerated type of Zigbee Device IDs */
 typedef enum
 {
@@ -214,14 +213,12 @@ typedef enum
     E_ZBD_END_DEVICE_DEVICE                 = 0x0841,
 } teZigbeeDeviceID;
 
-
 /** Enumerated type of Zigbee Profile IDs */
 typedef enum
 {
     E_ZB_PROFILEID_HA                       = 0x0104,
     E_ZB_PROFILEID_ZLL                      = 0xC05E,    
 } teZigbee_ProfileID;
-
 
 /** Enumerated type of Zigbee Cluster IDs */
 typedef enum
@@ -290,7 +287,6 @@ typedef enum
     E_ZB_ATTRIBUTEID_BASIC_DISBALELOCALCONF = 0x0014,
 } teZigbee_AttributeIDBasicCluster;
 
-
 /** Enumerated type of attributes in the Scenes Cluster */
 typedef enum
 {
@@ -302,7 +298,6 @@ typedef enum
     E_ZB_ATTRIBUTEID_SCENE_LASTCONFIGUREDBY = 0x0005,
 } teZigbee_AttributeIDScenesCluster;
 
-
 /** Enumerated type of attributes in the ON/Off Cluster */
 typedef enum
 {
@@ -312,7 +307,6 @@ typedef enum
     E_ZB_ATTRIBUTEID_ONOFF_OFFWAITTIME      = 0x4002,
 } teZigbee_AttributeIDOnOffCluster;
 
-
 /** Enumerated type of attributes in the Level Control Cluster */
 typedef enum
 {
@@ -321,7 +315,6 @@ typedef enum
     E_ZB_ATTRIBUTEID_LEVEL_ONOFFTRANSITION  = 0x0010,
     E_ZB_ATTRIBUTEID_LEVEL_ONLEVEL          = 0x0011,
 } teZigbee_AttributeIDLevelControlCluster;
-
 
 /** Enumerated type of attributes in the Level Control Cluster */
 typedef enum
@@ -370,7 +363,6 @@ typedef enum
     E_ZB_ATTRIBUTEID_TSTAT_SYSTEMMODE               = 0x001C,
     E_ZB_ATTRIBUTEID_TSTAT_ALARMMASK                = 0x001D,
 } teZigbee_AttributeIDThermostatCluster;
-
 
 /** Enumerated type of attributes in the Temperature sensing Cluster */
 typedef enum
@@ -489,7 +481,6 @@ typedef enum
     E_CLD_ILLMEAS_ATTR_ID_TOLERANCE,
     E_CLD_ILLMEAS_ATTR_ID_LIGHT_SENSOR_TYPE
 } teZigbee_AttributeIDIlluMinanceCluster;
-
 //endif
 
 /** Enumerated type of attribute data types from ZCL */
@@ -627,8 +618,8 @@ typedef enum
 
 typedef enum
 {
-    E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK                  = 0x00,         /* Mandatory */
-    E_CLD_DOOR_LOCK_DEVICE_CMD_UNLOCK                = 0x01,         /* Mandatory */
+    E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK                 = 0x00,         /* Mandatory */
+    E_CLD_DOOR_LOCK_DEVICE_CMD_UNLOCK               = 0x01,         /* Mandatory */
     /** PCT Add */
     E_CLD_DOOR_LOCK_CMD_TOGGLE                      = 0x02,
     E_CLD_DOOR_LOCK_CMD_UNLOCK_WITH_TIMEOUT         = 0x03,

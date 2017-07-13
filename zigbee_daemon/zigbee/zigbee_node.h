@@ -256,7 +256,8 @@ teZbStatus eZigbeeNodeAddEndpoint(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
                                   tsNodeEndpoint **ppsEndpoint);
 /*****************************************************************************
 ** Prototype    : eZigbee_NodeAddCluster
-** Description  : 对端点添加Cluster
+** Description  : 对端点添加Cluster，在后续对设备进行控制时需要检查设备上是否有此cluster
+ * 的支持，目前只添加了input cluster
 ** Input        : psZigbeeNode, 节点指针
  *                u8Endpoint, 端点号，如果存在，则更新数据
  *                u16ClusterID，Cluster ID
@@ -268,9 +269,50 @@ teZbStatus eZigbeeNodeAddEndpoint(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, 
 ** Author       : PCT
 *****************************************************************************/
 teZbStatus eZigbeeNodeAddCluster(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID);
+/*****************************************************************************
+** Prototype    : eZigbeeNodeAddAttribute
+** Description  : 对指定端点指定cluster添加attribute，现在只用在了协调器上，记录了协调器
+ * 支持哪些属性，在直接控制属性值时可以去查询然后修改，目前没有查询
+** Input        : psZigbeeNode, 节点指针
+ *                u8Endpoint, 端点号，如果存在，则更新数据
+ *                u16ClusterID，Cluster ID
+** Output       : none
+** Return Value : Return E_ZB_OK
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
 teZbStatus eZigbeeNodeAddAttribute(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID,
                                    uint16 u16AttributeID);
+/*****************************************************************************
+** Prototype    : eZigbeeNodeAddCommand
+** Description  : 对指定端点指定cluster添加attribute支持的命令，现在只用在了协调器上，
+ * 记录了协调器支持哪些命令，在直接控制属性值时可以去查询然后修改，目前没有查询
+** Input        : psZigbeeNode, 节点指针
+ *                u8Endpoint, 端点号，如果存在，则更新数据
+ *                u16ClusterID，Cluster ID
+** Output       : none
+** Return Value : Return E_ZB_OK
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
 teZbStatus eZigbeeNodeAddCommand(tsZigbeeBase *psZigbeeNode, uint8 u8Endpoint, uint16 u16ClusterID, uint8 u8CommandID);
+/*****************************************************************************
+** Prototype    : eZigbeeGetEndpoints
+** Description  : 获取一个设备指定cluster的端点信息，得到cluster所在的端点号
+** Input        : psZigbeeNode, 节点指针
+ *                u16ClusterID，Cluster ID
+** Output       : pu8Src，源地址端点号，也就是协调器端点号
+ *                pu8Dst，目的地址端点号
+** Return Value : Return E_ZB_OK
+
+** History      :
+** Date         : 2017/2/28
+** Author       : PCT
+*****************************************************************************/
 teZbStatus eZigbeeGetEndpoints(tsZigbeeBase *psZigbee_Node, teZigbee_ClusterID eClusterID, uint8 *pu8Src, uint8 *pu8Dst);
 /*****************************************************************************
 ** Prototype    : psZigbeeNodeFindEndpoint
