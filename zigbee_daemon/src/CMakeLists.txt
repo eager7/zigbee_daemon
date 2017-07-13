@@ -15,7 +15,7 @@ link_directories(./lib)
 
 set(SOURCE_FILES
         main.c
-		comm/zigbee_cloud.c  comm/zigbee_discovery.c  comm/zigbee_socket.c
+		comm/zigbee_cloud.c comm/zigbee_discovery.c  comm/zigbee_socket.c
         control-bridge/serial.c  control-bridge/serial_link.c  control-bridge/zigbee_control_bridge.c
 		utils/list.c  utils/mthread.c  utils/zigbee_sqlite.c
 		devices/zigbee_devices.c
@@ -26,4 +26,4 @@ set(SOURCE_FILES
 #add_library(libsrp.a STATIC)
 
 add_executable(${TARGET} ${SOURCE_FILES} )
-target_link_libraries(${TARGET} -lpthread -ljson-c -lsqlite3 -lzmq)
+target_link_libraries(${TARGET} -lpthread -ljson-c -lsqlite3)

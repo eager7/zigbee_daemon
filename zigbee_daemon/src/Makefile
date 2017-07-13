@@ -32,7 +32,7 @@ CFLAGS += -I./devices
 
 PROJ_DFLAGS := -D_REENTRANT
 PROJ_LIBS ?= -L./lib
-PROJ_LIBS += -lpthread -ljson-c -lsqlite3 -lzmq
+PROJ_LIBS += -lpthread -ljson-c -lsqlite3
 
 CC ?= gcc
 RM ?= -rm

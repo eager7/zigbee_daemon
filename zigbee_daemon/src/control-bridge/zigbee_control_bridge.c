@@ -447,13 +447,14 @@ static void vZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, v
             return ;
         }
         eLockLock(&psZigbeeNode->mutex);
-        for (int i = 0; i < psMatchDescriptorResponse->u8NumEndpoints; i++) {
+        int i = 0;
+        for (i = 0; i < psMatchDescriptorResponse->u8NumEndpoints; i++) {
             /* Add an endpoint to the device for each response in the match descriptor response */
             eZigbeeNodeAddEndpoint(&psZigbeeNode->sNode, psMatchDescriptorResponse->au8Endpoints[i], 0, NULL);
         }
-        eLockunLock(&psZigbeeNode->mutex);    
-        
-        for (int i = 0; i < psZigbeeNode->sNode.u32NumEndpoints; i++)/* get profile id, device id, input clusters */{
+        eLockunLock(&psZigbeeNode->mutex);
+
+        for (i = 0; i < psZigbeeNode->sNode.u32NumEndpoints; i++)/* get profile id, device id, input clusters */{
             if (psZigbeeNode->sNode.pasEndpoints[i].u16ProfileID == 0) {
                 usleep(500);
                 if (eZCB_SimpleDescriptorRequest(&psZigbeeNode->sNode, psZigbeeNode->sNode.pasEndpoints[i].u8Endpoint) != E_ZB_OK){
@@ -506,7 +507,8 @@ static void vZCB_HandleSimpleDescriptorResponse(void *pvUser, uint16 u16Length, 
         return ;
     }
 
-    for (int i = 0; i < psSimpleDescriptorResponse->sInputClusters.u8ClusterCount; i++){
+    int i = 0;
+    for (i = 0; i < psSimpleDescriptorResponse->sInputClusters.u8ClusterCount; i++){
         uint16 u16ClusterID = ntohs(psSimpleDescriptorResponse->sInputClusters.au16Clusters[i]);
         if (eZigbeeNodeAddCluster(&psZigbeeNode->sNode, psSimpleDescriptorResponse->u8Endpoint, u16ClusterID) != E_ZB_OK){
             ERR_vPrintln(T_TRUE, "eZigbeeNodeAddCluster error\n");

@@ -127,7 +127,8 @@ static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, t
 static teZbStatus eZigbeeCoordinatorSearchDevices()
 {
     static int iStart= 0;
-    for (int i = 0; i < 2; ++i) {
+    int i = 0;
+    for (i = 0; i < 2; ++i) {
         eZCB_NeighbourTableRequest(&iStart);
         iStart++;
         sleep(1);
@@ -151,11 +152,12 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
 
     json_object *psJsonDevice = json_object_new_object();
     json_object *psArrayEndpoint = json_object_new_array();
-    for (int i = 0; i < psZigbeeNode->sNode.u32NumEndpoints; ++i) {
+    int i,j;
+    for (i = 0; i < psZigbeeNode->sNode.u32NumEndpoints; ++i) {
         json_object *psJsonEndpoint = json_object_new_object();
         json_object_object_add(psJsonEndpoint, "id", json_object_new_int(psZigbeeNode->sNode.pasEndpoints[i].u8Endpoint));
         json_object *psArrayCluster = json_object_new_array();
-        for (int j = 0; j < psZigbeeNode->sNode.pasEndpoints[i].u32NumClusters; ++j) {
+        for (j = 0; j < psZigbeeNode->sNode.pasEndpoints[i].u32NumClusters; ++j) {
             json_object *psJsonCluster = json_object_new_object();
             json_object_object_add(psJsonCluster, "id", json_object_new_int(psZigbeeNode->sNode.pasEndpoints[i].pasClusters[j].u16ClusterID));
             json_object_array_add(psArrayCluster, psJsonCluster);

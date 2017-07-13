@@ -69,8 +69,9 @@ static tsSL_MsgBrocast  sSL_MsgBroadcast;
 teSL_Status eSL_Init(char *cpSerialDevice, uint32 u32BaudRate)
 {
     CHECK_RESULT(eSerial_Init(cpSerialDevice, u32BaudRate, &sSerialLink.iSerialFd), E_SERIAL_OK, E_SL_ERROR_SERIAL);
-    
-    for (int i = 0; i < SL_MAX_MESSAGE_QUEUES; i++){
+
+    int i = 0;
+    for (i = 0; i < SL_MAX_MESSAGE_QUEUES; i++){
         pthread_mutex_init(&sSerialLink.asReaderMessageQueue[i].mutex, NULL);
         pthread_cond_init(&sSerialLink.asReaderMessageQueue[i].cond_data_available, NULL);
         sSerialLink.asReaderMessageQueue[i].u16Type = 0;
@@ -617,8 +618,8 @@ static void *pvSerialReaderThread(void *psThreadInfoVoid)
             }
         }
     }
-
-    for(int i = 0; i < SL_MAX_MESSAGE_QUEUES; i++){
+    int i = 0;
+    for(i = 0; i < SL_MAX_MESSAGE_QUEUES; i++){
         psSerialLink->asReaderMessageQueue[i].u16Length  = 0;
         psSerialLink->asReaderMessageQueue[i].pu8Message = NULL;
         pthread_cond_broadcast(&psSerialLink->asReaderMessageQueue[i].cond_data_available);
@@ -678,8 +679,8 @@ static void *pvMessageQueueHandlerThread(void *psThreadInfoVoid)
                 WAR_vPrintln(DBG_SERIAL_LINK_QUEUE, "0x%04x", sStatus->u16MessageType);
             }
             WAR_vPrintln(DBG_SERIAL_LINK_QUEUE,"\n");
-            
-            for(int i = 0; i < 5; i++){
+            int i = 0;
+            for(i = 0; i < 5; i++){
                 // See if any threads are waiting for this message
                 teSL_Status eStatus = eSL_MessageQueue(&sSerialLink, psMessageData->u16Type, psMessageData->u16Length, psMessageData->au8Message);
                 if (eStatus == E_SL_OK) {

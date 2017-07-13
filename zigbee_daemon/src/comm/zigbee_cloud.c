@@ -44,13 +44,7 @@ tsZigbeeCloud sZigbeeCloud;
 teCloudStatus eZigbeeCloudInit()
 {
     memset(&sZigbeeCloud, 0, sizeof(sZigbeeCloud));
-    sZigbeeCloud.pvContext = zmq_ctx_new();
-    sZigbeeCloud.pvSender = zmq_socket(sZigbeeCloud.pvContext, ZMQ_PUSH);
-    CHECK_STATUS(zmq_bind(sZigbeeCloud.pvSender, pauServerPushAddr), 0, E_CLOUD_ERROR);
-    sZigbeeCloud.pvSubscriber = zmq_socket(sZigbeeCloud.pvContext, ZMQ_SUB);
-    CHECK_STATUS(zmq_connect(sZigbeeCloud.pvSubscriber, pauServerSubAddr), 0, E_CLOUD_ERROR);
-    CHECK_STATUS(zmq_setsockopt(sZigbeeCloud.pvSubscriber, ZMQ_SUBSCRIBE, NULL, 0), 0, E_CLOUD_ERROR);
-    
+
     sZigbeeCloud.sThreadCloud.pvThreadData = &sZigbeeCloud;  
     CHECK_RESULT(eThreadStart(pvCloudHandleThread, &sZigbeeCloud.sThreadCloud, E_THREAD_DETACHED), E_THREAD_OK, E_CLOUD_ERROR);
 
@@ -60,18 +54,11 @@ teCloudStatus eZigbeeCloudInit()
 teCloudStatus eZigbeeCloudFinished()
 {
     eThreadStop(&sZigbeeCloud.sThreadCloud);
-    zmq_close(sZigbeeCloud.pvSender);
-    zmq_close(sZigbeeCloud.pvSubscriber);
-    zmq_ctx_destroy(sZigbeeCloud.pvContext);
     return E_CLOUD_OK;
 }
 
 teCloudStatus eZigbeeCloudPush(const char *pmsg, uint16 u16Length)
 {
-    if(-1 == zmq_send(sZigbeeCloud.pvSender, pmsg, u16Length, ZMQ_DONTWAIT)){
-        ERR_vPrintln(T_TRUE, "zmq send error\n");
-        return E_CLOUD_ERROR;
-    }
     return E_CLOUD_OK;
 }
 
@@ -137,13 +124,6 @@ static void *pvCloudHandleThread(void *psThreadInfoVoid)
     {
         DBG_vPrintln(DBG_CLOUD, "pvCloudHandleThread Recv \n");
         
-        int ret = zmq_recv(psZigbeeCloud->pvSubscriber, auSubBuf, sizeof(auSubBuf), 0);
-        if(ret != -1){
-            NOT_vPrintln(DBG_CLOUD, "Server Pub Msg:%s\n", auSubBuf);
-        } else {
-            WAR_vPrintln(T_TRUE, "zmq_recv message error:%s\n", strerror(errno));
-            continue;
-        }
     }
 
     DBG_vPrintln(DBG_CLOUD, "pvCloudHandleThread Exit \n");

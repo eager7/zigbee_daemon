@@ -32,7 +32,7 @@
 #include "zigbee_devices.h"
 #include "zigbee_socket.h"
 #include "zigbee_discovery.h"
-#include "zigbee_cloud.h"
+//#include "zigbee_cloud.h"
 #include "coordinator.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
     CHECK_RESULT(eZigbeeSqliteInit(pZigbeeSqlitePath), E_SQ_OK, -1);
     CHECK_RESULT(eSocketServer_Init(), E_SS_OK, -1);
     CHECK_RESULT(eZigbeeDiscoveryInit(), E_DISCOVERY_OK, -1);
-    CHECK_RESULT(eZigbeeCloudInit(), E_CLOUD_OK, -1);
+    //CHECK_RESULT(eZigbeeCloudInit(), E_CLOUD_OK, -1);
 
     while(bRunning){
         DBG_vPrintln(DBG_MAIN, "Communication with Coordinator...\n");
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
     eZigbeeSqliteFinished();
     eSocketServer_Destroy();
     eZigbeeDiscoveryFinished();
-    eZigbeeCloudFinished();
+    //eZigbeeCloudFinished();
 
     DBG_vPrintln(DBG_MAIN, "Main thread will exiting\n");
 

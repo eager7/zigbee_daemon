@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   SECTION:=topband
   CATEGORY:=Topband
   TITLE:=zigbee_daemon -- new zigbee daemon for smart door lock
-  DEPENDS:=+libjson-c +libdaemon +libpthread +libsqlite3
+  DEPENDS:=+libjson-c +libpthread +libsqlite3
 endef
 
 define Build/Prepare

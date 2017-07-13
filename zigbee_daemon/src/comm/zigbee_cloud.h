@@ -42,7 +42,6 @@ extern "C" {
 #include <net/if.h>
 #include <netinet/in.h>
 #include <linux/sockios.h>
-#include <zmq.h>
 #include "utils.h"
 #include "mthread.h"
 #include "zigbee_socket.h"
@@ -64,9 +63,6 @@ typedef enum
 
 typedef struct
 {
-    void        *pvContext;
-    void        *pvSender;
-    void        *pvSubscriber;
     tsThread    sThreadCloud;
 }tsZigbeeCloud;
 

@@ -155,7 +155,8 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
                         FD_CLR(psSocketServer->iSocketFd, &fdSelect);//delete this Server from select set
                         break;
                     }
-                    for(int i = 0; i < NUMBER_SOCKET_CLIENT; i++)
+                    int i = 0;
+                    for(i = 0; i < NUMBER_SOCKET_CLIENT; i++)
                     {
                         if(ClientSocket[i].iSocketClient == -1){
                             ClientSocket[i].iSocketClient = accept(psSocketServer->iSocketFd, (struct sockaddr *)&ClientSocket[i].addrclint, (socklen_t *) &ClientSocket[i].u16Length);
@@ -176,7 +177,8 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
                 }
                 else
                 {   //there is client communication
-                    for(int i = 0; ((i < NUMBER_SOCKET_CLIENT)&&(-1 != ClientSocket[i].iSocketClient)); i++)
+                    int i = 0;
+                    for(i = 0; ((i < NUMBER_SOCKET_CLIENT)&&(-1 != ClientSocket[i].iSocketClient)); i++)
                     {
                         if(FD_ISSET(ClientSocket[i].iSocketClient, &fdTemp)) {
                             memset(ClientSocket[i].auClientData, 0, sizeof(ClientSocket[i].auClientData));
@@ -237,7 +239,8 @@ static void *pvSocketCallbackHandlerThread(void *psThreadInfoVoid)
                 eSocketCommand = (teSocketCommand)json_object_get_int(psJsonTemp);
                 if(json_object_object_get_ex(psJsonMessage,JSON_SEQUENCE, &psJsonTemp)) {
                     iSequenceNumber = json_object_get_int(psJsonTemp);
-                    for(int i = 0; i < sizeof(sSocketHandleMap)/sizeof(tsSocketHandleMap); i++) {
+                    int i = 0;
+                    for(i = 0; i < sizeof(sSocketHandleMap)/sizeof(tsSocketHandleMap); i++) {
                         if(eSocketCommand == sSocketHandleMap[i].eSocketCommand) {
                             teSS_Status eStatus = sSocketHandleMap[i].preMessageHandlePacket(psCallbackData->iSocketClientfd, psJsonMessage);
                             if(E_SS_INCORRECT_PARAMETERS == eStatus){
@@ -1027,7 +1030,8 @@ teSS_Status eSocketServer_Init(void)
     signal(SIGPIPE, SIG_IGN);//ingnore signal interference
 
     memset(&sSocketServer, 0, sizeof(sSocketServer));
-    for(int i = 0; i < NUMBER_SOCKET_CLIENT; i++){//init client socket fd
+    int i = 0;
+    for(i = 0; i < NUMBER_SOCKET_CLIENT; i++){//init client socket fd
         memset(&ClientSocket[i], 0, sizeof(tsClientSocket));
         ClientSocket[i].iSocketClient = -1;
     }
