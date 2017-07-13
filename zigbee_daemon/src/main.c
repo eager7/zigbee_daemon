@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
         sleep(10);
 
         uint32 u32TimeNow = (uint32)time((time_t*)NULL);
-        tsTemporaryPassword sPasswordTemp, sPasswordHeader, *psTemp;
+        tsTemporaryPassword sPasswordHeader, *psTemp;
         eZigbeeSqliteDoorLockRetrievePasswordList(&sPasswordHeader);
         dl_list_for_each(psTemp, &sPasswordHeader.list, tsTemporaryPassword, list){
             if(psTemp->u8Worked == 0){

@@ -51,17 +51,17 @@ $(TARGET):$(OBJS)
 %.o:%.c
 	$(CC) $(PROJ_DFLAGS) -I. $(CFLAGS) -c $< -o $@
 
-%d:%c
-	@set -e;$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
-	sed 's/.o:/.o $@:/g' < $@.$$$$ > $@; \
-	rm $@.$$$$
--include $(SOURCE:.c=.d)
+#%d:%c
+#	@set -e;$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
+#	sed 's/.o:/.o $@:/g' < $@.$$$$ > $@; \
+#	rm $@.$$$$
+#-include $(SOURCE:.c=.d)
 
 test:
-	@echo $(SRC_ROOT)
 	@echo $(SOURCE)
+	
 clean:
-	$(RM) $(TARGET) $(OBJS) $(DEPS) *.d* 
+	$(RM) $(TARGET) $(OBJS) $(DEPS) *.d* $(SRC_ROOT)/zigbee/*.d* $(SRC_ROOT)/comm/*.d* $(SRC_ROOT)/control-bridge/*.d* $(SRC_ROOT)/utils/*.d* $(SRC_ROOT)/devices/*.d* 
  
 install_depends:
 	sudo install libsqlite3-dev libjson-c-dev libzeromq-dev libczmq-dev

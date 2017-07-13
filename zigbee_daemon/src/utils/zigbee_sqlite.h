@@ -189,8 +189,7 @@ teSQ_Status eZigbeeSqliteDoorLockRetrieveUserListFree(tsDoorLockUser *psPassword
 *****************************************************************************/
 teSQ_Status
 eZigbeeSqliteAddDoorLockRecord(teDoorLockUserType eType, uint8 u8UserID, uint32 u32Time, const char *psPassword);
-teSQ_Status eZigbeeSqliteDoorLockRetrieveRecord(uint8 u8UserID, tsDoorLockRecord *psRecord);
-teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(tsDoorLockRecord *psRecordHeader);
+teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(uint8 u8UserID, tsDoorLockRecord *psRecordHeader);
 teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordListFree(tsDoorLockRecord *psRecordHeader);
 
 /*****************************************************************************

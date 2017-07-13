@@ -308,8 +308,6 @@ done:
 static void vZCB_HandleRestartProvisioned(void *pvUser, uint16 u16Length, void *pvMessage)
 {
     DBG_vPrintln(DBG_ZCB, "************[0x8006]ZCB_HandleRestartProvisioned\n");
-    (void*)pvUser;
-    (uint16)u16Length;
     const char *pcStatus = NULL;
     
     struct _tsWarmRestart

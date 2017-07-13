@@ -399,34 +399,16 @@ teSQ_Status eZigbeeSqliteAddDoorLockRecord(teDoorLockUserType eType, uint8 u8Use
     return E_SQ_OK;
 }
 
-teSQ_Status eZigbeeSqliteDoorLockRetrieveRecord(uint8 u8UserID, tsDoorLockRecord *psRecord)
-{
-    char SqlCommand[MDBF] = {0};
-    snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_RECORD" WHERE "USER_ID"=%d", u8UserID);
-    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
-
-    sqlite3_stmt *stmt = NULL;
-    if (SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
-        ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));
-        return E_SQ_ERROR;
-    }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        psRecord->u8UserId = (uint8) sqlite3_column_int(stmt, 1);
-        psRecord->eType = (teDoorLockUserType) sqlite3_column_int(stmt, 2);
-        psRecord->u32Time = (uint32) sqlite3_column_int(stmt, 3);
-        memcpy(psRecord->auPassword,(char*)sqlite3_column_text(stmt, 4), (size_t)sqlite3_column_bytes(stmt,4));
-    }
-    sqlite3_finalize(stmt);
-
-    return E_SQ_OK;
-}
-
-teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(tsDoorLockRecord *psRecordHeader)
+teSQ_Status eZigbeeSqliteDoorLockRetrieveRecordList(uint8 u8UserID, tsDoorLockRecord *psRecordHeader)
 {
     CHECK_POINTER(psRecordHeader, E_SQ_ERROR);
 
     char SqlCommand[MDBF] = {0};
-    snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_RECORD"");
+    if(u8UserID == 0xff){
+        snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_RECORD"");
+    } else {
+        snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_RECORD" WHERE "USER_ID"=%d", u8UserID);
+    }
     DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
 
     sqlite3_stmt * stmt = NULL;

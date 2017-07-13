@@ -929,33 +929,24 @@ static teSS_Status eSocketHandleDoorLockGetRecord(int iSocketFd, struct json_obj
         json_object_object_add(psJsonResult, JSON_MAC,json_object_new_int64((int64_t)u64DeviceAddress));
 
         tsDoorLockRecord sRecordHeader = {0};
-        if(u8UserID == 0xff){//All Users' Record
-            eZigbeeSqliteDoorLockRetrieveRecordList(&sRecordHeader);
-            tsDoorLockRecord *Temp = NULL;
-            dl_list_for_each(Temp, &sRecordHeader.list, tsDoorLockRecord, list){
-                struct json_object *psJosnTemp = json_object_new_object();
-                json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8UserId));
-                json_object_object_add(psJosnTemp, JSON_TYPE,json_object_new_int(Temp->eType));
-                long int lTime = Temp->u32Time;
-                struct tm *pTime = localtime(&lTime);
-                json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_string(asctime(pTime)));
-                if(Temp->eType == E_RECORD_TYPE_TEMPORARY_PASSWORD)
-                    json_object_object_add(psJosnTemp, PASSWORD_DATA,json_object_new_string((const char *)Temp->auPassword));
-                json_object_array_add(psJsonArray, psJosnTemp);
-            }
-            eZigbeeSqliteDoorLockRetrieveRecordListFree(&sRecordHeader);
-        } else {
-            eZigbeeSqliteDoorLockRetrieveRecord(u8UserID, &sRecordHeader);
+        eZigbeeSqliteDoorLockRetrieveRecordList(u8UserID, &sRecordHeader);
+        tsDoorLockRecord *Temp = NULL; int i = 0;
+        for (i = 0, Temp = dl_list_entry((&sRecordHeader.list)->next, tsDoorLockRecord, list);
+             (&Temp->list != (&sRecordHeader.list))&&(i < u8Number);
+             Temp = dl_list_entry(Temp->list.next, tsDoorLockRecord, list), i ++)
+       {
             struct json_object *psJosnTemp = json_object_new_object();
-            json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(sRecordHeader.u8UserId));
-            json_object_object_add(psJosnTemp, JSON_TYPE,json_object_new_int(sRecordHeader.eType));
-            long int lTime = sRecordHeader.u32Time;
+            json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8UserId));
+            json_object_object_add(psJosnTemp, JSON_TYPE,json_object_new_int(Temp->eType));
+            long int lTime = Temp->u32Time;
             struct tm *pTime = localtime(&lTime);
             json_object_object_add(psJosnTemp, JSON_TIME,json_object_new_string(asctime(pTime)));
-            if(sRecordHeader.eType == E_RECORD_TYPE_TEMPORARY_PASSWORD)
-                json_object_object_add(psJosnTemp, PASSWORD_DATA,json_object_new_string((const char *)sRecordHeader.auPassword));
+            if(Temp->eType == E_RECORD_TYPE_TEMPORARY_PASSWORD)
+                json_object_object_add(psJosnTemp, PASSWORD_DATA,json_object_new_string((const char *)Temp->auPassword));
             json_object_array_add(psJsonArray, psJosnTemp);
         }
+        eZigbeeSqliteDoorLockRetrieveRecordListFree(&sRecordHeader);
+
         json_object_object_add(psJsonResult, JSON_RECORDS,psJsonArray);
         DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
                      json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
