@@ -118,7 +118,7 @@ static void vGetOption(int argc, char *argv[])
     static struct option long_options[] = {
         {"serial",                  required_argument,  NULL, 's'},
         {"help",                    no_argument,        NULL, 'h'},
-        {"front",                   required_argument,  NULL, 'f'},
+        {"front",                   no_argument,        NULL, 'f'},
         {"verbosity",               required_argument,  NULL, 'v'},
         {"baud",                    required_argument,  NULL, 'B'},
         {"channel",                 required_argument,  NULL, 'c'},
@@ -126,7 +126,7 @@ static void vGetOption(int argc, char *argv[])
         { NULL, 0, NULL, 0}
     };
 
-    while ((opt = getopt_long(argc, argv, "s:hfv:B:c:D:", long_options, &option_index)) != -1) 
+    while ((opt = getopt_long(argc, argv, "s:hfv:B:c:D:", long_options, &option_index)) != -1)
     {
         switch (opt) 
         {
@@ -134,7 +134,7 @@ static void vGetOption(int argc, char *argv[])
                 vPrintUsage(argv);
             break;
             case 'f':
-                daemonize = atoi(optarg);
+                daemonize = 0;
             break;
             case 'v':
                 verbosity = atoi(optarg);

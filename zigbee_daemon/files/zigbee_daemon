@@ -18,7 +18,7 @@ start () {
 
 
 stop () {
-	ps | grep zigbee-daemon | grep D | awk '{print $3}'  | sudo xargs kill -9
+	ps | grep zigbee-daemon | grep D | awk '{print $3}'  | xargs kill -9
 	rm -rf /var/run/zigbee_daemon.lock
 }
 
