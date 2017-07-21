@@ -141,7 +141,8 @@ typedef enum
     E_SS_COMMAND_SET_DOOR_LOCK_STATE                = 0x00F9,
 
     /* Discovery */
-    E_SS_COMMAND_DISCOVERY                  = 0xFFFF,
+    E_SS_COMMAND_DISCOVERY                          = 0x00FF,
+    E_SS_COMMAND_DISCOVERY_RESPONSE                 = 0x80FF,
 
 }teSocketCommand;
 

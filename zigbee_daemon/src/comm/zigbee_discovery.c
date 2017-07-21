@@ -149,7 +149,8 @@ static void *pvDiscoveryHandleThread(void *psThreadInfoVoid)
     while(psThreadInfo->eState == E_THREAD_RUNNING)
     {
         eThreadYield();
-        if((iRecvLen = recvfrom(psZigbeeDiscovery->iSocketFd, paRecvBuffer, MDBF, 0, 
+        memset(paRecvBuffer, 0 ,sizeof(paRecvBuffer));
+        if((iRecvLen = (int)recvfrom(psZigbeeDiscovery->iSocketFd, paRecvBuffer, MDBF, 0,
                     (struct sockaddr*)&psZigbeeDiscovery->server_addr,(socklen_t*)&iAddrLen)) > 0)
         {
             struct sockaddr_in *p = (struct sockaddr_in*)&psZigbeeDiscovery->server_addr;
@@ -162,7 +163,7 @@ static void *pvDiscoveryHandleThread(void *psThreadInfoVoid)
                     uint16 u16Command = (uint16)json_object_get_int(psJsonTemp);
                     if(E_SS_COMMAND_DISCOVERY == u16Command){
                         char auResponse[MDBF] = {0};
-                        snprintf(auResponse, sizeof(auResponse), "{\"port\":%d}", SOCKET_SERVER_PORT);
+                        snprintf(auResponse, sizeof(auResponse), "{\"type\":%d,\"port\":%d}", E_SS_COMMAND_DISCOVERY_RESPONSE, SOCKET_SERVER_PORT);
                         if(sendto(psZigbeeDiscovery->iSocketFd, auResponse, strlen(auResponse), 0, 
                                     (struct sockaddr*)&psZigbeeDiscovery->server_addr, sizeof(psZigbeeDiscovery->server_addr)) < 0)
                         {
@@ -173,6 +174,8 @@ static void *pvDiscoveryHandleThread(void *psThreadInfoVoid)
                     }
                 }
                 json_object_put(psJsonMessage);//free json object's memory
+            } else {
+                WAR_vPrintln(T_TRUE,"json format error:%s \n", paRecvBuffer);
             }
         }
         else
