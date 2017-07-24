@@ -82,14 +82,7 @@ public class MainActivity extends AppCompatActivity
         btnPassword.setVisibility(View.INVISIBLE);
         textHello.setText("欢迎使用拓邦智能门锁演示系统");
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -108,9 +101,12 @@ public class MainActivity extends AppCompatActivity
                     case (0x01):{//搜索到主机
                         textHello.setText(msg.obj.toString());
                         madapter.add(new Data(iIndex++, msg.obj.toString()));
+                        mToast("操作成功",Toast.LENGTH_SHORT, getApplicationContext() );
+
                     }break;
                     case (0x02):{
                         textHello.setText(msg.obj.toString());
+                        mToast("操作失败",Toast.LENGTH_SHORT, getApplicationContext() );
                     }break;
                     default:
                         break;
@@ -193,7 +189,7 @@ public class MainActivity extends AppCompatActivity
                     HashSet intHash = new HashSet();
                     Random random = new Random();
                     int iNumber = 0;
-                    while (iNumber < 4){
+                    while (iNumber < 6){
                         int iRandom = random.nextInt(10);
                         if(!intHash.contains(iRandom)){
                             intHash.add(iRandom);
@@ -203,8 +199,9 @@ public class MainActivity extends AppCompatActivity
                     }
                     stringPassword+="#";
                     textHello.setText("临时密码为："+stringPassword);
+                    madapter.add(new Data(iIndex++, "临时密码为："+stringPassword));
                     String stringAddPassword = "{\"type\":240,\"sequence\":0,\"mac\":0,\"id\":1," +
-                            "\"available\":1,\"time_start\":0,\"time_end\":1510629973,\"length\":6," +
+                            "\"available\":1,\"time_start\":0,\"time_end\":1510629973,\"length\":8," +
                             "\"password\":\""+stringPassword+"\"}";
 
                     new SocketSendThread(stringAddPassword, 0x8000).start();
@@ -317,6 +314,9 @@ public class MainActivity extends AppCompatActivity
             super.run();
 
             try {
+                Message msgSocket = new Message();
+                msgSocket.what = 0x01;
+
                 Socket socketHost = new Socket(stringAddress, iPort);
                 socketHost.setReuseAddress(true);
                 OutputStream sender = socketHost.getOutputStream();
@@ -333,10 +333,16 @@ public class MainActivity extends AppCompatActivity
                     JSONObject jsonObject = new JSONObject(stringRecv);
                     Log.i("PCT", "Command:"+jsonObject.getInt("type"));
                     if(iResponseCommand == jsonObject.getInt("type")){
-                     Log.i("PCT", stringRecv);
+                        Log.i("PCT", stringRecv);
+                        msgSocket.obj = stringRecv;
+                        handlerSocketRev.sendMessage(msgSocket);
                     }
                 }catch (JSONException e){
                     e.printStackTrace();
+                    Message errsmg = new Message();
+                    errsmg.what = 0x02;
+                    errsmg.obj = e.toString();
+                    handlerSocketRev.sendMessage(errsmg);
                 }
 
                 socketHost.close();
@@ -348,6 +354,10 @@ public class MainActivity extends AppCompatActivity
                 handlerSocketRev.sendMessage(errsmg);
             } catch (IOException e) {
                 e.printStackTrace();
+                Message errsmg = new Message();
+                errsmg.what = 0x02;
+                errsmg.obj = e.toString();
+                handlerSocketRev.sendMessage(errsmg);
             }
         }
     }
