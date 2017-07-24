@@ -388,9 +388,7 @@ public class MainActivity extends AppCompatActivity
                         }else if(0x00F7 == iCmd){//删除用户
                             Log.i("PCT", stringRecv);
                             msgSocket.obj = "del user:" + "删除了用户"+jsonObject.getInt("id");
-
                         }
-
                         handlerSocketRev.sendMessage(msgSocket);
                     }catch (JSONException e){
                         e.printStackTrace();
