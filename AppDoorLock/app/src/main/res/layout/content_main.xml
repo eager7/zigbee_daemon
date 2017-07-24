@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.example.chandler.doorlock.MainActivity"
+    tools:showIn="@layout/app_bar_main">
+
+    <Button
+        android:id="@+id/search_btn"
+        android:text="搜索主机"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root"
+
+        />
+
+    <Button
+        android:id="@+id/password_btn"
+        android:text="生成密码"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintRight_toRightOf="@+id/layout_root"
+        />
+
+    <Button
+        android:id="@+id/clear_btn"
+        android:text="清除"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root"
+        app:layout_constraintRight_toRightOf="@+id/layout_root"
+        />
+
+    <TextView
+        android:id="@+id/hello"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root"
+        app:layout_constraintRight_toRightOf="@+id/layout_root"
+        app:layout_constraintBottom_toBottomOf="@+id/layout_root"
+        />
+
+    <ListView
+        android:id="@+id/list_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@+id/layout_root"
+        app:layout_constraintRight_toRightOf="@+id/layout_root"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="50dp">
+    </ListView>
+</android.support.constraint.ConstraintLayout>

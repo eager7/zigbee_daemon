@@ -6,3 +6,12 @@ SI/
 link_message/Serial_LinkCommand
 *.pyc
 cmake-build-debug/
+*.iml
+.gradle
+local.properties
+.idea/workspace.xml
+.idea/libraries
+.DS_Store
+build
+captures
+.externalNativeBuild
