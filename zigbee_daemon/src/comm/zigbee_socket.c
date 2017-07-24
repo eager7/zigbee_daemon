@@ -398,7 +398,7 @@ static teSS_Status eSocketHandleLeaveNetwork(int iSocketFd, struct json_object *
 
 static teSS_Status eSocketHandleSearchDevice(int iSocketFd, struct json_object *psJsonMessage)
 {
-    INF_vPrintln(DBG_SOCKET, "Client request leave a device\n");
+    INF_vPrintln(DBG_SOCKET, "Client request search devices\n");
 
     vResponseJsonString(iSocketFd, E_SS_OK, "Success");
     if(sControlBridge.Method.preCoordinatorSearchDevices){
@@ -999,7 +999,7 @@ static teSS_Status eSocketHandleDoorLockGetUser(int iSocketFd, struct json_objec
         dl_list_for_each(Temp, &sUserHeader.list, tsDoorLockUser, list){
             struct json_object *psJosnTemp = json_object_new_object();
             json_object_object_add(psJosnTemp, JSON_ID,json_object_new_int(Temp->u8UserID));
-            json_object_object_add(psJosnTemp, JSON_TYPE,json_object_new_int(Temp->eUserType));
+            json_object_object_add(psJosnTemp, JSON_USER_TYPE,json_object_new_int(Temp->eUserType));
             json_object_object_add(psJosnTemp, JSON_PERM,json_object_new_int(Temp->eUserPerm));
             json_object_array_add(psJsonArray, psJosnTemp);
         }
@@ -1128,6 +1128,48 @@ teSS_Status eSocketDoorAlarmReport(uint8 u8Alarm){
     int i;
     for (i = 0; i < NUMBER_SOCKET_CLIENT && ClientSocket[i].iSocketClient != -1; ++i) {
         INF_vPrintln(DBG_SOCKET, "eSocketDoorAlarmReport:%d", u8Alarm);
+        send(ClientSocket[i].iSocketClient, json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0);
+    }
+
+    json_object_put(psJsonResult);
+
+    return E_SS_OK;
+}
+
+teSS_Status eSocketDoorUserAddReport(uint8 u8UserID, uint8 u8Type, uint8 u8Perm)
+{
+    json_object *psJsonResult = json_object_new_object();
+    json_object_object_add(psJsonResult, JSON_TYPE, json_object_new_int(E_SS_COMMAND_DOOR_LOCK_ADD_USER_REPORT));
+    json_object_object_add(psJsonResult, JSON_SEQUENCE, json_object_new_int(0));
+    json_object_object_add(psJsonResult, JSON_MAC, json_object_new_int64(0));
+    json_object_object_add(psJsonResult, JSON_ID, json_object_new_int(u8UserID));
+    json_object_object_add(psJsonResult, JSON_USER_TYPE, json_object_new_int(u8Type));
+    json_object_object_add(psJsonResult, JSON_PERM, json_object_new_int(u8Perm));
+
+    DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
+                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
+    int i;
+    for (i = 0; i < NUMBER_SOCKET_CLIENT && ClientSocket[i].iSocketClient != -1; ++i) {
+        send(ClientSocket[i].iSocketClient, json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0);
+    }
+
+    json_object_put(psJsonResult);
+
+    return E_SS_OK;
+}
+
+teSS_Status eSocketDoorUserDelReport(uint8 u8UserID)
+{
+    json_object *psJsonResult = json_object_new_object();
+    json_object_object_add(psJsonResult, JSON_TYPE, json_object_new_int(E_SS_COMMAND_DOOR_LOCK_DEL_USER_REPORT));
+    json_object_object_add(psJsonResult, JSON_SEQUENCE, json_object_new_int(0));
+    json_object_object_add(psJsonResult, JSON_MAC, json_object_new_int64(0));
+    json_object_object_add(psJsonResult, JSON_ID, json_object_new_int(u8UserID));
+
+    DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
+                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
+    int i;
+    for (i = 0; i < NUMBER_SOCKET_CLIENT && ClientSocket[i].iSocketClient != -1; ++i) {
         send(ClientSocket[i].iSocketClient, json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0);
     }
 

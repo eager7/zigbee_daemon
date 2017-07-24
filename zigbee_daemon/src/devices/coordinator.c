@@ -175,6 +175,7 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
     //TODO:将还未失效的临时密码发送给协调器
     sleep(1);
     eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);
+    eZigbeeCoordinatorSearchDevices();
     return E_ZB_OK;
 }
 

@@ -67,6 +67,7 @@ extern "C" {
 #define JSON_PASSWORD_LEN "length"
 #define JSON_PASSWORD "password"
 #define JSON_USER   "users"
+#define JSON_USER_TYPE "user_type"
 #define JSON_ALARM "alarm"
 #define JSON_RECORDS "records"
 #define JSON_NUM "number"
@@ -206,6 +207,8 @@ teSS_Status eSocketServer_Destroy(void);
 
 teSS_Status eSocketDoorLockReport(uint8 u8UserID, uint8 u8Mode);
 teSS_Status eSocketDoorAlarmReport(uint8 u8Alarm);
+teSS_Status eSocketDoorUserAddReport(uint8 u8UserID, uint8 u8Type, uint8 u8Perm);
+teSS_Status eSocketDoorUserDelReport(uint8 u8UserID);
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

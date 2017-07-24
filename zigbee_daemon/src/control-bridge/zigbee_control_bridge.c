@@ -29,7 +29,7 @@
 #include <door_lock.h>
 
 #include "zigbee_control_bridge.h"
-#include "zigbee_zcl.h"
+#include "zigbee_socket.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -444,6 +444,7 @@ static void vZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, v
     if (psMatchDescriptorResponse->u8NumEndpoints) /* if endpoint's number is 0, this is a invaild device */{
         tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psMatchDescriptorResponse->u16ShortAddress);
         if((NULL == psZigbeeNode) || (psZigbeeNode->sNode.u16DeviceID != 0)){
+            ERR_vPrintln(T_TRUE, "Can't find this node in the network!\n");
             return ;
         }
         eLockLock(&psZigbeeNode->mutex);
@@ -497,6 +498,7 @@ static void vZCB_HandleSimpleDescriptorResponse(void *pvUser, uint16 u16Length, 
 
     tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psSimpleDescriptorResponse->u16ShortAddress);
     if((NULL == psZigbeeNode) || (psZigbeeNode->sNode.u16DeviceID != 0)){
+        ERR_vPrintln(T_TRUE, "Can't find this node in the network!\n");
         return ;
     }
     eLockLock(&psZigbeeNode->mutex);
@@ -547,7 +549,7 @@ static void vZCB_HandleDeviceLeave(void *pvUser, uint16 u16Length, void *pvMessa
 
 static void vZCB_HandleAlarm(void *pvUser, uint16 u16Length, void *pvMessage)
 {
-    DBG_vPrintln(DBG_ZCB, "************[0x004D]vZCB_HandleDeviceLeave\n");
+    DBG_vPrintln(DBG_ZCB, "************[0x0011]vZCB_HandleAlarm\n");
     struct _tsAlarm {
         uint8     u8Sequence;
         uint8     u8SrcEndpoint;
@@ -560,16 +562,18 @@ static void vZCB_HandleAlarm(void *pvUser, uint16 u16Length, void *pvMessage)
     psMessage->u16ClusterID   = ntohs(psMessage->u16ClusterID);
     psMessage->u16ShortAddress   = ntohs(psMessage->u16ShortAddress);
     psMessage->u16AlarmCluster   = ntohs(psMessage->u16AlarmCluster);
-
-    tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(psMessage->u16ShortAddress);
+    DBG_vPrintln( DBG_ZCB, "Alarm from 0x%04X.\n",psMessage->u16ShortAddress);
+    tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psMessage->u16ShortAddress);
     if(NULL == psZigbeeNode){
         ERR_vPrintln(T_TRUE, "Can't find this node in the network!\n");
         return;
     }
     //TODO:将报警信息存入数据库并通知云端
     if(psMessage->u8AlarmCode == E_RECORD_TYPE_LOCAL_OPEN_THREATE){
+        eSocketDoorAlarmReport(1);
         eZigbeeSqliteAddDoorLockRecord(E_RECORD_TYPE_LOCAL_OPEN_THREATE, 0, (uint32)time((time_t*)NULL),NULL);
     } else if(psMessage->u8AlarmCode == E_RECORD_TYPE_LOCAL_OPEN_VIOLENCE){
+        eSocketDoorAlarmReport(0);
         eZigbeeSqliteAddDoorLockRecord(E_RECORD_TYPE_LOCAL_OPEN_VIOLENCE, 0, (uint32)time((time_t*)NULL),NULL);
     }
     return;
@@ -654,8 +658,10 @@ static void vZCB_HandleDoorLockSetUser(void *pvUser, uint16 u16Length, void *pvM
     //}
 
     if(E_CLD_DOOR_LOCK_CMD_SET_USER_STATUS == psMessage->u8Command){
+        eSocketDoorUserDelReport(psMessage->u8UserID);
         eZigbeeSqliteDelDoorLockUser(psMessage->u8UserID);
     } else if(E_CLD_DOOR_LOCK_CMD_SET_USER_TYPE == psMessage->u8Command){
+        eSocketDoorUserAddReport(psMessage->u8UserID, psMessage->u8UserType, psMessage->u8UserPermStatus);
         eZigbeeSqliteAddDoorLockUser(psMessage->u8UserID, psMessage->u8UserType, psMessage->u8UserPermStatus, "DoorLock");
     }
 
@@ -690,6 +696,7 @@ static void vZCB_HandleDoorLockStateReport(void *pvUser, uint16 u16Length, void 
 
     eZigbeeSqliteAddDoorLockRecord((teDoorLockUserType) psMessage->u8UserType, psMessage->u8UserID,
                                    (uint32) time((time_t *) NULL), NULL);
+    eSocketDoorLockReport(psMessage->u8UserID, (uint8)((psMessage->u8UserType == E_RECORD_TYPE_LOCAL_OPEN_NON_NORMAL)?1:0));
     return ;
 }
 
@@ -730,6 +737,8 @@ static void vZCB_HandleDoorLockOpenRequest(void *pvUser, uint16 u16Length, void 
                                    (uint32) time((time_t *) NULL), (const char*)sPassword.auPassword);
     sleep(1);/* Lock Door */
     eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);
+    eSocketDoorLockReport(psMessage->u8UserID, 0);
+
     return ;
 }
 
