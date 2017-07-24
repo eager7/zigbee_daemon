@@ -203,6 +203,9 @@ typedef struct _tsSocketHandleMap
 /****************************************************************************/
 teSS_Status eSocketServer_Init(void);
 teSS_Status eSocketServer_Destroy(void);
+
+teSS_Status eSocketDoorLockReport(uint8 u8UserID, uint8 u8Mode);
+teSS_Status eSocketDoorAlarmReport(uint8 u8Alarm);
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

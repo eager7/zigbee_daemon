@@ -1096,3 +1096,42 @@ teSS_Status eSocketServer_Destroy(void)
 /***        END OF FILE                                                   ***/
 /****************************************************************************/
 
+teSS_Status eSocketDoorLockReport(uint8 u8UserID, uint8 u8Mode){
+    json_object *psJsonResult = json_object_new_object();
+    json_object_object_add(psJsonResult, JSON_TYPE, json_object_new_int(E_SS_COMMAND_DOOR_LOCK_OPEN_REPORT));
+    json_object_object_add(psJsonResult, JSON_SEQUENCE, json_object_new_int(0));
+    json_object_object_add(psJsonResult, JSON_MAC, json_object_new_int64(0));
+    json_object_object_add(psJsonResult, JSON_ID, json_object_new_int(u8UserID));
+    json_object_object_add(psJsonResult, JSON_MODE, json_object_new_int(u8Mode));
+
+    DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
+                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
+    int i;
+    for (i = 0; i < NUMBER_SOCKET_CLIENT && ClientSocket[i].iSocketClient != -1; ++i) {
+        INF_vPrintln(DBG_SOCKET, "eSocketDoorLockReport:%d", u8Mode);
+        send(ClientSocket[i].iSocketClient, json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0);
+    }
+
+    json_object_put(psJsonResult);
+
+    return E_SS_OK;
+}
+teSS_Status eSocketDoorAlarmReport(uint8 u8Alarm){
+    json_object *psJsonResult = json_object_new_object();
+    json_object_object_add(psJsonResult, JSON_TYPE, json_object_new_int(E_SS_COMMAND_DOOR_LOCK_ALARM_REPORT));
+    json_object_object_add(psJsonResult, JSON_SEQUENCE, json_object_new_int(0));
+    json_object_object_add(psJsonResult, JSON_MAC, json_object_new_int64(0));
+    json_object_object_add(psJsonResult, JSON_ALARM, json_object_new_int(u8Alarm));
+
+    DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
+                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
+    int i;
+    for (i = 0; i < NUMBER_SOCKET_CLIENT && ClientSocket[i].iSocketClient != -1; ++i) {
+        INF_vPrintln(DBG_SOCKET, "eSocketDoorAlarmReport:%d", u8Alarm);
+        send(ClientSocket[i].iSocketClient, json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0);
+    }
+
+    json_object_put(psJsonResult);
+
+    return E_SS_OK;
+}

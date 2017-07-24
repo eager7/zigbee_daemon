@@ -152,7 +152,7 @@ teSQ_Status eZigbeeSqliteRetrieveDevicesList(tsZigbeeBase *psZigbee_Node)
     
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_DEVICE"");
-    DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
+    //DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
     
     sqlite3_stmt * stmt = NULL;
     if(SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
@@ -553,7 +553,7 @@ teSQ_Status eZigbeeSqliteDoorLockRetrievePasswordList(tsTemporaryPassword *psPas
 
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand), "SELECT * FROM "TABLE_PASSWORD"");
-    DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
+    //DBG_vPrintln(DBG_SQLITE, "Sqlite's Command: %s\n", SqlCommand);
 
     sqlite3_stmt * stmt = NULL;
     if(SQLITE_OK != sqlite3_prepare_v2(sZigbeeSqlite.psZgbeeDB, SqlCommand, -1, &stmt, NULL)) {
