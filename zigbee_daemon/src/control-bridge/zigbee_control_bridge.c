@@ -459,7 +459,7 @@ static void vZCB_HandleMatchDescriptorResponse(void *pvUser, uint16 u16Length, v
                 usleep(500);
                 if (eZCB_SimpleDescriptorRequest(&psZigbeeNode->sNode, psZigbeeNode->sNode.pasEndpoints[i].u8Endpoint) != E_ZB_OK){
                     ERR_vPrintln(T_TRUE, "Failed to read endpoint simple descriptor - requeue\n");
-                    eZigbeeRemoveNode(psZigbeeNode);
+                    //eZigbeeRemoveNode(psZigbeeNode);
                     return ;
                 }
             }
@@ -499,11 +499,12 @@ static void vZCB_HandleSimpleDescriptorResponse(void *pvUser, uint16 u16Length, 
     if((NULL == psZigbeeNode) || (psZigbeeNode->sNode.u16DeviceID != 0)){
         return ;
     }
+    eLockLock(&psZigbeeNode->mutex);
     if (eZigbeeNodeAddEndpoint(&psZigbeeNode->sNode,
                                psSimpleDescriptorResponse->u8Endpoint, ntohs(psSimpleDescriptorResponse->u16ProfileID),
                                NULL) != E_ZB_OK) {
         ERR_vPrintln(T_TRUE, "eZigbeeNodeAddEndpoint error\n");
-        eZigbeeRemoveNode(psZigbeeNode);
+        //eZigbeeRemoveNode(psZigbeeNode);
         return ;
     }
 
@@ -512,10 +513,11 @@ static void vZCB_HandleSimpleDescriptorResponse(void *pvUser, uint16 u16Length, 
         uint16 u16ClusterID = ntohs(psSimpleDescriptorResponse->sInputClusters.au16Clusters[i]);
         if (eZigbeeNodeAddCluster(&psZigbeeNode->sNode, psSimpleDescriptorResponse->u8Endpoint, u16ClusterID) != E_ZB_OK){
             ERR_vPrintln(T_TRUE, "eZigbeeNodeAddCluster error\n");
-            eZigbeeRemoveNode(psZigbeeNode);
+            //eZigbeeRemoveNode(psZigbeeNode);
             return ;
         }
     }
+    eLockunLock(&psZigbeeNode->mutex);
     vZCB_InitZigbeeNodeInfo(psZigbeeNode, psSimpleDescriptorResponse->u16DeviceID);
 }
 /**
