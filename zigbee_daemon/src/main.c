@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        eSocketDoorAlarmReport(0);
+        //eSocketDoorAlarmReport(0);
     }
     eZCB_Finish();
     eZigbeeSqliteFinished();
