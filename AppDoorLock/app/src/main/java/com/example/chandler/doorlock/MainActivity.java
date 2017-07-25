@@ -1,8 +1,10 @@
 package com.example.chandler.doorlock;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -52,6 +54,8 @@ public class MainActivity extends AppCompatActivity
     private TextView textHello;
     private Button btnSearch;
     private Button btnPassword;
+    private Button btnStop;
+    private int iNumberPassword = 0;
     private int iPort = 0;
     private int iIndex = 1;
     private String stringAddress;
@@ -68,7 +72,7 @@ public class MainActivity extends AppCompatActivity
         textHello = (TextView)findViewById(R.id.hello);
         btnSearch = (Button)findViewById(R.id.search_btn);
         btnPassword = (Button)findViewById(R.id.password_btn);
-        Button btnClear = (Button) findViewById(R.id.clear_btn);
+        btnStop = (Button)findViewById(R.id.stop_btn);
         ListView listView = (ListView) findViewById(R.id.list_view);
         List<Data> mData = new LinkedList<Data>();
         mData.add(new Data(iIndex++, "暂无数据"));
@@ -78,11 +82,11 @@ public class MainActivity extends AppCompatActivity
         madapter = new mAdapter((LinkedList<Data>) mData, MainActivity.this);
         listView.setAdapter(madapter);
 
-        btnSearch.setVisibility(View.INVISIBLE);
+        btnSearch.setVisibility(View.VISIBLE);
         btnPassword.setVisibility(View.INVISIBLE);
+        btnStop.setVisibility(View.INVISIBLE);
+        textHello.setVisibility(View.INVISIBLE);
         textHello.setText("欢迎使用拓邦智能门锁演示系统");
-
-
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -93,7 +97,8 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        handlerSocketRev = new Handler(){
+        handlerSocketRev = new Handler()
+        {
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
@@ -108,18 +113,32 @@ public class MainActivity extends AppCompatActivity
                         textHello.setText(msg.obj.toString());
                         mToast("操作失败",Toast.LENGTH_SHORT, getApplicationContext() );
                     }break;
+                    case (0x0f):{
+                        textHello.setText(msg.obj.toString());
+                        madapter.add(new Data(iIndex++, msg.obj.toString()));
+                        mToast("主机搜索成功",Toast.LENGTH_SHORT, getApplicationContext());
+
+                        textHello.setText("获取上报事件");
+                        btnSearch.setVisibility(View.INVISIBLE);
+                        btnPassword.setVisibility(View.INVISIBLE);
+                        btnStop.setVisibility(View.INVISIBLE);
+
+                        new SocketRecvThread().start();
+                    }
                     default:
                         break;
                 }
             }
         };
-        btnClear.setOnClickListener(new View.OnClickListener() {
+        btnSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                textHello.setText(" ");
+                textHello.setText("正在搜索主机...");
+                mToast("searchIotcServer", Toast.LENGTH_SHORT, getApplicationContext());
+                Log.i("PCT", "Start Search Thread");
+                new SocketSearchThread().start();
             }
         });
-
     }
 
     @Override
@@ -128,7 +147,21 @@ public class MainActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            new AlertDialog.Builder(this)
+            .setTitle("确认退出")
+            .setIcon(android.R.drawable.ic_dialog_info)
+            .setPositiveButton("返回", new DialogInterface.OnClickListener(){
+                @Override
+                public void onClick(DialogInterface dialog, int which){
+                    mToast("back", Toast.LENGTH_LONG, getApplicationContext());
+                }
+            }).setNegativeButton("确定", new DialogInterface.OnClickListener(){
+                @Override
+                public void onClick(DialogInterface dialog, int which){
+                    MainActivity.super.onBackPressed();
+                }
+            }).show();
+            //super.onBackPressed();
         }
     }
 
@@ -162,23 +195,8 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_camera) {
             // Handle the camera action
-            btnSearch.setVisibility(View.VISIBLE);
-            btnPassword.setVisibility(View.INVISIBLE);
-            textHello.setText("Search Host");
-
-            btnSearch.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    textHello.setText("正在搜索主机...");
-                    mToast("searchIotcServer", Toast.LENGTH_SHORT, getApplicationContext());
-                    Log.i("PCT", "Start Search Thread");
-                    new SocketSearchThread().start();
-                }
-            });
-
-        } else if (id == R.id.nav_gallery) {
-            textHello.setText("Temporary Password");
             btnSearch.setVisibility(View.INVISIBLE);
+            btnStop.setVisibility(View.INVISIBLE);
             btnPassword.setVisibility(View.VISIBLE);
 
             btnPassword.setOnClickListener(new View.OnClickListener() {
@@ -203,24 +221,14 @@ public class MainActivity extends AppCompatActivity
                     String stringAddPassword = "{\"type\":240,\"sequence\":0,\"mac\":0,\"id\":1," +
                             "\"available\":1,\"time_start\":0,\"time_end\":1510629973,\"length\":8," +
                             "\"password\":\""+stringPassword+"\"}";
-
                     new SocketSendThread(stringAddPassword, 0x8000).start();
                 }
             });
-
+        } else if (id == R.id.nav_gallery) {
         } else if (id == R.id.nav_slideshow) {
-            textHello.setText("Event Report");
-            btnSearch.setVisibility(View.INVISIBLE);
-            btnPassword.setVisibility(View.INVISIBLE);
-
-            new SocketRecvThread().start();
         } else if (id == R.id.nav_manage) {
-            textHello.setText("Get Records");
-
         } else if (id == R.id.nav_share) {
-
         } else if (id == R.id.nav_send) {
-
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -228,6 +236,7 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
     private class SocketSearchThread extends Thread{
+        private boolean bSuccess = false;
         private SocketSearchThread(){
 
         }
@@ -240,11 +249,10 @@ public class MainActivity extends AppCompatActivity
                 DatagramSocket bcSocket = new DatagramSocket(null);
                 bcSocket.setReuseAddress(true);
                 bcSocket.bind(new InetSocketAddress(6789));
-                bcSocket.setSoTimeout(5000);
+                bcSocket.setSoTimeout(1000);
 
                 String strSearch = "{\"type\":255}";
-                byte[] bufferSend = new byte[256];
-                bufferSend = strSearch.getBytes("utf-8");
+                byte[] bufferSend = strSearch.getBytes("utf-8");
                 DatagramPacket sendPacket = new DatagramPacket(bufferSend, bufferSend.length, InetAddress.getByName("255.255.255.255"), 6789);
                 bcSocket.send(sendPacket);
 
@@ -263,32 +271,41 @@ public class MainActivity extends AppCompatActivity
                         JSONObject jsonObject = new JSONObject(new String(receivePacket.getData()).trim());
                         Log.i("PCT", "Command:"+jsonObject.getInt("type"));
                         if(0x80ff == jsonObject.getInt("type")){
+                            bSuccess = true;
                             iPort = jsonObject.getInt("port");
                             stringAddress = receivePacket.getAddress().getHostAddress();
                             String strRecv;
                             strRecv = new String(receivePacket.getData()).trim();
                             Log.i("PCT", "Search Response:"+strRecv);
                             Message msgSocket = new Message();
-                            msgSocket.what = 0x01;
+                            msgSocket.what = 0x0f;
                             msgSocket.obj = "address:" + receivePacket.getAddress().getHostAddress() + "; data:" + strRecv;
                             handlerSocketRev.sendMessage(msgSocket);
                             break;
                         }
                     }catch (JSONException e){
                         e.printStackTrace();
+                        Message errsmg = new Message();
+                        errsmg.what = 0x02;
+                        errsmg.obj = e.toString();
+                        handlerSocketRev.sendMessage(errsmg);
                     }
+                }
+                if(!bSuccess){
+                    Message errsmg = new Message();
+                    errsmg.what = 0x02;
+                    errsmg.obj = "未收到响应";
+                    handlerSocketRev.sendMessage(errsmg);
                 }
 
                 bcSocket.disconnect();
                 bcSocket.close();
-            } catch (SocketException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 Message errsmg = new Message();
                 errsmg.what = 0x02;
                 errsmg.obj = e.toString();
                 handlerSocketRev.sendMessage(errsmg);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -301,8 +318,8 @@ public class MainActivity extends AppCompatActivity
         toast.show();
     }
     private class SocketSendThread extends Thread{
-        public String stringCommand;
-        public int iResponseCommand;
+        String stringCommand;
+        int iResponseCommand;
         private SocketSendThread(String str, int iCommand){
             Log.i("PCT", str);
             stringCommand = str;
@@ -346,12 +363,6 @@ public class MainActivity extends AppCompatActivity
                 }
 
                 socketHost.close();
-            } catch (SocketException e) {
-                e.printStackTrace();
-                Message errsmg = new Message();
-                errsmg.what = 0x02;
-                errsmg.obj = e.toString();
-                handlerSocketRev.sendMessage(errsmg);
             } catch (IOException e) {
                 e.printStackTrace();
                 Message errsmg = new Message();
@@ -362,13 +373,14 @@ public class MainActivity extends AppCompatActivity
         }
     }
     private class SocketRecvThread extends Thread{
+        private Socket socketHost;
         private SocketRecvThread(){}
         @Override
         public void run() {
             super.run();
             while(true){
                 try {
-                    Socket socketHost = new Socket(stringAddress, iPort);
+                    socketHost = new Socket(stringAddress, iPort);
                     socketHost.setReuseAddress(true);
                     InputStream receiver = socketHost.getInputStream();
 
@@ -377,8 +389,8 @@ public class MainActivity extends AppCompatActivity
                     String stringRecv = new String(buffer).trim();
                     Log.i("PCT", stringRecv);
 
+                    Message msgSocket = new Message();
                     try {
-                        Message msgSocket = new Message();
                         msgSocket.what = 0x01;
                         JSONObject jsonObject = new JSONObject(stringRecv);
                         int iCmd = jsonObject.getInt("type");
@@ -402,20 +414,26 @@ public class MainActivity extends AppCompatActivity
                         handlerSocketRev.sendMessage(msgSocket);
                     }catch (JSONException e){
                         e.printStackTrace();
+                        msgSocket.what = 0x02;
+                        msgSocket.obj = "Json格式有误";
+                        handlerSocketRev.sendMessage(msgSocket);
                     }
 
-                    socketHost.close();
-                } catch (SocketException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                     Message errsmg = new Message();
                     errsmg.what = 0x02;
                     errsmg.obj = e.toString();
                     handlerSocketRev.sendMessage(errsmg);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                }finally {
+                    try{
+                        if(socketHost != null)
+                            socketHost.close();
+                    }catch (IOException ee){
+                        ee.printStackTrace();
+                    }
                 }
             }
-
         }
     }
 }

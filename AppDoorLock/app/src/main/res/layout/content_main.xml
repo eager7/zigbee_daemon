@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="@+id/layout_root"
-
+        app:layout_constraintRight_toRightOf="@+id/layout_root"
         />
 
     <Button
@@ -23,18 +23,17 @@
         android:text="生成密码"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root"
         app:layout_constraintRight_toRightOf="@+id/layout_root"
         />
-
     <Button
-        android:id="@+id/clear_btn"
-        android:text="清除"
+        android:id="@+id/stop_btn"
+        android:text="停止接收"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="@+id/layout_root"
         app:layout_constraintRight_toRightOf="@+id/layout_root"
         />
-
     <TextView
         android:id="@+id/hello"
         android:layout_width="wrap_content"
