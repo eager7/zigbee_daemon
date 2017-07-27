@@ -29,6 +29,7 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(TARGET) $(1)/bin/
+	$(INSTALL_BIN) ./files/button_mknod.sh $(1)/root/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

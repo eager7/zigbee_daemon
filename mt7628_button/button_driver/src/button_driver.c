@@ -23,7 +23,7 @@
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
-#define GPIO_MAJOR 250	//major version
+#define GPIO_MAJOR 0	//major version
 #define GPIO_MINOR 0
 
 #define GPIO_NUM 1
