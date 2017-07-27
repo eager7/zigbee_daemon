@@ -12,7 +12,7 @@
 
 int main()
 {
-	const char *device_cmd = "/root/button_mknod.sh";
+	const char *device_cmd = "/etc/button_mknod.sh";
     if(access(DEV,F_OK) < 0)
         system(device_cmd);
     int button_fd = open(DEV,O_RDWR);
