@@ -17,7 +17,7 @@ PKG_BUILD_DIR:= $(BUILD_DIR)/$(PKG_NAME)
 
 define Package/$(PKG_NAME)
   SECTION:=topband
-  CATEGORY:=topband
+  CATEGORY:=Topband
   TITLE:=button_application
 endef
 

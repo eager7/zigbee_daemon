@@ -1,8 +1,8 @@
 /*************************************************************************
-	> File Name: gpio_control.c
+	> File Name: button_driver.c
 	> Author: PCT
 	> Mail: 
-	> Created Time: 2015年11月25日 星期三 14时55分14秒
+	> Created Time: 2017年07月25日
  ************************************************************************/
 /****************************************************************************/
 /***        Include files                                                 ***/
@@ -23,7 +23,7 @@
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
-#define GPIO_MAJOR 0	//major version
+#define GPIO_MAJOR 250	//major version
 #define GPIO_MINOR 0
 
 #define GPIO_NUM 1
@@ -32,6 +32,7 @@
 //////////////////////////REGISTER ADDRESS////////////////////////////
 #define RALINK_SYSCTL_ADDR		RALINK_SYSCTL_BASE	// system control
 #define RALINK_REG_GPIOMODE		(RALINK_SYSCTL_ADDR + 0x60)
+#define RALINK_AGPIO_CFG		(RALINK_SYSCTL_ADDR + 0x3C)
 #define RALINK_REG_GPIOMODE2	(RALINK_SYSCTL_ADDR + 0x64)
 #define RALINK_IRQ_ADDR			RALINK_INTCL_BASE
 #define RALINK_PRGIO_ADDR		RALINK_PIO_BASE // Programmable I/O
@@ -89,23 +90,14 @@ struct cdev cdev;
 /****************************************************************************/
 static void led_init()
 {
+	//Set SD digital mode
+	(*(volatile u32 *)RALINK_AGPIO_CFG) 	&= cpu_to_le32(~(0x0f<<17));
+	(*(volatile u32 *)RALINK_AGPIO_CFG) 	|= cpu_to_le32(0x0f<<17);
 	//GPIO#25, set IO mode and output
 	(*(volatile u32 *)RALINK_REG_GPIOMODE) 	&= 	cpu_to_le32(~(0x03<<10));	//clear the 10&11 bit
 	(*(volatile u32 *)RALINK_REG_GPIOMODE) 	|=  cpu_to_le32((0x01<<10));	//set the 10&11 bit,GPIO
 	(*(volatile u32 *)RALINK_REG_PIODIR) 	&= 	cpu_to_le32(~(0x01<<25));
 	(*(volatile u32 *)RALINK_REG_PIODIR) 	|=	cpu_to_le32((0x01<<25));
-	
-	//RESET,GPIO#36, set IO mode and output
-	(*(volatile u32 *)RALINK_REG_GPIOMODE) &= cpu_to_le32(~(0x01<<16));//clear the 16 bit
-	(*(volatile u32 *)RALINK_REG_GPIOMODE) |=  cpu_to_le32((0x01<<16));//set the 16 bit
-	(*(volatile u32 *)RALINK_REG_PIOEDGE) &= cpu_to_le32(~(0x01<<4));
-	(*(volatile u32 *)RALINK_REG_PIOEDGE) |=  cpu_to_le32((0x01<<4));
-	
-	//MISO,GPIO#6, set IO mode and output
-	(*(volatile u32 *)RALINK_REG_GPIOMODE) &= cpu_to_le32(~(0x03<<4));//clear the 4&5 bit
-	(*(volatile u32 *)RALINK_REG_GPIOMODE) |=  cpu_to_le32((0x01<<4));//set the 4&5 bit
-	(*(volatile u32 *)RALINK_REG_PIODIR) &= cpu_to_le32(~(0x01<<6));
-	(*(volatile u32 *)RALINK_REG_PIODIR) |=  cpu_to_le32((0x01<<6));
 }
 
 static void led_on()
@@ -114,7 +106,7 @@ static void led_on()
 }
 static void led_off()
 {
-	(*(volatile u32 *)RALINK_REG_PIODATA) &= cpu_to_le32(~(0x01<<25));
+	(*(volatile u32 *)RALINK_REG_PIODATA) |= cpu_to_le32((0x01<<25));
 }
 
 static void reset_on()
