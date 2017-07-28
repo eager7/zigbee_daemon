@@ -31,8 +31,8 @@
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
-static int gpio_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos);
-static int gpio_read(struct file *filp, char __user *buf, size_t size, loff_t *ppos);
+static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos);
+static ssize_t gpio_read(struct file *filp, char __user*buf, size_t size, loff_t *ppos);
 inline static unsigned gpio_poll(struct file *filp, poll_table *pwait);
 static int gpio_open(struct inode *inode, struct file *filp);
 long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
@@ -54,14 +54,14 @@ static struct file_operations gpio_optns =
 	.aio_write		= NULL,			//asynchronous write
 	.readdir		= NULL,			//read dir, only used for filesystem
 	.poll  			= gpio_poll,	//poll to judge the device whether it can non blocking read & write
-	//.ioctl 			= NULL,			//executive the cmd, int the later version of linux, used fun unlocked_ioctl replace this fun
+	//.ioctl 			= NULL,		//executive the cmd, int the later version of linux, used fun unlocked_ioctl replace this fun
 	.unlocked_ioctl = gpio_ioctl,	//if system doens't use BLK filesystem ,the use this fun indeeded iotcl
 	.compat_ioctl 	= NULL,			//the 32bit program will use this fun replace the ioctl in the 64bit platform
 	.mmap			= NULL,			//memory mapping
 	.open  			= gpio_open,	//open device
 	.flush			= NULL,			//flush device
-	.release		= mem_release,			//close the device
-	//.synch			= NULL,			//refresh the data
+	.release		= mem_release,	//close the device
+	//.synch			= NULL,		//refresh the data
 	.aio_fsync		= NULL,			//asynchronouse .synch
 	.fasync			= NULL,			//notifacation the device's Flag changed
 };
@@ -90,20 +90,19 @@ static void gpio_init()
 	(*(volatile u32 *)RALINK_REG_PIODIR) 	&= 	cpu_to_le32(~(0x01<<22));//KEY4
 }
 
-static void led2_on()
+static void inline led2_on()
 {
 	(*(volatile u32 *)RALINK_REG_PIODATA) &= cpu_to_le32(~(0x01<<25));
 }
-static void led2_off()
+static void inline led2_off()
 {
 	(*(volatile u32 *)RALINK_REG_PIODATA) |= cpu_to_le32((0x01<<25));
 }
-
-static void led3_on()
+static void inline led3_on()
 {
 	(*(volatile u32 *)RALINK_REG_PIODATA) &= cpu_to_le32(~(0x01<<27));
 }
-static void led3_off()
+static void inline led3_off()
 {
 	(*(volatile u32 *)RALINK_REG_PIODATA) |= cpu_to_le32((0x01<<27));
 }
@@ -114,27 +113,36 @@ static unsigned char get_button_data()
 	unsigned char u8Data = (u32Data >> 22) & 0xff;
 	return u8Data;
 }
-void timer_function(unsigned long arg)
+void led2_timer_function(unsigned long arg)
 {
-	printk(KERN_DEBUG "Timer Trigger\n");
-    if(button_driver.u8FlagLed2){
-        button_driver.bStateLed2 ? led2_on():led2_off();
-        button_driver.bStateLed2 = !button_driver.bStateLed2;
-    }
-    if(button_driver.u8FlagLed3){
-        button_driver.bStateLed3 ? led3_on():led3_off();
-        button_driver.bStateLed3 = !button_driver.bStateLed3;
-    }
-    button_driver.timer_times ++;
-    if(button_driver.timer_times > button_driver.timer_led.data * 2){
-        if(timer_pending(&button_driver.timer_led)){
-            del_timer(&button_driver.timer_led);
+	printk(KERN_DEBUG "led2_timer_function Trigger\n");
+    button_driver.led2.bLedState ? led2_on():led2_off();
+    button_driver.led2.bLedState = !button_driver.led2.bLedState;
+
+    button_driver.led2.timer_times ++;
+    if(button_driver.led2.timer_times > button_driver.led2.timer_led.data * 2){
+        if(timer_pending(&button_driver.led2.timer_led)){
+            del_timer(&button_driver.led2.timer_led);
         }
     }else{
-        mod_timer(&button_driver.timer_led, jiffies + (50));//设置定时器，每隔0.5秒执行一次
+        mod_timer(&button_driver.led2.timer_led, jiffies + (50));//设置定时器，每隔0.5秒执行一次
     }
 }
+void led3_timer_function(unsigned long arg)
+{
+    printk(KERN_DEBUG "led3_timer_function Trigger\n");
+    button_driver.led3.bLedState ? led3_on():led3_off();
+    button_driver.led3.bLedState = !button_driver.led3.bLedState;
 
+    button_driver.led3.timer_times ++;
+    if(button_driver.led3.timer_times > button_driver.led3.timer_led.data * 2){
+        if(timer_pending(&button_driver.led3.timer_led)){
+            del_timer(&button_driver.led3.timer_led);
+        }
+    }else{
+        mod_timer(&button_driver.led3.timer_led, jiffies + (50));//设置定时器，每隔0.5秒执行一次
+    }
+}
 static void reset_on()
 {
 	(*(volatile u32 *)RALINK_REG_PIODATA2) |= cpu_to_le32(0x01<<4);
@@ -182,8 +190,10 @@ static int __init button_driver_init(void)
 
     gpio_init(); led2_on(); led3_on();
 	
-	init_timer(&button_driver.timer_led);
-    button_driver.timer_led.function = timer_function;//设置定时器超时函数
+	init_timer(&button_driver.led2.timer_led);
+	init_timer(&button_driver.led3.timer_led);
+    button_driver.led2.timer_led.function = led2_timer_function;//设置定时器超时函数
+    button_driver.led3.timer_led.function = led3_timer_function;//设置定时器超时函数
 	//reset_on();
 	//spimiso_on();
     return 0;
@@ -197,14 +207,14 @@ static void button_driver_exit(void)
 	//del_timer(&timer_key);
 }
 
-static int gpio_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos)
+static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos)
 {
 	printk(KERN_DEBUG "gpio_write\n");
 	
 	return 0;
 }
 
-static int gpio_read(struct file *filp, char __user *buf, size_t size, loff_t *ppos)
+static ssize_t gpio_read(struct file *filp, char __user *buf, size_t size, loff_t *ppos)
 {
 	printk(KERN_DEBUG "gpio_read\n");
 	if(size != 1){
@@ -244,10 +254,12 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	printk(KERN_DEBUG "gpio_ioctl\n");
     unsigned long val = 0;
-    if(copy_from_user(&val, &arg, sizeof(val))){
+    //arg并不是用户空间传进来的值，而是一个指针
+    if(copy_from_user(&val, (unsigned long*)arg, sizeof(val))){
         return -EFAULT;
     }
-	switch(cmd){
+    printk(KERN_DEBUG "cmd:%d, get value:%ld\n", cmd, val);
+    switch(cmd){
 		case E_GPIO_DRIVER_LED2_CONTROL:{
 			printk(KERN_DEBUG "E_GPIO_DRIVER_LED2_CONTROL, arg %ld\n", arg);
 			val ? led2_on() : led2_off();
@@ -258,9 +270,14 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         }break;
 		case E_GPIO_DRIVER_LED2_FLSAH:{
 			printk(KERN_DEBUG "E_GPIO_DRIVER_LED2_FLSAH, arg %ld\n", arg);
-            button_driver.timer_led.data = val;//传递给定时器超时函数的值，这里传进来的是闪烁时间
-            return mod_timer(&button_driver.timer_led, jiffies + 50);
+            button_driver.led2.timer_led.data = val;//传递给定时器超时函数的值，这里传进来的是闪烁时间
+            return mod_timer(&button_driver.led2.timer_led, jiffies + 50);
 		}break;
+        case E_GPIO_DRIVER_LED3_FLSAH:{
+            printk(KERN_DEBUG "E_GPIO_DRIVER_LED3_FLSAH, arg %ld\n", arg);
+            button_driver.led3.timer_led.data = val;//传递给定时器超时函数的值，这里传进来的是闪烁时间
+            return mod_timer(&button_driver.led3.timer_led, jiffies + 50);
+        }break;
         default:break;
 	}
 	return 0;

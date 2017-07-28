@@ -64,15 +64,17 @@ typedef enum {
 
 }button_driver_e;
 
+typedef struct _led_control{
+    struct timer_list timer_led;
+    bool bLedState;
+    unsigned int timer_times;
+}led_control_t;
+
 typedef struct _button_driver_t{
     int driver_major;
 	struct cdev device;
-	struct timer_list timer_led;
-    unsigned int timer_times;
-    unsigned char u8FlagLed2;
-    bool bStateLed2;
-    unsigned char u8FlagLed3;
-    bool bStateLed3;
+    led_control_t led2;
+    led_control_t led3;
 }button_driver_t;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
