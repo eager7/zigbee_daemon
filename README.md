@@ -16,6 +16,9 @@ zigbee网关的测试程序，有C和Python两个版本，在没有APP的情况�
 #### zigbee_flash
 zigbee芯片的烧录程序，可以将bin文件烧录到芯片中。
 
+#### mt7628_driver
+mt7628的LED和按键驱动程序
+
 #### Doc
 部分文档，APP和zigbee_daemon的通信协议文档。
 

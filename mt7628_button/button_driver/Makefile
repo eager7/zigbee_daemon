@@ -6,10 +6,11 @@ PKG_NAME:=$(shell pwd | sed 's/\/.*.\///g')
 PKG_CONFIG:=$(shell echo $(PKG_NAME) | tr '[a-z]' '[A-Z]')
 PKG_RELEASE:=0.1
 
+#99为最后装载
 define KernelPackage/$(PKG_NAME)
 	CATEGORY:=Topband
 	TITLE:=$(PKG_NAME)
-	AUTOLOAD:=$(call AutoLoad,30,$(PKG_NAME))
+	#AUTOLOAD:=$(call AutoLoad,99,$(PKG_NAME))
 	FILES:=$(PKG_BUILD_DIR)/$(PKG_NAME).$(LINUX_KMOD_SUFFIX)
 endef
 
