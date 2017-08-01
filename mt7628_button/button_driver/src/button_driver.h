@@ -76,6 +76,8 @@ typedef enum {
     E_GPIO_DRIVER_STOP_FLSAH,
     E_GPIO_DRIVER_ENABLE_KEY_INTERUPT,
     E_GPIO_DRIVER_DISABLE_KEY_INTERUPT,
+
+    E_GPIO_DRIVER_INIT,
 }button_driver_e;
 
 typedef struct _led_control{

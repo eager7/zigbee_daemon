@@ -14,13 +14,15 @@
 int button_fd = 0;
 
 typedef enum {
-	E_GPIO_DRIVER_LED2_CONTROL = 0x01,
-	E_GPIO_DRIVER_LED3_CONTROL,
-	E_GPIO_DRIVER_LED2_FLSAH,
-	E_GPIO_DRIVER_LED3_FLSAH,
-	E_GPIO_DRIVER_STOP_FLSAH,
+    E_GPIO_DRIVER_LED2_CONTROL = 0x01,
+    E_GPIO_DRIVER_LED3_CONTROL,
+    E_GPIO_DRIVER_LED2_FLSAH,
+    E_GPIO_DRIVER_LED3_FLSAH,
+    E_GPIO_DRIVER_STOP_FLSAH,
     E_GPIO_DRIVER_ENABLE_KEY_INTERUPT,
     E_GPIO_DRIVER_DISABLE_KEY_INTERUPT,
+
+    E_GPIO_DRIVER_INIT,
 }button_driver_e;
 
 void signal_handler(int signum)
@@ -45,7 +47,8 @@ int main()
         return -1;
     }
 	int val = 0;
-	int i;
+    ioctl(button_fd, E_GPIO_DRIVER_INIT, &val);
+    int i;
 #if 0
 	for(i = 0; i < 5; i++){
 		printf("-----------Open Led2\n");

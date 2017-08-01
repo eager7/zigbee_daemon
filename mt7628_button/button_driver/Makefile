@@ -10,7 +10,7 @@ PKG_RELEASE:=0.1
 define KernelPackage/$(PKG_NAME)
 	CATEGORY:=Topband
 	TITLE:=$(PKG_NAME)
-	#AUTOLOAD:=$(call AutoLoad,99,$(PKG_NAME))
+	AUTOLOAD:=$(call AutoLoad,99,$(PKG_NAME))
 	FILES:=$(PKG_BUILD_DIR)/$(PKG_NAME).$(LINUX_KMOD_SUFFIX)
 endef
 

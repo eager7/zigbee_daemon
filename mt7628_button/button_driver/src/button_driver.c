@@ -252,6 +252,9 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     pid_t pid;
 
     switch(cmd){
+        case E_GPIO_DRIVER_INIT:{
+            gpio_init(); led2_on(); led3_on();
+        }break;
 		case E_GPIO_DRIVER_LED2_CONTROL:{
             //arg并不是用户空间传进来的值，而是一个指针
             if(copy_from_user(&val, (unsigned long*)arg, sizeof(val))){
