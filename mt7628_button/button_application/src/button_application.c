@@ -25,13 +25,11 @@ typedef enum {
 
 void signal_handler(int signum)
 {
-    unsigned char btn = 0;
+    unsigned char btn[2] = {0};
     read(button_fd, &btn, sizeof(btn));
 
-    if(signum == SIGUSR1){
-        printf("key[%d] press\n", btn);
-    } else if(signum == SIGUSR2){
-        printf("key[%d] hold\n", btn);
+    if(signum == SIGUSR2){
+        printf("key[%d][%d] hold\n", btn[0], btn[2]);
     }
 
 }
@@ -95,9 +93,9 @@ int main()
 #endif
 
 #if 1
-    signal(SIGUSR1,signal_handler);
     signal(SIGUSR2,signal_handler);
     printf("enable interrupt\n");
+    val = getpid();
     ioctl(button_fd, E_GPIO_DRIVER_ENABLE_KEY_INTERUPT, &val);
     printf("waiting....\n");
     pause();

@@ -62,6 +62,9 @@ extern "C" {
 #define KEY3 24
 #define KEY4 22
 #define KEYS ((1<<KEY2)|(1<<KEY3)|(1<<KEY4))
+
+#define SHORT_KEY 0x01
+#define LONG_KEY 0x02
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
@@ -82,14 +85,14 @@ typedef struct _led_control{
 }led_control_t;
 
 typedef struct _btn_control{
-    struct timer_list timer_btn;
-    unsigned char btn_value;
+    unsigned char state;//0x01,short press; 0x02,long press
+    unsigned char value;
 } btn_control_t;
 
 typedef struct _button_driver_t{
     int driver_major;
     pid_t pid;
-	struct cdev device;
+	struct cdev device; //驱动设备在内核中以inode的形式存在，字符类设备使用cdev结构体
     led_control_t led2;
     led_control_t led3;
     btn_control_t btn;

@@ -47,9 +47,8 @@ int mem_release(struct inode *inode, struct file *filp);
 /***        Local Variables                                               ***/
 /****************************************************************************/
 static button_driver_t button_driver;
-static DECLARE_WAIT_QUEUE_HEAD(button_waitq);
-static struct work_struct gpio_event_hold;
-static struct work_struct gpio_event_click;
+static struct work_struct gpio_event_click;//类似消息队列的任务处理队列
+/** 驱动模块和应用层通过文件描述符来进行链接，每次打开文件都会创建一个文件描述符，但是inode文件实体只有一个*/
 static struct file_operations gpio_optns =
 {
 	.owner 			= THIS_MODULE,	//the module's owner
@@ -116,20 +115,9 @@ static void inline led3_off(void)
 
 static unsigned char get_button_data(void)
 {
-	unsigned int u32Data = (*(volatile u32 *)(RALINK_REG_PIODATA));	
+	unsigned int u32Data = (*(volatile u32 *)(RALINK_REG_PIODATA));	//读取数值
 	unsigned char u8Data = (unsigned char)((u32Data >> 22) & 0xff);
 	return u8Data;
-}
-void button_timer_function(unsigned long arg)
-{
-    unsigned char btn = get_button_data();
-    if(!(btn & BUTTON_SW2) || !(btn & BUTTON_SW3) || !(btn & BUTTON_SW4)){
-        printk(KERN_DEBUG "get key value[%d]\n", btn);
-        button_driver.btn.btn_value = btn;
-        del_timer(&button_driver.btn.timer_btn);
-        wake_up_interruptible(&button_waitq);
-    }
-    mod_timer(&button_driver.btn.timer_btn, jiffies + 5);
 }
 void led2_timer_function(unsigned long arg)
 {
@@ -161,54 +149,6 @@ void led3_timer_function(unsigned long arg)
     }
 }
 
-static int __init button_driver_init(void)
-{
-	dev_t dev_no = MKDEV(GPIO_MAJOR, GPIO_MINOR);
-	int result = 0;
-    printk(KERN_DEBUG "Hello Kernel Init!\n");
-	
-	/*region device version*/
-	if(GPIO_MAJOR){
-		printk(KERN_DEBUG "static region device\n");
-		result = register_chrdev_region(dev_no, GPIO_NUM, GPIO_NAME);//static region
-	}else{
-		printk(KERN_DEBUG "alloc region device\n");
-		result = alloc_chrdev_region(&dev_no, GPIO_MAJOR, GPIO_NUM, GPIO_NAME);//alloc region
-		button_driver.driver_major = MAJOR(dev_no);//get major
-	}
-	if(result < 0){
-		printk(KERN_ERR "Region Device Error, %d\n", result);
-		return result;
-	}
-	
-	cdev_init(&button_driver.device, &gpio_optns);//将内核设备和文件节点链接起来
-    button_driver.device.owner = THIS_MODULE;
-    button_driver.device.ops = &gpio_optns;
-	
-	printk(KERN_DEBUG "cdev_add\n");
-	cdev_add(&button_driver.device, (dev_t)MKDEV(button_driver.driver_major, GPIO_MINOR), GPIO_NUM);//regedit the device
-
-    gpio_init(); led2_on(); led3_on();
-	
-	init_timer(&button_driver.led2.timer_led);
-	init_timer(&button_driver.led3.timer_led);
-    button_driver.led2.timer_led.function = led2_timer_function;//设置定时器超时函数
-    button_driver.led3.timer_led.function = led3_timer_function;//设置定时器超时函数
-
-    init_timer(&button_driver.btn.timer_btn);
-    button_driver.btn.timer_btn.function = button_timer_function;
-
-    return 0;
-}
-
-static void button_driver_exit(void)
-{
-    printk(KERN_ALERT "unregion the gpio device\n");
-    cdev_del(&button_driver.device);//delete the device
-	unregister_chrdev_region((dev_t)MKDEV(button_driver.driver_major, GPIO_MINOR), GPIO_NUM);//unregion device
-    //disable gpio interrupt
-    //*(volatile u32 *)(RALINK_REG_INTDIS) = cpu_to_le32(RALINK_INTCTL_PIO);
-}
 
 static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos)
 {
@@ -219,22 +159,21 @@ static ssize_t gpio_write(struct file *filp, const char __user *buf, size_t size
 
 static ssize_t gpio_read(struct file *filp, char __user *buf, size_t size, loff_t *ppos)
 {
-	printk(KERN_DEBUG "gpio_read\n");
-	if(size != 1){
+	if(size != 2){
         return -EINVAL;	
 	}
 	
-    if(copy_to_user(buf, button_driver.btn.btn_value, 1)){
+    if(copy_to_user(buf, (unsigned char*)&button_driver.btn, size)){
         return -EFAULT;
 	}
-    button_driver.btn.btn_value = 0;
+    button_driver.btn.state = 0;
+    button_driver.btn.value = 0;
 	return 0;
 }
 
-void ralink_gpio_notify_user(int usr)
+void gpio_click_notify(struct work_struct *work)
 {
     struct task_struct *ptask = NULL;
-    printk(KERN_DEBUG "ralink_gpio_notify_user:%d\n", usr);
 
     if(button_driver.pid < 2){
         printk(KERN_ERR GPIO_NAME ":can't send any signal if pid is 0 or 1\n");
@@ -245,27 +184,7 @@ void ralink_gpio_notify_user(int usr)
         printk(KERN_ERR GPIO_NAME ":no registered process to notify\n");
         return;
     }
-    if (usr == 1) {
-        printk(KERN_NOTICE GPIO_NAME ": sending a SIGUSR1 to process %d\n",button_driver.pid);
-        send_sig(SIGUSR1, ptask, 0);
-    }
-    else if (usr == 2) {
-        printk(KERN_NOTICE GPIO_NAME ": sending a SIGUSR2 to process %d\n",button_driver.pid);
-        send_sig(SIGUSR2, ptask, 0);
-    }
-}
-
-void gpio_click_notify(struct work_struct *work)
-{
-    printk("<hua-dbg> %s, 1\n", __FUNCTION__);
-    ralink_gpio_notify_user(1);
-}
-
-
-void gpio_hold_notify(struct work_struct *work)
-{
-    printk("<hua-dbg> %s, 2\n", __FUNCTION__);
-    ralink_gpio_notify_user(2);
+    send_sig(SIGUSR2, ptask, 0);
 }
 
 irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
@@ -278,26 +197,24 @@ irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
         unsigned long rising;
     };
     static struct gpio_time_record record;
-    printk(KERN_DEBUG "ralink_gpio_irq_handler\n");
 
-    ralink_gpio_intp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOINT));
-    ralink_gpio_edge = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOEDGE));
-    *(volatile u32 *)(RALINK_REG_PIOINT) = cpu_to_le32(0xFFFFFFFF);
-    *(volatile u32 *)(RALINK_REG_PIOEDGE) = cpu_to_le32(0xFFFFFFFF);
-    if(ralink_gpio_edge & KEYS){
-        if (time_before(jiffies, record.falling + 200L)) {
+    ralink_gpio_intp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOINT));//读取中断标志位
+    ralink_gpio_edge = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOEDGE));//读取中断状态，是上升沿还是下降沿
+    *(volatile u32 *)(RALINK_REG_PIOINT) = cpu_to_le32(0xFFFFFFFF);//清空中断标志位
+    *(volatile u32 *)(RALINK_REG_PIOEDGE) = cpu_to_le32(0xFFFFFFFF);//清空中断状态
+    if(ralink_gpio_edge & KEYS){//上升沿
+        if (time_before(jiffies, record.falling + 100*3)) {//3s
             //one click
-            schedule_work(&gpio_event_click);
-        }
-        else {
+            button_driver.btn.state = SHORT_KEY;
+        } else {
             //press for several seconds
-            schedule_work(&gpio_event_hold);
+            button_driver.btn.state = LONG_KEY;
         }
-    } else {
-        btn = get_button_data();
+        schedule_work(&gpio_event_click);
+    } else {//下降沿
+        btn = get_button_data();//读取GPIO数值
         if(!(btn & BUTTON_SW2) || !(btn & BUTTON_SW3) || !(btn & BUTTON_SW4)){
-            printk(KERN_DEBUG "get key value[%d]\n", btn);
-            button_driver.btn.btn_value = btn;
+            button_driver.btn.value = btn;
         }
         record.falling = jiffies;
     }
@@ -308,16 +225,14 @@ irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
 static int gpio_open(struct inode *inode, struct file *filp)
 {
     int result = 0;
-	printk(KERN_DEBUG "gpio_open\n");
     try_module_get(THIS_MODULE);
-
+    /** 注册按键中断和中断处理函数 */
     result = request_irq(SURFBOARDINT_GPIO, ralink_gpio_irq_handler, IRQF_DISABLED, "ralink_gpio", NULL);
     if(result){
-        printk(KERN_INFO "request irq error:%d\n", result);
+        printk(KERN_ERR "request irq error:%d\n", result);
         return result;
     }
-
-    INIT_WORK(&gpio_event_hold, gpio_hold_notify);
+    /** 添加两个处理函数，分别处理短按和长按 */
     INIT_WORK(&gpio_event_click, gpio_click_notify);
 
 	return 0;
@@ -326,21 +241,15 @@ static int gpio_open(struct inode *inode, struct file *filp)
 inline static unsigned gpio_poll(struct file *filp, poll_table *pwait)
 {
 	printk(KERN_DEBUG "gpio_poll\n");
-    //button_driver.btn.timer_btn.expires = jiffies + 5;
-    //add_timer(&button_driver.btn.timer_btn);//启动定时器
 
-    poll_wait(filp, &button_waitq, pwait);
-    if(button_driver.btn.btn_value != 0){
-        return (POLL_IN | POLLRDNORM);
-    }
 	return 0;
 }
 
 long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
+    unsigned long tmp = 0;
     unsigned long val = 0;
     pid_t pid;
-	printk(KERN_DEBUG "gpio_ioctl\n");
 
     switch(cmd){
 		case E_GPIO_DRIVER_LED2_CONTROL:{
@@ -375,22 +284,22 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             return mod_timer(&button_driver.led3.timer_led, jiffies + 50);
         }break;
         case E_GPIO_DRIVER_ENABLE_KEY_INTERUPT:{
+            /** 用户层需要传递自身的PID到内核中，在中断发生时内核通知应用层 */
             if(copy_from_user(&pid, (pid_t*)arg, sizeof(pid))){
                 return -EFAULT;
             }
             button_driver.pid = pid;
-            printk(KERN_DEBUG "E_GPIO_DRIVER_ENABLE_KEY_INTERUPT\n");
-            (*(volatile u32 *)RALINK_REG_INTENA) 	= cpu_to_le32(RALINK_INTCTL_PIO);
-            unsigned long tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIORENA));
+            (*(volatile u32 *)RALINK_REG_INTENA) 	= cpu_to_le32(RALINK_INTCTL_PIO);//使能GPIO中断
+            tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIORENA));
             tmp |= ((1<<22)|(1<<24)|(1<<28));
-            (*(volatile u32 *)RALINK_REG_PIORENA) 	= cpu_to_le32(tmp);
+            (*(volatile u32 *)RALINK_REG_PIORENA) 	= cpu_to_le32(tmp);//使能上升沿中断
             tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOFENA));
             tmp |= ((1<<22)|(1<<24)|(1<<28));
-            (*(volatile u32 *)RALINK_REG_PIOFENA) 	= cpu_to_le32(tmp);
+            (*(volatile u32 *)RALINK_REG_PIOFENA) 	= cpu_to_le32(tmp);//使能下降沿中断
         }break;
         case E_GPIO_DRIVER_DISABLE_KEY_INTERUPT:{
             printk(KERN_DEBUG "E_GPIO_DRIVER_DISABLE_KEY_INTERUPT\n");
-            (*(volatile u32 *)RALINK_REG_INTDIS) 	= cpu_to_le32(RALINK_INTCTL_PIO);
+            (*(volatile u32 *)RALINK_REG_INTDIS) 	= cpu_to_le32(RALINK_INTCTL_PIO);//关掉GPIO中断
         }break;
         default:break;
 	}
@@ -400,50 +309,54 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 int mem_release(struct inode *inode, struct file *filp)
 {
 	printk(KERN_DEBUG "mem_release\n");
-    free_irq(SURFBOARDINT_GPIO, NULL);
+    free_irq(SURFBOARDINT_GPIO, NULL);//释放注册的中断
     module_put(THIS_MODULE);
 	return 0;
 }
-#if 0
-irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
+
+static int __init button_driver_init(void)
 {
-    printk(KERN_DEBUG "ralink_gpio_irq_handler\n");
-    struct gpio_time_record {
-        unsigned long falling;
-        unsigned long rising;
-    };
-    static struct gpio_time_record record;
-    unsigned int ralink_gpio_intp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOINT));
-    unsigned int ralink_gpio_edge = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOEDGE));
-    *(volatile u32 *)(RALINK_REG_PIOINT) = cpu_to_le32(0xFFFFFFFF);
-    *(volatile u32 *)(RALINK_REG_PIOEDGE) = cpu_to_le32(0xFFFFFFFF);
-    if(ralink_gpio_edge & KEYS){
-        if (time_before(jiffies, record.falling + 200L)) {
-            //one click
-            schedule_work(&gpio_event_click);
-        }
-        else {
-            //press for several seconds
-            schedule_work(&gpio_event_hold);
-        }
-    } else {
-        record.falling = jiffies;
+    dev_t dev_no = MKDEV(GPIO_MAJOR, GPIO_MINOR);
+    int result = 0;
+
+    /*region device version*/
+    if(GPIO_MAJOR){
+        printk(KERN_DEBUG "static region device\n");
+        result = register_chrdev_region(dev_no, GPIO_NUM, GPIO_NAME);//static region
+    }else{
+        printk(KERN_DEBUG "alloc region device\n");
+        result = alloc_chrdev_region(&dev_no, GPIO_MAJOR, GPIO_NUM, GPIO_NAME);//alloc region
+        button_driver.driver_major = MAJOR(dev_no);//get major
+    }
+    if(result < 0){
+        printk(KERN_ERR "Region Device Error, %d\n", result);
+        return result;
     }
 
-    return IRQ_HANDLED;
-}
-struct irqaction ralink_gpio_irqaction = {
-        .handler = ralink_gpio_irq_handler,
-        .flags = IRQF_DISABLED,
-        .name = GPIO_NAME,
-};
+    cdev_init(&button_driver.device, &gpio_optns);//将内核设备和文件节点链接起来
+    button_driver.device.owner = THIS_MODULE;
+    button_driver.device.ops = &gpio_optns;
 
-void __init ralink_gpio_init_irq(void)
-{
-    printk(KERN_DEBUG "ralink_gpio_init_irq\n");
-    setup_irq(SURFBOARDINT_GPIO, &ralink_gpio_irqaction);
+    printk(KERN_DEBUG "cdev_add\n");//将设备文件注册到内核中
+    cdev_add(&button_driver.device, (dev_t)MKDEV(button_driver.driver_major, GPIO_MINOR), GPIO_NUM);//regedit the device
+    /** 初始化IO和按键的模式及方向*/
+    gpio_init(); led2_on(); led3_on();
+    /** 为LED的闪烁添加定时器 */
+    init_timer(&button_driver.led2.timer_led);
+    init_timer(&button_driver.led3.timer_led);
+    button_driver.led2.timer_led.function = led2_timer_function;//设置定时器超时函数
+    button_driver.led3.timer_led.function = led3_timer_function;//设置定时器超时函数
+
+    return 0;
 }
-#endif
+
+static void button_driver_exit(void)
+{
+    printk(KERN_ALERT "unregion the gpio device\n");
+    cdev_del(&button_driver.device);//delete the device
+    unregister_chrdev_region((dev_t)MKDEV(button_driver.driver_major, GPIO_MINOR), GPIO_NUM);//unregion device
+}
+
 /****************************************************************************/
 /***        Kernel    Module                                              ***/
 /****************************************************************************/
