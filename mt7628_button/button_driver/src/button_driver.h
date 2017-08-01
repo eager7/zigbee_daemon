@@ -42,16 +42,26 @@ extern "C" {
 #define RALINK_REG_GPIOMODE		(RALINK_SYSCTL_ADDR + 0x60)
 #define RALINK_AGPIO_CFG		(RALINK_SYSCTL_ADDR + 0x3C)
 #define RALINK_REG_GPIOMODE2	(RALINK_SYSCTL_ADDR + 0x64)
+
 #define RALINK_IRQ_ADDR			RALINK_INTCL_BASE
+#define RALINK_REG_INTDIS		(RALINK_IRQ_ADDR   + 0x78)
+#define RALINK_REG_INTENA		(RALINK_IRQ_ADDR   + 0x80)
+
 #define RALINK_PRGIO_ADDR		RALINK_PIO_BASE // Programmable I/O
 #define RALINK_REG_PIODIR		(RALINK_PRGIO_ADDR + 0x00)
-#define RALINK_REG_PIOEDGE		(RALINK_PRGIO_ADDR + 0x04)
+#define RALINK_REG_PIOEDGE		(RALINK_PRGIO_ADDR + 0xA0)
 #define RALINK_REG_PIODATA		(RALINK_PRGIO_ADDR + 0x20)
-#define RALINK_REG_PIODATA2		(RALINK_PRGIO_ADDR + 0x24)
+#define RALINK_REG_PIORENA		(RALINK_PRGIO_ADDR + 0x50)
+#define RALINK_REG_PIOFENA		(RALINK_PRGIO_ADDR + 0x60)
+#define RALINK_REG_PIOINT		(RALINK_PRGIO_ADDR + 0x90)
 
 #define BUTTON_SW2 0x40
 #define BUTTON_SW3 0x04
 #define BUTTON_SW4 0x01
+#define KEY2 28
+#define KEY3 24
+#define KEY4 22
+#define KEYS ((1<<KEY2)|(1<<KEY3)|(1<<KEY4))
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
@@ -61,7 +71,8 @@ typedef enum {
     E_GPIO_DRIVER_LED2_FLSAH,
     E_GPIO_DRIVER_LED3_FLSAH,
     E_GPIO_DRIVER_STOP_FLSAH,
-
+    E_GPIO_DRIVER_ENABLE_KEY_INTERUPT,
+    E_GPIO_DRIVER_DISABLE_KEY_INTERUPT,
 }button_driver_e;
 
 typedef struct _led_control{
@@ -70,11 +81,18 @@ typedef struct _led_control{
     unsigned int timer_times;
 }led_control_t;
 
+typedef struct _btn_control{
+    struct timer_list timer_btn;
+    unsigned char btn_value;
+} btn_control_t;
+
 typedef struct _button_driver_t{
     int driver_major;
+    pid_t pid;
 	struct cdev device;
     led_control_t led2;
     led_control_t led3;
+    btn_control_t btn;
 }button_driver_t;
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
