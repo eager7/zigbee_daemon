@@ -20,7 +20,7 @@ set(SOURCE_FILES
 		utils/list.c  utils/mthread.c  utils/zigbee_sqlite.c
 		devices/zigbee_devices.c
 		devices/door_lock_controller.c devices/coordinator.c devices/door_lock.c
-		zigbee/zigbee_node.c
+		zigbee/zigbee_node.c utils/zigbee_button.c
         )
 
 #add_library(libsrp.a STATIC)

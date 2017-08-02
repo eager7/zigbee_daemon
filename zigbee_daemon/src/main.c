@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
+#include <sys/ioctl.h>
 #include "door_lock.h"
 #include "zigbee_devices.h"
 #include "zigbee_socket.h"
@@ -43,7 +44,6 @@
 /****************************************************************************/
 const char *pVersion = "1.0";
 volatile sig_atomic_t bRunning = 1;
-
 int verbosity = 7;
 int daemonize = 1;
 uint32 u32BaudRate = 115200;
@@ -66,6 +66,7 @@ tsDeviceIDMap asDeviceIDMap[] =
     { E_ZBD_DOOR_LOCK_CONTROLLER,   eDoorLockControllerInitialize },
     { E_ZBD_END_DEVICE_DEVICE,      eEndDeviceInitialize },
 };
+
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -194,6 +195,7 @@ static void vQuitSignalHandler (int sig)
     
     return;
 }
+
 /**
  * Fork a new progress and replaced current progress, then the progress turn to background
  * */
@@ -310,6 +312,10 @@ int main(int argc, char *argv[])
     }
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
 
+    if(){
+        //Init Button
+
+    }
     /** Check temporary password per 10 seconds */
     while(bRunning){
         sleep(10);

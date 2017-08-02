@@ -47,6 +47,7 @@ int mem_release(struct inode *inode, struct file *filp);
 /***        Local Variables                                               ***/
 /****************************************************************************/
 static button_driver_t button_driver;
+static bool bInterrupt = false;
 static struct work_struct gpio_event_click;//类似消息队列的任务处理队列
 /** 驱动模块和应用层通过文件描述符来进行链接，每次打开文件都会创建一个文件描述符，但是inode文件实体只有一个*/
 static struct file_operations gpio_optns =
@@ -113,11 +114,9 @@ static void inline led3_off(void)
 	(*(volatile u32 *)RALINK_REG_PIODATA) |= cpu_to_le32((0x01<<27));
 }
 
-static unsigned char get_button_data(void)
+static unsigned long get_button_data(void)
 {
-	unsigned int u32Data = (*(volatile u32 *)(RALINK_REG_PIODATA));	//读取数值
-	unsigned char u8Data = (unsigned char)((u32Data >> 22) & 0xff);
-	return u8Data;
+	return le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));	//读取数值
 }
 void led2_timer_function(unsigned long arg)
 {
@@ -189,7 +188,9 @@ void gpio_click_notify(struct work_struct *work)
 
 irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
 {
-    unsigned char btn = 0;
+    static unsigned long btn = 0;
+    static unsigned long btn_falling = 0;
+    static unsigned long btn_rising = 0;
     unsigned int ralink_gpio_intp =0;
     unsigned int ralink_gpio_edge = 0;
     struct gpio_time_record {
@@ -198,25 +199,41 @@ irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
     };
     static struct gpio_time_record record;
 
+    printk(KERN_DEBUG "ralink_gpio_irq_handler\n");
     ralink_gpio_intp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOINT));//读取中断标志位
     ralink_gpio_edge = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOEDGE));//读取中断状态，是上升沿还是下降沿
     *(volatile u32 *)(RALINK_REG_PIOINT) = cpu_to_le32(0xFFFFFFFF);//清空中断标志位
     *(volatile u32 *)(RALINK_REG_PIOEDGE) = cpu_to_le32(0xFFFFFFFF);//清空中断状态
-    if(ralink_gpio_edge & KEYS){//上升沿
-        if (time_before(jiffies, record.falling + 100*3)) {//3s
-            //one click
-            button_driver.btn.state = SHORT_KEY;
-        } else {
-            //press for several seconds
-            button_driver.btn.state = LONG_KEY;
+    if(ralink_gpio_intp & KEYS){
+        if(ralink_gpio_edge & KEYS){//上升沿
+            btn_rising = get_button_data();
+            printk(KERN_DEBUG "get_button_data rising:%lu\n", btn_rising);
+            btn = btn_falling ^ btn_rising;//读取GPIO数值
+            printk(KERN_DEBUG "get_button_data:%lu\n", btn);
+            if(btn & (1<<KEY2)){
+                printk(KERN_DEBUG "key2 been pressed\n");
+                button_driver.btn.value = BUTTON_SW2;
+            }else if(btn & (1<<KEY3)){
+                printk(KERN_DEBUG "key3 been pressed\n");
+                button_driver.btn.value = BUTTON_SW3;
+            }else if(btn & (1<<KEY4)){
+                printk(KERN_DEBUG "key4 been pressed\n");
+                button_driver.btn.value = BUTTON_SW4;
+            }
+            if (time_before(jiffies, record.falling + 100*3)) {//3s
+                //one click
+                button_driver.btn.state = SHORT_KEY;
+            } else {
+                //press for several seconds
+                button_driver.btn.state = LONG_KEY;
+            }
+            schedule_work(&gpio_event_click);
+        } else {//下降沿
+            btn_falling = get_button_data();//读取GPIO数值
+            printk(KERN_DEBUG "get_button_data falling:%lu\n", btn);
+
+            record.falling = jiffies;
         }
-        schedule_work(&gpio_event_click);
-    } else {//下降沿
-        btn = get_button_data();//读取GPIO数值
-        if(!(btn & BUTTON_SW2) || !(btn & BUTTON_SW3) || !(btn & BUTTON_SW4)){
-            button_driver.btn.value = btn;
-        }
-        record.falling = jiffies;
     }
 
     return IRQ_HANDLED;
@@ -227,12 +244,12 @@ static int gpio_open(struct inode *inode, struct file *filp)
     int result = 0;
     try_module_get(THIS_MODULE);
     /** 注册按键中断和中断处理函数 */
-    result = request_irq(SURFBOARDINT_GPIO, ralink_gpio_irq_handler, IRQF_DISABLED, "ralink_gpio", NULL);
+    result = request_irq(SURFBOARDINT_GPIO, ralink_gpio_irq_handler, IRQF_ONESHOT, "ralink_gpio", NULL);
     if(result){
         printk(KERN_ERR "request irq error:%d\n", result);
         return result;
     }
-    /** 添加两个处理函数，分别处理短按和长按 */
+    /** 添加处理函数，处理短按和长按 */
     INIT_WORK(&gpio_event_click, gpio_click_notify);
 
 	return 0;
@@ -299,6 +316,7 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOFENA));
             tmp |= ((1<<22)|(1<<24)|(1<<28));
             (*(volatile u32 *)RALINK_REG_PIOFENA) 	= cpu_to_le32(tmp);//使能下降沿中断
+			bInterrupt = true;
         }break;
         case E_GPIO_DRIVER_DISABLE_KEY_INTERUPT:{
             printk(KERN_DEBUG "E_GPIO_DRIVER_DISABLE_KEY_INTERUPT\n");
@@ -312,6 +330,8 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 int mem_release(struct inode *inode, struct file *filp)
 {
 	printk(KERN_DEBUG "mem_release\n");
+	bInterrupt = false;
+	button_driver.pid = 0;
     free_irq(SURFBOARDINT_GPIO, NULL);//释放注册的中断
     module_put(THIS_MODULE);
 	return 0;

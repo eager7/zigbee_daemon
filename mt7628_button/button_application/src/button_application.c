@@ -12,6 +12,10 @@
 
 #define DEV "/dev/button"
 int button_fd = 0;
+typedef struct _btn_control{
+    unsigned char state;//0x01,short press; 0x02,long press
+    unsigned char value;
+} btn_control_t;
 
 typedef enum {
     E_GPIO_DRIVER_LED2_CONTROL = 0x01,
@@ -27,11 +31,11 @@ typedef enum {
 
 void signal_handler(int signum)
 {
-    unsigned char btn[2] = {0};
+    btn_control_t btn;
     read(button_fd, &btn, sizeof(btn));
 
     if(signum == SIGUSR2){
-        printf("key[%d][%d] hold\n", btn[0], btn[2]);
+        printf("key[%d][%d] hold\n", btn.state, btn.value);
     }
 
 }
@@ -101,6 +105,11 @@ int main()
     val = getpid();
     ioctl(button_fd, E_GPIO_DRIVER_ENABLE_KEY_INTERUPT, &val);
     printf("waiting....\n");
+    pause();
+    pause();
+    pause();
+    pause();
+    pause();
     pause();
     printf("disable interrupt\n");
     ioctl(button_fd, E_GPIO_DRIVER_DISABLE_KEY_INTERUPT, &val);
