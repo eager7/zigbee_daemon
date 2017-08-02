@@ -28,13 +28,13 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <syslog.h>
-#include <sys/ioctl.h>
 #include "door_lock.h"
 #include "zigbee_devices.h"
 #include "zigbee_socket.h"
 #include "zigbee_discovery.h"
 //#include "zigbee_cloud.h"
 #include "coordinator.h"
+#include "zigbee_button.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -312,10 +312,10 @@ int main(int argc, char *argv[])
     }
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
 
-    if(){
+    //if(){
         //Init Button
-
-    }
+        iButtonInitialize();
+    //}
     /** Check temporary password per 10 seconds */
     while(bRunning){
         sleep(10);
@@ -337,6 +337,7 @@ int main(int argc, char *argv[])
         }
         //eSocketDoorAlarmReport(0);
     }
+    iButtonFinished();
     eZCB_Finish();
     eZigbeeSqliteFinished();
     eSocketServer_Destroy();
