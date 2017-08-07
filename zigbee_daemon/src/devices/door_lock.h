@@ -18,8 +18,8 @@
 
 
 
-#ifndef __DOOR_LOCK_H__
-#define __DOOR_LOCK_H__
+#ifndef __ZIGBEE_DOOR_LOCK_H__
+#define __ZIGBEE_DOOR_LOCK_H__
 
 #if defined __cplusplus
 extern "C" {

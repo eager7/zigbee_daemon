@@ -21,20 +21,19 @@
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
+#include <stdio.h>
+#include <signal.h>
 #include <getopt.h>
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <signal.h>
 #include <syslog.h>
 #include "door_lock.h"
 #include "zigbee_devices.h"
+#include "coordinator.h"
 #include "zigbee_socket.h"
 #include "zigbee_discovery.h"
-//#include "zigbee_cloud.h"
-#include "coordinator.h"
-#include "zigbee_button.h"
+//#include "zigbee_button.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -314,7 +313,8 @@ int main(int argc, char *argv[])
 
     //if(){
         //Init Button
-        iButtonInitialize();
+    DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
+    //iButtonInitialize();
     //}
     /** Check temporary password per 10 seconds */
     while(bRunning){
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
         }
         //eSocketDoorAlarmReport(0);
     }
-    iButtonFinished();
+    //iButtonFinished();
     eZCB_Finish();
     eZigbeeSqliteFinished();
     eSocketServer_Destroy();

@@ -28,18 +28,8 @@ extern "C" {
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
-#include <stdint.h>
 #include "utils.h"
-#include <stdlib.h>
-#include <poll.h>
-#include <string.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/ioctl.h>
+
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/

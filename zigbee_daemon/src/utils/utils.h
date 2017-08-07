@@ -25,19 +25,7 @@ extern "C" {
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include <malloc.h>
-#include <syslog.h>
-#include <json-c/json.h>
-#include <sys/time.h>
-#include <arpa/inet.h>
-#include <syslog.h>
-#include <time.h>
-#include <sqlite3.h>
+
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/

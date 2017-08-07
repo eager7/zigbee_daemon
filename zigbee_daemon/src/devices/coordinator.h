@@ -18,8 +18,8 @@
 
 
 
-#ifndef __COORDINATOR_H__
-#define __COORDINATOR_H__
+#ifndef __ZIGBEE_COORDINATOR_H__
+#define __ZIGBEE_COORDINATOR_H__
 
 #if defined __cplusplus
 extern "C" {
