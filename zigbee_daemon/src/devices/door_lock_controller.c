@@ -18,6 +18,7 @@
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
+#include <json-c/json.h>
 #include <zigbee_node.h>
 #include "door_lock_controller.h"
 #include "zigbee_devices.h"

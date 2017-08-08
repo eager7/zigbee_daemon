@@ -28,8 +28,6 @@ extern "C" {
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
-#include <stdint.h>
-#include "utils.h"
 #include "serial_link.h"
 #include "zigbee_zcl.h"
 #include "zigbee_node.h"

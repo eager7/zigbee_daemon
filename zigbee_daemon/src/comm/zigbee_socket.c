@@ -199,7 +199,7 @@ static void *pvSocketServerThread(void *psThreadInfoVoid)
                                 }
                                 memset(psSCallBackThreadData, 0, sizeof(tsSSCallbackThreadData));
                                 psSCallBackThreadData->u16Length = ClientSocket[i].u16Length;
-                                psSCallBackThreadData->iSocketClientfd = ClientSocket[i].iSocketClient;
+                                psSCallBackThreadData->iSocketClientFd = ClientSocket[i].iSocketClient;
                                 memcpy(psSCallBackThreadData->au8Message, ClientSocket[i].auClientData, sizeof(psSCallBackThreadData->au8Message));
 
                                 eQueueEnqueue(&psSocketServer->sQueue, psSCallBackThreadData);
@@ -242,22 +242,22 @@ static void *pvSocketCallbackHandlerThread(void *psThreadInfoVoid)
                     int i = 0;
                     for(i = 0; i < sizeof(sSocketHandleMap)/sizeof(tsSocketHandleMap); i++) {
                         if(eSocketCommand == sSocketHandleMap[i].eSocketCommand) {
-                            teSS_Status eStatus = sSocketHandleMap[i].preMessageHandlePacket(psCallbackData->iSocketClientfd, psJsonMessage);
+                            teSS_Status eStatus = sSocketHandleMap[i].preMessageHandlePacket(psCallbackData->iSocketClientFd, psJsonMessage);
                             if(E_SS_INCORRECT_PARAMETERS == eStatus){
-                                vResponseJsonString(psCallbackData->iSocketClientfd, E_SS_INCORRECT_PARAMETERS, "Parameters Error");
+                                vResponseJsonString(psCallbackData->iSocketClientFd, E_SS_INCORRECT_PARAMETERS, "Parameters Error");
                             } else if(E_SS_ERROR == eStatus){
-                                vResponseJsonString(psCallbackData->iSocketClientfd, E_SS_ERROR, "Command Failed");
+                                vResponseJsonString(psCallbackData->iSocketClientFd, E_SS_ERROR, "Command Failed");
                             }
                         }
                     }
                 }
             } else {
-                vResponseJsonString(psCallbackData->iSocketClientfd, E_SS_ERROR_UNHANDLED_COMMAND, "Command invalid");
+                vResponseJsonString(psCallbackData->iSocketClientFd, E_SS_ERROR_UNHANDLED_COMMAND, "Command invalid");
             }
             json_object_put(psJsonMessage);//free json object's memory
         } else {
             ERR_vPrintln(T_TRUE, "ResponseJsonFormatError error\n");
-            vResponseJsonString(psCallbackData->iSocketClientfd, E_SS_INCORRECT_PARAMETERS, "Parameters Error");
+            vResponseJsonString(psCallbackData->iSocketClientFd, E_SS_INCORRECT_PARAMETERS, "Parameters Error");
         }
         FREE(psCallbackData);
         eThreadYield();

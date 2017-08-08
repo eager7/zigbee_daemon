@@ -42,7 +42,6 @@ extern "C" {
 #include <net/if.h>
 #include <netinet/in.h>
 #include <linux/sockios.h>
-#include "utils.h"
 #include "mthread.h"
 #include "zigbee_socket.h"
 /****************************************************************************/

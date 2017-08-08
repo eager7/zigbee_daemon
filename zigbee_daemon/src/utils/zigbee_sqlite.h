@@ -28,9 +28,7 @@ extern "C" {
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
-#include <stdint.h>
-#include "utils.h"
-#include "serial_link.h"
+#include <sqlite3.h>
 #include "zigbee_node.h"
 #include "door_lock.h"
 

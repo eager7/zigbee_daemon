@@ -30,7 +30,6 @@ extern "C" {
 /****************************************************************************/
 #include <stdint.h>
 #include <signal.h>
-#include "utils.h"
 #include "serial_link.h"
 #include "zigbee_zcl.h"
 
@@ -73,7 +72,7 @@ typedef struct
 
 typedef struct
 {
-    struct timeval  sLastSuccessful;        /**< Time of last successful communications */
+    //struct timeval  sLastSuccessful;        /**< Time of last successful communications */
     uint16          u16SequentialFailures;  /**< Number of sequential failures */
 } tsComm;                                  /**< Structure containing communications statistics */
 

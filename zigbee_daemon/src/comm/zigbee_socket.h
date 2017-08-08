@@ -27,8 +27,8 @@ extern "C" {
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
-
 #include <netinet/in.h>
+#include <json-c/json.h>
 #include "mthread.h"
 #include "zigbee_node.h"
 #include "zigbee_sqlite.h"
@@ -176,12 +176,12 @@ typedef struct _clientSocket
 /** Structure allocated and passed to callback handler thread */
 typedef struct
 {
-    int iSocketClientfd;
+    int iSocketClientFd;
     uint16 u16Length;
     uint8  au8Message[MABF];
 } tsSSCallbackThreadData;
 
-typedef teSS_Status (*tpreMessageHandlePacket)(int iSocketfd, struct json_object *psJsonMessage);
+typedef teSS_Status (*tpreMessageHandlePacket)(int iSocketFd, struct json_object *psJsonMessage);
 typedef struct _tsSocketHandleMap
 {
     teSocketCommand eSocketCommand;

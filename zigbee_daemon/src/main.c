@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <syslog.h>
+#include <fcntl.h>
 #include "door_lock.h"
 #include "zigbee_devices.h"
 #include "coordinator.h"

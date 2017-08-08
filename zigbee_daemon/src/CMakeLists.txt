@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 2.8)
 project(zigbee_daemon)
 SET(TARGET zigbee_daemon)
 
@@ -11,7 +11,7 @@ include_directories(
 		comm  control-bridge  devices utils  zigbee
         )
 include_directories(/usr/include/sys)
-link_directories(./lib)
+#link_directories(./lib)
 
 set(SOURCE_FILES
         main.c
