@@ -32,6 +32,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(TARGET) $(1)/bin/
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/zigbee_daemon $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/button_mknod.sh $(1)/etc/init.d/
 endef
 
 define Package/$(PKG_NAME)/postinst

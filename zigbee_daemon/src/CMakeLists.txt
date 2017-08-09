@@ -21,6 +21,7 @@ set(SOURCE_FILES
 		devices/zigbee_devices.c
 		devices/door_lock_controller.c devices/coordinator.c devices/door_lock.c
 		zigbee/zigbee_node.c
+		utils/zigbee_button.c
         )
 
 #add_library(libsrp.a STATIC)

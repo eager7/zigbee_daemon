@@ -47,7 +47,7 @@ int mem_release(struct inode *inode, struct file *filp);
 /***        Local Variables                                               ***/
 /****************************************************************************/
 static button_driver_t button_driver;
-static bool bInterrupt = false;
+int id_share_interrupt = 124;
 static struct work_struct gpio_event_click;//类似消息队列的任务处理队列
 /** 驱动模块和应用层通过文件描述符来进行链接，每次打开文件都会创建一个文件描述符，但是inode文件实体只有一个*/
 static struct file_operations gpio_optns =
@@ -239,7 +239,7 @@ static int gpio_open(struct inode *inode, struct file *filp)
     int result = 0;
     try_module_get(THIS_MODULE);
     /** 注册按键中断和中断处理函数 */
-    result = request_irq(SURFBOARDINT_GPIO, ralink_gpio_irq_handler, IRQF_ONESHOT, "ralink_gpio", NULL);
+    result = request_irq(SURFBOARDINT_GPIO, ralink_gpio_irq_handler, IRQF_DISABLED, "ralink_gpio", NULL);
     if(result){
         printk(KERN_ERR "request irq error:%d\n", result);
         return result;
@@ -309,7 +309,6 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOFENA));
             tmp |= ((1<<22)|(1<<24)|(1<<28));
             (*(volatile u32 *)RALINK_REG_PIOFENA) 	= cpu_to_le32(tmp);//使能下降沿中断
-			bInterrupt = true;
         }break;
         case E_GPIO_DRIVER_DISABLE_KEY_INTERUPT:{
             printk(KERN_DEBUG "E_GPIO_DRIVER_DISABLE_KEY_INTERUPT\n");
@@ -323,7 +322,6 @@ long gpio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 int mem_release(struct inode *inode, struct file *filp)
 {
 	printk(KERN_DEBUG "mem_release\n");
-	bInterrupt = false;
 	button_driver.pid = 0;
     free_irq(SURFBOARDINT_GPIO, NULL);//释放注册的中断
     module_put(THIS_MODULE);

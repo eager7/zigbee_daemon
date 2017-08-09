@@ -34,7 +34,7 @@
 #include "coordinator.h"
 #include "zigbee_socket.h"
 #include "zigbee_discovery.h"
-//#include "zigbee_button.h"
+#include "zigbee_button.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
     //if(){
         //Init Button
     DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
-    //iButtonInitialize();
+    iButtonInitialize();
     //}
     /** Check temporary password per 10 seconds */
     while(bRunning){
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
         }
         //eSocketDoorAlarmReport(0);
     }
-    //iButtonFinished();
+    iButtonFinished();
     eZCB_Finish();
     eZigbeeSqliteFinished();
     eSocketServer_Destroy();

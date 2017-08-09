@@ -18,6 +18,14 @@
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/ioctl.h>
 #include "zigbee_button.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -56,7 +64,7 @@ static void vButtonSignalHandler (int sig)
                     }break;
                     case BUTTON_SW4:{
                         DBG_vPrintln(DBG_BUTTON, "Got key4\n");
-
+                        iLedControl(E_LED2_FLASH, 60);
                     }break;
                         default:break;
                 }
@@ -81,12 +89,13 @@ int iButtonInitialize()
     }
     iButtonFd = open("/dev/button",O_RDWR);
     if(iButtonFd < 0){
-        printf("can't open %s, return %d, err:%s\n", "/dev/button", iButtonFd, strerror(errno));
+        ERR_vPrintln(T_TRUE, "can't open /dev/button, return %d, err:%s\n", iButtonFd, strerror(errno));
         return -1;
     }
     sleep(3);
     int val = 0;
     ioctl(iButtonFd, E_GPIO_DRIVER_INIT, &val);
+    val = getpid();
     ioctl(iButtonFd, E_GPIO_DRIVER_ENABLE_KEY_INTERUPT, &val);
 
     signal(SIGUSR2, vButtonSignalHandler);

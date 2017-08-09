@@ -32,9 +32,6 @@
 #include <arpa/inet.h>
 #include <zigbee_node.h>
 #include <zigbee_sqlite.h>
-#include <door_lock.h>
-#include <zigbee_zcl.h>
-
 #include "utils.h"
 #include "zigbee_socket.h"
 /****************************************************************************/
