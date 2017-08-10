@@ -2,8 +2,6 @@ package com.example.chandler.doorlock;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -14,14 +12,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ListView;
 
 import android.content.Context;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,17 +25,13 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+
 import android.os.Handler;
 import android.os.Message;
 import android.graphics.Color;
 import android.view.Gravity;
-import android.widget.TextView;
 import android.widget.Toast;
 import org.json.JSONObject;
-import org.json.JSONArray;
 import org.json.JSONException;
 import java.net.Socket;
 
@@ -54,7 +45,7 @@ public class MainActivity extends AppCompatActivity
     private TextView textHello;
     private Button btnSearch;
     private Button btnPassword;
-    private Button btnStop;
+    private Button btnDev;
     private int iNumberPassword = 0;
     private int iPort = 0;
     private int iIndex = 1;
@@ -72,7 +63,7 @@ public class MainActivity extends AppCompatActivity
         textHello = (TextView)findViewById(R.id.hello);
         btnSearch = (Button)findViewById(R.id.search_btn);
         btnPassword = (Button)findViewById(R.id.password_btn);
-        btnStop = (Button)findViewById(R.id.stop_btn);
+        btnDev = (Button)findViewById(R.id.dev_btn);
         ListView listView = (ListView) findViewById(R.id.list_view);
         List<Data> mData = new LinkedList<Data>();
         mData.add(new Data(iIndex++, "暂无数据"));
@@ -84,7 +75,7 @@ public class MainActivity extends AppCompatActivity
 
         btnSearch.setVisibility(View.VISIBLE);
         btnPassword.setVisibility(View.INVISIBLE);
-        btnStop.setVisibility(View.INVISIBLE);
+        btnDev.setVisibility(View.INVISIBLE);
         textHello.setVisibility(View.INVISIBLE);
         textHello.setText("欢迎使用拓邦智能门锁演示系统");
 
@@ -121,10 +112,14 @@ public class MainActivity extends AppCompatActivity
                         textHello.setText("获取上报事件");
                         btnSearch.setVisibility(View.INVISIBLE);
                         btnPassword.setVisibility(View.INVISIBLE);
-                        btnStop.setVisibility(View.INVISIBLE);
+                        btnDev.setVisibility(View.VISIBLE);
 
                         new SocketRecvThread().start();
-                    }
+                    }break;
+                    case (0x0a):{
+                        madapter.add(new Data(iIndex++, msg.obj.toString()));
+
+                    }break;
                     default:
                         break;
                 }
@@ -137,6 +132,21 @@ public class MainActivity extends AppCompatActivity
                 mToast("searchIotcServer", Toast.LENGTH_SHORT, getApplicationContext());
                 Log.i("PCT", "Start Search Thread");
                 new SocketSearchThread().start();
+            }
+        });
+        btnDev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mToast("搜索门锁", Toast.LENGTH_SHORT, getApplicationContext());
+                String stringSearchDoor = "{\"type\":22,\"sequence\":0}";
+                new SocketSendThread(stringSearchDoor, 0x8000).start();
+                new Handler().postDelayed(new Runnable(){
+                    public void run() {
+                        //execute the task
+                    }
+                }, 3000);
+                Log.i("PCT", "Start Get Devices Lists");
+                new DoorLockSearchThread().start();
             }
         });
     }
@@ -195,8 +205,11 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_camera) {
             // Handle the camera action
+            btnDev.setVisibility(View.VISIBLE);
+            btnPassword.setVisibility(View.INVISIBLE);
+        } else if (id == R.id.nav_gallery) {
             btnSearch.setVisibility(View.INVISIBLE);
-            btnStop.setVisibility(View.INVISIBLE);
+            btnDev.setVisibility(View.INVISIBLE);
             btnPassword.setVisibility(View.VISIBLE);
 
             btnPassword.setOnClickListener(new View.OnClickListener() {
@@ -224,7 +237,6 @@ public class MainActivity extends AppCompatActivity
                     new SocketSendThread(stringAddPassword, 0x8000).start();
                 }
             });
-        } else if (id == R.id.nav_gallery) {
         } else if (id == R.id.nav_slideshow) {
         } else if (id == R.id.nav_manage) {
         } else if (id == R.id.nav_share) {
@@ -300,6 +312,60 @@ public class MainActivity extends AppCompatActivity
 
                 bcSocket.disconnect();
                 bcSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Message errsmg = new Message();
+                errsmg.what = 0x02;
+                errsmg.obj = e.toString();
+                handlerSocketRev.sendMessage(errsmg);
+            }
+        }
+    }
+    private class DoorLockSearchThread extends Thread{
+        private boolean bSuccess = false;
+        private DoorLockSearchThread(){
+
+        }
+
+        @Override
+        public void run() {
+            super.run();
+
+            try {
+                Message msgSocket = new Message();
+                msgSocket.what = 0x0a;
+
+                String stringDoorLock = "{\"type\":20,\"sequence\":0}";
+
+                Socket socketHost = new Socket(stringAddress, iPort);
+                socketHost.setReuseAddress(true);
+                OutputStream sender = socketHost.getOutputStream();
+                InputStream receiver = socketHost.getInputStream();
+                sender.write(stringDoorLock.getBytes());
+                sender.flush();
+
+                byte[] buffer = new byte[1024];
+                receiver.read(buffer);
+                String stringRecv = new String(buffer).trim();
+                Log.i("PCT", stringRecv);
+
+                try {
+                    JSONObject jsonObject = new JSONObject(stringRecv);
+                    Log.i("PCT", "Command:"+jsonObject.getInt("type"));
+                    if(0x8014 == jsonObject.getInt("type")){
+                        Log.i("PCT", stringRecv);
+                        msgSocket.obj = stringRecv;
+                        handlerSocketRev.sendMessage(msgSocket);
+                    }
+                }catch (JSONException e){
+                    e.printStackTrace();
+                    Message errsmg = new Message();
+                    errsmg.what = 0x02;
+                    errsmg.obj = e.toString();
+                    handlerSocketRev.sendMessage(errsmg);
+                }
+
+                socketHost.close();
             } catch (IOException e) {
                 e.printStackTrace();
                 Message errsmg = new Message();

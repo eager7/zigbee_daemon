@@ -27,8 +27,8 @@
         app:layout_constraintRight_toRightOf="@+id/layout_root"
         />
     <Button
-        android:id="@+id/stop_btn"
-        android:text="停止接收"
+        android:id="@+id/dev_btn"
+        android:text="搜索门锁"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="@+id/layout_root"
