@@ -198,6 +198,7 @@ irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
         unsigned long rising;
     };
     static struct gpio_time_record record;
+    button_driver.btn.value = 0x00;
 
     ralink_gpio_intp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOINT));//读取中断标志位
     ralink_gpio_edge = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIOEDGE));//读取中断状态，是上升沿还是下降沿
@@ -224,7 +225,9 @@ irqreturn_t ralink_gpio_irq_handler(int irq, void *irqaction)
                 //press for several seconds
                 button_driver.btn.state = LONG_KEY;
             }
-            schedule_work(&gpio_event_click);
+            if(button_driver.btn.value != 0){
+                schedule_work(&gpio_event_click);
+            }
         } else {//下降沿
             btn_falling = get_button_data();//读取GPIO数值
             record.falling = jiffies;

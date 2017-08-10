@@ -27,6 +27,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include "zigbee_button.h"
+#include "zigbee_devices.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -50,8 +51,9 @@ static void vButtonSignalHandler (int sig)
 {
     DBG_vPrintln(DBG_BUTTON, "Got signal %d\n", sig);
     btn_control_t btn;
-    if(sig == SIGUSR2){
+    //if(sig == SIGUSR2){
         if(-1 != read(iButtonFd, &btn, sizeof(btn))){
+            INF_vPrintln(DBG_BUTTON, "key value:[%d][%d]", btn.state, btn.value);
             if(btn.state == LONG_KEY){
                 switch(btn.value){
                     case BUTTON_SW2:{
@@ -65,12 +67,15 @@ static void vButtonSignalHandler (int sig)
                     case BUTTON_SW4:{
                         DBG_vPrintln(DBG_BUTTON, "Got key4\n");
                         iLedControl(E_LED2_FLASH, 60);
+                        eZigbee_SetPermitJoining(60);
                     }break;
                         default:break;
                 }
             }
+        } else{
+            WAR_vPrintln(T_TRUE, "can't read key value");
         }
-    }
+    //}
     return;
 }
 

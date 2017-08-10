@@ -18,6 +18,8 @@
 /****************************************************************************/
 /***        Include files                                                 ***/
 /****************************************************************************/
+#include <unistd.h>
+#include <netinet/in.h>
 #include <json-c/json.h>
 #include "zigbee_zcl.h"
 #include "zigbee_node.h"

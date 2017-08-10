@@ -31,6 +31,7 @@ typedef enum {
 
 void signal_handler(int signum)
 {
+	printf("get signal [%d]\n", signum);
     btn_control_t btn;
     read(button_fd, &btn, sizeof(btn));
 
