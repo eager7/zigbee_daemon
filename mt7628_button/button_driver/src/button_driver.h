@@ -55,11 +55,12 @@ extern "C" {
 #define RALINK_REG_PIOFENA		(RALINK_PRGIO_ADDR + 0x60)
 #define RALINK_REG_PIOINT		(RALINK_PRGIO_ADDR + 0x90)
 
+#define BUTTON_NUMBER 3
 #define BUTTON_SW2 0x02
 #define BUTTON_SW3 0x03
 #define BUTTON_SW4 0x04
-#define KEY2 28
-#define KEY3 24
+#define KEY2 27
+#define KEY3 23
 #define KEY4 22
 #define KEYS ((1<<KEY2)|(1<<KEY3)|(1<<KEY4))
 
