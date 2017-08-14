@@ -51,7 +51,7 @@ static void vButtonSignalHandler (int sig)
 {
     DBG_vPrintln(DBG_BUTTON, "Got signal %d\n", sig);
     btn_control_t btn;
-    //if(sig == SIGUSR2){
+    if(sig == SIGUSR2){
         if(-1 != read(iButtonFd, &btn, sizeof(btn))){
             INF_vPrintln(DBG_BUTTON, "key value:[%d][%d]", btn.state, btn.value);
             if(btn.state == LONG_KEY){
@@ -66,7 +66,14 @@ static void vButtonSignalHandler (int sig)
                     }break;
                     case BUTTON_SW4:{
                         DBG_vPrintln(DBG_BUTTON, "Got key4\n");
-                        iLedControl(E_LED2_FLASH, 60);
+                        ralink_gpio_led_info led_info;
+                        led_info.gpio = LED_ZIGBEE;
+                        led_info.on = 1;
+                        led_info.off = 1;
+                        led_info.blinks = 1;
+                        led_info.rests = 0;
+                        led_info.times = 60;
+                        ioctl(iButtonFd, RALINK_GPIO_LED_SET, &led_info);
                         eZigbee_SetPermitJoining(60);
                     }break;
                         default:break;
@@ -75,7 +82,7 @@ static void vButtonSignalHandler (int sig)
         } else{
             WAR_vPrintln(T_TRUE, "can't read key value");
         }
-    //}
+    }
     return;
 }
 
@@ -84,25 +91,67 @@ static void vButtonSignalHandler (int sig)
 /****************************************************************************/
 int iButtonInitialize()
 {
+    int val = 0;
     const char *device_cmd = "/etc/init.d/button_mknod.sh";
-    if(access("/dev/button",F_OK) < 0){
+    if(access(DEV,F_OK) < 0){
         system(device_cmd);
     }
-    if(access("/dev/button",F_OK) < 0){
-        WAR_vPrintln(T_TRUE, "Can't mknod /dev/button");
+    if(access(DEV,F_OK) < 0){
+        WAR_vPrintln(1, "Can't mknod /dev/gpio");
         return -1;
     }
-    iButtonFd = open("/dev/button",O_RDWR);
+    iButtonFd = open(DEV,O_RDWR);
     if(iButtonFd < 0){
-        ERR_vPrintln(T_TRUE, "can't open /dev/button, return %d, err:%s\n", iButtonFd, strerror(errno));
+        ERR_vPrintln(1, "can't open /dev/gpio, return %d, err:%s\n", iButtonFd, strerror(errno));
         return -1;
     }
-    sleep(3);
-    int val = 0;
-    ioctl(iButtonFd, E_GPIO_DRIVER_INIT, &val);
-    val = getpid();
-    ioctl(iButtonFd, E_GPIO_DRIVER_ENABLE_KEY_INTERUPT, &val);
+    ioctl(iButtonFd, RALINK_GPIO_INIT, &val);
+    /** LED */
+    val = 25;
+    ioctl(iButtonFd, RALINK_GPIO_SET_DIR_OUT, &val);
+    ralink_gpio_led_info led_info;
+    led_info.gpio = LED_ZIGBEE;
+    led_info.blinks = 10;
+    led_info.times = 10;
+    ioctl(iButtonFd, RALINK_GPIO_LED_SET, &led_info);
 
+    /** GPIO */
+    val = BUTTON_SW2;
+    ioctl(iButtonFd, RALINK_GPIO_SET_DIR_IN, &val);
+    val = BUTTON_SW3;
+    ioctl(iButtonFd, RALINK_GPIO_SET_DIR_IN, &val);
+    val = BUTTON_SW4;
+    ioctl(iButtonFd, RALINK_GPIO_SET_DIR_IN, &val);
+
+    //register my information
+    ralink_gpio_reg_info info;
+    info.pid = getpid();
+    info.irq = BUTTON_SW2;
+    if (ioctl(iButtonFd, RALINK_GPIO_REG_IRQ, &info) < 0) {
+        perror("ioctl");
+        close(iButtonFd);
+        return -1;
+    }
+    info.irq = BUTTON_SW3;
+    if (ioctl(iButtonFd, RALINK_GPIO_REG_IRQ, &info) < 0) {
+        perror("ioctl");
+        close(iButtonFd);
+        return -1;
+    }
+    info.irq = BUTTON_SW4;
+    if (ioctl(iButtonFd, RALINK_GPIO_REG_IRQ, &info) < 0) {
+        perror("ioctl");
+        close(iButtonFd);
+        return -1;
+    }
+
+    //enable gpio interrupt
+    printf("enable the button interrupt\n");
+    if (ioctl(iButtonFd, RALINK_GPIO_ENABLE_INTP) < 0) {
+        perror("ioctl");
+        close(iButtonFd);
+        return -1;
+    }
     signal(SIGUSR2, vButtonSignalHandler);
 
     return 0;
@@ -111,43 +160,7 @@ int iButtonInitialize()
 int iButtonFinished()
 {
     int val = 0;
-    ioctl(iButtonFd, E_GPIO_DRIVER_DISABLE_KEY_INTERUPT, &val);
+    ioctl(iButtonFd, RALINK_GPIO_DISABLE_INTP, &val);
     close(iButtonFd);
-    return 0;
-}
-
-int iLedControl(led_cmd_e cmd, uint8 time)
-{
-    uint64 value = 0;
-    if(iButtonFd <= 0){
-        WAR_vPrintln(T_TRUE, "Gpio driver not insmod\n");
-        return -1;
-    }
-    switch (cmd){
-        case E_LED2_ON:
-            value = 1;
-            ioctl(iButtonFd, E_GPIO_DRIVER_LED2_CONTROL, &value);
-            break;
-        case E_LED2_OFF:
-            value = 0;
-            ioctl(iButtonFd, E_GPIO_DRIVER_LED2_CONTROL, &value);
-            break;
-        case E_LED2_FLASH:
-            ioctl(iButtonFd, E_GPIO_DRIVER_LED2_FLSAH, &time);
-            break;
-        case E_LED3_ON:
-            value = 1;
-            ioctl(iButtonFd, E_GPIO_DRIVER_LED3_CONTROL, &value);
-            break;
-        case E_LED3_OFF:
-            value = 0;
-            ioctl(iButtonFd, E_GPIO_DRIVER_LED3_CONTROL, &value);
-            break;
-        case E_LED3_FLASH:
-            ioctl(iButtonFd, E_GPIO_DRIVER_LED3_FLSAH, &time);
-            break;
-        default:
-            break;
-    }//end of switch
     return 0;
 }

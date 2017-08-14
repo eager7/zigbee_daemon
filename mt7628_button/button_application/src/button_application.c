@@ -7,11 +7,26 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 
+#define DBG_vPrintln(a,b,ARGS...)  \
+    do {printf(("\e[34;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);} while(0)
+#define INF_vPrintln(a,b,ARGS...)  \
+    do {printf(("\e[33;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);} while(0)
+#define NOT_vPrintln(a,b,ARGS...)  \
+    do {printf(("\e[32;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);} while(0)
+#define WAR_vPrintln(a,b,ARGS...)  \
+    do {printf(("\e[35;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);} while(0)
+#define ERR_vPrintln(a,b,ARGS...)  \
+    do {printf(("\e[31;1m""[%d]" b "\n""\e[0m"), __LINE__, ## ARGS);} while(0)
 
-#define DEV "/dev/button"
+#define DEV "/dev/gpio"
 
+#define KEY2 28
+#define KEY3 24
+#define KEY4 22
+#define LED_ZIGBEE 25
 
 /*
  * ioctl commands
@@ -59,108 +74,68 @@ typedef struct {
     unsigned int irq;		//request irq pin number
     pid_t pid;			//process id to notify
 } ralink_gpio_reg_info;
-
+#define RALINK_GPIO_LED_INFINITY	4000
+typedef struct {
+    int gpio;			//gpio number (0 ~ 23)
+    unsigned int on;		//interval of led on
+    unsigned int off;		//interval of led off
+    unsigned int blinks;		//number of blinking cycles
+    unsigned int rests;		//number of break cycles
+    unsigned int times;		//blinking times
+} ralink_gpio_led_info;
 
 void signal_handler(int signum)
 {
 	printf("get signal [%d]\n", signum);
-#if 0
+#if 1
     btn_control_t btn;
     read(button_fd, &btn, sizeof(btn));
 
     if(signum == SIGUSR2){
         printf("key[%d][%d] hold\n", btn.state, btn.value);
+        ralink_gpio_led_info led_info;
+        led_info.gpio = LED_ZIGBEE;
+        led_info.blinks = 10;
+        led_info.times = 10;
+        ioctl(button_fd, RALINK_GPIO_LED_SET, &led_info);
     }
 #endif
 }
 
 int main()
 {
-#if 0
-	const char *device_cmd = "/etc/init.d/button_mknod.sh";
-    if(access(DEV,F_OK) < 0)
+    int val = 0;
+    const char *device_cmd = "/etc/init.d/button_mknod.sh";
+    if(access(DEV,F_OK) < 0){
         system(device_cmd);
+    }
+    if(access(DEV,F_OK) < 0){
+        WAR_vPrintln(1, "Can't mknod /dev/button");
+        return -1;
+    }
     button_fd = open(DEV,O_RDWR);
-    if(button_fd < 0){ 
-        printf("can't open %s, return %d\n", DEV, button_fd);
-        return -1;
-    }
-	int val = 0;
-    ioctl(button_fd, E_GPIO_DRIVER_INIT, &val);
-    int i;
-#endif
-#if 0
-	for(i = 0; i < 5; i++){
-		printf("-----------Open Led2\n");
-		val = 1;
-		ioctl(button_fd,E_GPIO_DRIVER_LED2_CONTROL,&val);
-		sleep(1);
-		printf("-----------Close Led2\n");
-		val = 0;
-		ioctl(button_fd,E_GPIO_DRIVER_LED2_CONTROL,&val);
-		sleep(1);
-	}
-#endif
-#if 0
-	sleep(2);
-	printf("-----------Flash LED2\n");
-	val = 10;
-	ioctl(button_fd, E_GPIO_DRIVER_LED2_FLSAH, &val);
-    sleep(5);
-#endif
-#if 0
-    printf("-----------Poll KEY\n");
-    fd_set fdSelect, fdTemp;
-    FD_ZERO(&fdSelect);//Init fd
-    FD_SET(button_fd, &fdSelect);//Add socketserver fd into select fd
-    int iListenFD = 0;
-    if(button_fd > iListenFD) {
-        iListenFD = button_fd;
-    }
-    fdTemp = fdSelect;  /* use temp value, because this value will be clear */
-    int iResult = select(iListenFD + 1, &fdTemp, NULL, NULL, NULL);
-    switch(iResult)
-    {
-        case 0:
-            printf("receive message time out \n");
-            break;
-
-        case -1:
-            printf("receive message error\n");
-            break;
-
-        default: {
-            unsigned char value = 0;
-            read(button_fd, &value, sizeof(value));
-            printf("key value:%d\n", value);
-        }
-    }
-#endif
-
-#if 0
-    signal(SIGUSR2,signal_handler);
-    printf("enable interrupt\n");
-    val = getpid();
-    ioctl(button_fd, E_GPIO_DRIVER_ENABLE_KEY_INTERUPT, &val);
-    printf("waiting....\n");
-    pause();
-    pause();
-    pause();
-    pause();
-    pause();
-    pause();
-    printf("disable interrupt\n");
-    ioctl(button_fd, E_GPIO_DRIVER_DISABLE_KEY_INTERUPT, &val);
-#endif
-#if 1
-    button_fd = open("/dev/gpio",O_RDONLY);
     if(button_fd < 0){
-        printf("can't open \"dev/gpio\", return %d\n", button_fd);
+        ERR_vPrintln(1, "can't open /dev/gpio, return %d, err:%s\n", button_fd, strerror(errno));
         return -1;
     }
-    int val = 23;
     ioctl(button_fd, RALINK_GPIO_INIT, &val);
+    /** LED */
+    val = 25;
+    ioctl(button_fd, RALINK_GPIO_SET_DIR_OUT, &val);
+    ralink_gpio_led_info led_info;
+    led_info.gpio = LED_ZIGBEE;
+    led_info.blinks = 10;
+    led_info.times = 10;
+    ioctl(button_fd, RALINK_GPIO_LED_SET, &led_info);
+
+    /** GPIO */
+    val = KEY2;
     ioctl(button_fd, RALINK_GPIO_SET_DIR_IN, &val);
+    val = KEY3;
+    ioctl(button_fd, RALINK_GPIO_SET_DIR_IN, &val);
+    val = KEY4;
+    ioctl(button_fd, RALINK_GPIO_SET_DIR_IN, &val);
+
     //enable gpio interrupt
     printf("enable the button interrupt\n");
     if (ioctl(button_fd, RALINK_GPIO_ENABLE_INTP) < 0) {
@@ -172,15 +147,25 @@ int main()
     //register my information
     ralink_gpio_reg_info info;
     info.pid = getpid();
-    info.irq = 23;
+    info.irq = KEY2;
+    if (ioctl(button_fd, RALINK_GPIO_REG_IRQ, &info) < 0) {
+        perror("ioctl");
+        close(button_fd);
+        return -1;
+    }
+    info.irq = KEY3;
+    if (ioctl(button_fd, RALINK_GPIO_REG_IRQ, &info) < 0) {
+        perror("ioctl");
+        close(button_fd);
+        return -1;
+    }
+    info.irq = KEY4;
     if (ioctl(button_fd, RALINK_GPIO_REG_IRQ, &info) < 0) {
         perror("ioctl");
         close(button_fd);
         return -1;
     }
     printf("install signal handler\n");
-    //issue a handler to handle SIGUSR1
-    signal(SIGUSR1, signal_handler);
     signal(SIGUSR2, signal_handler);
 
     //wait for signal
@@ -192,7 +177,6 @@ int main()
         close(button_fd);
         return -1;
     }
-#endif
 
 	close(button_fd);
 	return 0;
