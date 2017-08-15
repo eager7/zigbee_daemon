@@ -11,7 +11,7 @@ start () {
 	if [ -x /bin/zigbee_daemon ]; then
 		$PROG -s /dev/ttyS0 -B 115200 -D /etc/config/Zigbee.DB -v 3
 		ES=$?
-		[ "$VERBOSE" != no ] && log_end_msg $ES
+		[ "$VERBOSE" != no ] && echo $ES
 		return $ES
 	fi
 }
