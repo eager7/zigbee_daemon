@@ -121,4 +121,11 @@ int wifi_receive_cmd()
     }
 
     json_object_put(json_message);
+    return 0;
+}
+
+int wifi_get_ssid_info()
+{
+    
+    return 0;
 }
