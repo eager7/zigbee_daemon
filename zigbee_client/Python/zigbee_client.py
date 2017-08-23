@@ -79,6 +79,20 @@ def SocketSend(msg):
     except Exception, e:
         mLog(E, e)
 
+def SettingWifiNetwork():
+    global sock_wifi
+    #addr, port = GatewayDiscovery()
+    
+    try:
+        print "SettingWifiNetwork"
+	sock_wifi = socket.socket()
+	sock_wifi.connect(("10.128.0.104", 7787))
+    except Exception, e:
+	mLog(W, e)
+    else:
+	mLog(D, "Connect With Server Successful")
+	sock_wifi.send("{\"type\":17,\"ssid\":\"My\",\"key\":12345678}")
+		
 def GetHostVersion():
     command = type + str(E_SS_COMMAND_GET_VERSION) + ',"sequence":0}'
     print command
@@ -474,11 +488,12 @@ def HandleLightSensor(device_select):
 
 def main():
     mLog(D, "zigbee client socket test program")
-    SocketInit()
+
     running = True
     while running:
         print'''
         Choose your operator:
+		0. Search Host
         1. Get Host Version
         2. Get Host Mac
         3. Open Network
@@ -491,10 +506,15 @@ def main():
         14.Get Door Records
         15.Get Users
         16.Lock UnLock Door
+	80.Setting Wifi
+	81.Reset Network
         q. exit
         '''
         command = raw_input("input your command:")
-        if   command == '1':
+        if  command == '0':
+            mLog(D, 'Search Host')
+            SocketInit()
+        elif command == '1':
             mLog(D, 'Get Host Version')
             GetHostVersion()
         elif command == '2':
@@ -553,6 +573,12 @@ def main():
             DoorLockGetUser()
         elif command == '16':
             mLog(D, "Lock UnLock Door")
+            DoorLockSetStatus()
+        elif command == '80':
+            mLog(D, "Setting Wifi")
+            SettingWifiNetwork()
+        elif command == '81':
+            mLog(D, "Reset Network")
             DoorLockSetStatus()
         elif command == 'q':
             mLog(W, 'exit program')
