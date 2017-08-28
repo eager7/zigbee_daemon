@@ -86,12 +86,12 @@ def SettingWifiNetwork():
     try:
         print "SettingWifiNetwork"
 	sock_wifi = socket.socket()
-	sock_wifi.connect(("10.128.0.104", 7787))
+	sock_wifi.connect(("10.128.0.101", 7787))
     except Exception, e:
 	mLog(W, e)
     else:
 	mLog(D, "Connect With Server Successful")
-	sock_wifi.send("{\"type\":17,\"ssid\":\"My\",\"key\":12345678}")
+	sock_wifi.send("{\"type\":17,\"ssid\":\"Tenda_25B200\",\"key\":\"12345678\"}")
 		
 def GetHostVersion():
     command = type + str(E_SS_COMMAND_GET_VERSION) + ',"sequence":0}'
@@ -493,7 +493,7 @@ def main():
     while running:
         print'''
         Choose your operator:
-		0. Search Host
+	0. Search Host
         1. Get Host Version
         2. Get Host Mac
         3. Open Network

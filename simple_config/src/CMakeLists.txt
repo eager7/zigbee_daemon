@@ -8,18 +8,18 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -m32")
 include_directories(
-		src
-        src/utils
-        src/wifi
+		./
+        utils
+        wifi
         )
 include_directories(/usr/include/sys)
 #link_directories(./lib)
 
 set(SOURCE_FILES
-        src/main.c
-		src/utils/list.c
-		src/utils/mthread.c
-        src/wifi/wifi_parse.c
+        main.c
+		utils/list.c
+		utils/mthread.c
+        wifi/wifi_parse.c
         )
 
 #add_library(libsrp.a STATIC)

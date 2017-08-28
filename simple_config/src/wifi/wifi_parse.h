@@ -60,8 +60,6 @@ typedef struct _wifi_info_t{
 *****************************************************************************/
 int wifi_thread_init();
 int wifi_receive_cmd();
-int wifi_get_ssid_info();
-int wifi_connect();
 
 #if defined __cplusplus
 }

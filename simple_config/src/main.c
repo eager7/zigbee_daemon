@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/resource.h>
-
+#include <unistd.h>
 #include "utils.h"
 #include "wifi_parse.h"
 /****************************************************************************/
@@ -39,7 +39,7 @@
 /****************************************************************************/
 volatile sig_atomic_t bRunning = 1;
 int verbosity = 7;
-int daemonize = 1;
+int daemonize = 0;
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
     DBG_vPrintln(DBG_MAIN, "This is zigbee daemon program...\n");
 
     if (daemonize){
-        //WAR_vPrintln(T_TRUE, "Enter Daemon Mode...\n");
-        //vDaemonizeInit("ZigbeeDaemon");
+        WAR_vPrintln(T_TRUE, "Enter Daemon Mode...\n");
+        vDaemonizeInit("ZigbeeDaemon");
     }
 
     signal(SIGINT,  vQuitSignalHandler);/* Install signal handlers */
@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
 
     wifi_thread_init();
     wifi_receive_cmd();
+
 
     DBG_vPrintln(DBG_MAIN, "Main thread will exiting\n");
 
