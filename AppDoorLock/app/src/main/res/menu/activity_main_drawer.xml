@@ -13,11 +13,11 @@
         <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_menu_slideshow"
-            android:title="None" />
+            android:title="配置网络" />
         <item
             android:id="@+id/nav_manage"
             android:icon="@drawable/ic_menu_manage"
-            android:title="None" />
+            android:title="搜索主机" />
     </group>
 
     <item android:title="Communicate">

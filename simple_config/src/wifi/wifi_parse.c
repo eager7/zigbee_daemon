@@ -133,6 +133,7 @@ int wifi_receive_cmd()
         if(json_object_object_get_ex(json_message, "key", &json_key)){
             DBG_vPrintln(DBG_WIFI, "get key:%s", json_object_get_string(json_key));
         }
+        send(wifi_info.socket_app, "{\"type\":32769}", strlen("{\"type\":32769}"), 0);
         char cmd_system[MIBF] = {0};
         snprintf(cmd_system, sizeof(cmd_system), "/etc/init.d/wireless.sh sta %s %s", json_object_get_string(json_ssid), json_object_get_string(json_key));
         system(cmd_system);

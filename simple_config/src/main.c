@@ -39,7 +39,7 @@
 /****************************************************************************/
 volatile sig_atomic_t bRunning = 1;
 int verbosity = 7;
-int daemonize = 1;
+int daemonize = 0;
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/

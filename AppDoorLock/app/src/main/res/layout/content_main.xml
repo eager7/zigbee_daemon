@@ -54,4 +54,32 @@
         android:layout_marginTop="50dp"
         android:layout_marginBottom="50dp">
     </ListView>
+    <EditText
+        android:id="@+id/ssid_wifi"
+        android:text="ssid"
+        android:textSize="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root"
+        app:layout_constraintRight_toRightOf="@+id/layout_root"/>
+    <EditText
+        android:id="@+id/key_wifi"
+        android:hint="请输入wifi密码"
+        android:textSize="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@+id/layout_root"
+        app:layout_constraintBottom_toBottomOf="@+id/layout_root"
+        app:layout_constraintRight_toRightOf="@+id/layout_root"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root" />
+
+    <Button
+        android:id="@+id/set_wifi"
+        android:text="开始配置"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@+id/layout_root"
+        app:layout_constraintRight_toRightOf="@+id/layout_root"
+        app:layout_constraintLeft_toLeftOf="@+id/layout_root"
+        />
 </android.support.constraint.ConstraintLayout>

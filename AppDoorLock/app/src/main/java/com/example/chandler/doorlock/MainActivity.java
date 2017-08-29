@@ -1,6 +1,9 @@
 package com.example.chandler.doorlock;
 
 import android.content.DialogInterface;
+import android.net.DhcpInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
@@ -13,6 +16,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.ListView;
 
@@ -33,6 +37,7 @@ import android.view.Gravity;
 import android.widget.Toast;
 import org.json.JSONObject;
 import org.json.JSONException;
+
 import java.net.Socket;
 
 import java.util.HashSet;
@@ -46,6 +51,10 @@ public class MainActivity extends AppCompatActivity
     private Button btnSearch;
     private Button btnPassword;
     private Button btnDev;
+    private ListView listView;
+    private EditText ssid_wifi;
+    private EditText key_wifi;
+    private Button set_wifi;
     private int iNumberPassword = 0;
     private int iPort = 0;
     private int iIndex = 1;
@@ -61,10 +70,13 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         textHello = (TextView)findViewById(R.id.hello);
+        ssid_wifi = (EditText)findViewById(R.id.ssid_wifi) ;
+        key_wifi = (EditText)findViewById(R.id.key_wifi);
+        set_wifi = (Button)findViewById(R.id.set_wifi);
         btnSearch = (Button)findViewById(R.id.search_btn);
         btnPassword = (Button)findViewById(R.id.password_btn);
         btnDev = (Button)findViewById(R.id.dev_btn);
-        ListView listView = (ListView) findViewById(R.id.list_view);
+        listView = (ListView) findViewById(R.id.list_view);
         List<Data> mData = new LinkedList<Data>();
         mData.add(new Data(iIndex++, "暂无数据"));
         for (int i = 0; i < mData.size(); i++){
@@ -77,6 +89,9 @@ public class MainActivity extends AppCompatActivity
         btnPassword.setVisibility(View.INVISIBLE);
         btnDev.setVisibility(View.INVISIBLE);
         textHello.setVisibility(View.INVISIBLE);
+        ssid_wifi.setVisibility(View.INVISIBLE);
+        key_wifi.setVisibility(View.INVISIBLE);
+        set_wifi.setVisibility(View.INVISIBLE);
         textHello.setText("欢迎使用拓邦智能门锁演示系统");
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -203,13 +218,21 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_camera) {//搜索门锁
             // Handle the camera action
+            listView.setVisibility(View.VISIBLE);
             btnDev.setVisibility(View.VISIBLE);
             btnPassword.setVisibility(View.INVISIBLE);
-        } else if (id == R.id.nav_gallery) {
+            ssid_wifi.setVisibility(View.INVISIBLE);
+            key_wifi.setVisibility(View.INVISIBLE);
+            set_wifi.setVisibility(View.INVISIBLE);
+        } else if (id == R.id.nav_gallery) {//临时密码
+            listView.setVisibility(View.VISIBLE);
             btnSearch.setVisibility(View.INVISIBLE);
             btnDev.setVisibility(View.INVISIBLE);
+            ssid_wifi.setVisibility(View.INVISIBLE);
+            key_wifi.setVisibility(View.INVISIBLE);
+            set_wifi.setVisibility(View.INVISIBLE);
             btnPassword.setVisibility(View.VISIBLE);
 
             btnPassword.setOnClickListener(new View.OnClickListener() {
@@ -237,8 +260,45 @@ public class MainActivity extends AppCompatActivity
                     new SocketSendThread(stringAddPassword, 0x8000).start();
                 }
             });
-        } else if (id == R.id.nav_slideshow) {
-        } else if (id == R.id.nav_manage) {
+        } else if (id == R.id.nav_slideshow) {//配置网络
+            btnDev.setVisibility(View.INVISIBLE);
+            textHello.setVisibility(View.INVISIBLE);
+            btnSearch.setVisibility(View.INVISIBLE);
+            btnPassword.setVisibility(View.INVISIBLE);
+            listView.setVisibility(View.INVISIBLE);
+            ssid_wifi.setVisibility(View.VISIBLE);
+            key_wifi.setVisibility(View.VISIBLE);
+            set_wifi.setVisibility(View.VISIBLE);
+
+            WifiManager wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            DhcpInfo di = wifiManager.getDhcpInfo();
+            long getewayIpL=di.gateway;
+            final String gatway_ip=long2ip(getewayIpL);//网关地址
+            Log.i("PCT", wifiInfo.getBSSID());
+            Log.i("PCT", gatway_ip);
+            final String string_ssid = wifiInfo.getSSID();
+            ssid_wifi.setText(wifiInfo.getSSID());
+
+            set_wifi.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    String ssid_string = ssid_wifi.getText().toString();
+                    String key_string = key_wifi.getText().toString();
+                    Log.i("PCT", key_string);
+                    String cmd = "{\"type\":17,\"ssid\":\""+ ssid_string +"\",\"key\":\"" + key_string + "\"}";
+                    new WifiSettingThread(cmd, 0x8001, "192.168.1.1", 7787).start();
+                }
+            });
+        } else if (id == R.id.nav_manage) {//搜索主机
+            btnDev.setVisibility(View.INVISIBLE);
+            textHello.setVisibility(View.INVISIBLE);
+            btnSearch.setVisibility(View.VISIBLE);
+            btnPassword.setVisibility(View.INVISIBLE);
+            listView.setVisibility(View.VISIBLE);
+            ssid_wifi.setVisibility(View.INVISIBLE);
+            key_wifi.setVisibility(View.INVISIBLE);
+            set_wifi.setVisibility(View.INVISIBLE);
         } else if (id == R.id.nav_share) {
         } else if (id == R.id.nav_send) {
         }
@@ -501,5 +561,77 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
+    }
+    private class WifiSettingThread extends Thread{
+        String stringCommand;
+        int iResponseCommand;
+        String string_ip;
+        int int_port;
+        private WifiSettingThread(String str, int iCommand, String ip, int port){
+            Log.i("PCT", str);
+            stringCommand = str;
+            iResponseCommand = iCommand;
+            string_ip = ip;
+            int_port = port;
+        }
+
+        @Override
+        public void run() {
+            super.run();
+
+            try {
+                Message msgSocket = new Message();
+                msgSocket.what = 0x01;
+                Log.i("PCT", "connect ap:" + string_ip + Integer.toString(int_port));
+                Socket socketHost = new Socket(string_ip, int_port);
+                socketHost.setReuseAddress(true);
+                OutputStream sender = socketHost.getOutputStream();
+                InputStream receiver = socketHost.getInputStream();
+                sender.write(stringCommand.getBytes());
+                sender.flush();
+
+                byte[] buffer = new byte[1024];
+                receiver.read(buffer);
+                String stringRecv = new String(buffer).trim();
+                Log.i("PCT", stringRecv);
+
+                try {
+                    JSONObject jsonObject = new JSONObject(stringRecv);
+                    Log.i("PCT", "Command:"+jsonObject.getInt("type"));
+                    if(iResponseCommand == jsonObject.getInt("type")){
+                        Log.i("PCT", stringRecv);
+                        msgSocket.obj = stringRecv;
+                        handlerSocketRev.sendMessage(msgSocket);
+                    }
+                }catch (JSONException e){
+                    e.printStackTrace();
+                    Message errsmg = new Message();
+                    errsmg.what = 0x02;
+                    errsmg.obj = e.toString();
+                    Log.i("PCT", e.toString());
+                    handlerSocketRev.sendMessage(errsmg);
+                }
+
+                socketHost.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Message errsmg = new Message();
+                errsmg.what = 0x02;
+                errsmg.obj = e.toString();
+                Log.i("PCT", e.toString());
+                handlerSocketRev.sendMessage(errsmg);
+            }
+        }
+    }
+    String long2ip(long ip){
+        StringBuffer sb=new StringBuffer();
+        sb.append(String.valueOf((int)(ip&0xff)));
+        sb.append('.');
+        sb.append(String.valueOf((int)((ip>>8)&0xff)));
+        sb.append('.');
+        sb.append(String.valueOf((int)((ip>>16)&0xff)));
+        sb.append('.');
+        sb.append(String.valueOf((int)((ip>>24)&0xff)));
+        return sb.toString();
     }
 }
