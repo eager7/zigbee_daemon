@@ -2,6 +2,27 @@
 
 sta_mt7628() {
 #       detect_ralink_wifi mt7628 mt7628
+		ssid=$1
+		key=$2
+		iwlist rai0 scanning > /dev/null
+		iwpriv rai0 get_site_survey | grep $ssid
+		if [ $? != 0 ];then
+			echo "there is no this ap:$ssid"
+			exit 2
+		fi
+		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep NONE
+		if [ $? == 0 ];then
+			encrypt='NONE'
+		fi
+		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep WPA2PSK
+		if [ $? == 0 ];then
+			encrypt='psk2'
+		fi
+		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep WPAPSK
+		if [ $? == 0 ];then
+			encrypt='psk'
+		fi
+		
         if [ -e /etc/config/wireless ];then
          cat <<EOF
 config wifi-device      mt7628sta
@@ -9,10 +30,13 @@ config wifi-device      mt7628sta
         option vendor   ralink
         option ifname   rai0
 
-config wifi-iface
-        option device   mt7628sta
-        option ifname   rai0
-        option mode     sta
+config wifi-iface                              
+        option device   mt7628sta                              
+        option ifname   rai0                                   
+        option mode     sta                                    
+        option encryption $encrypt                             
+        option ssid     $ssid                                  
+        option key              $key
 EOF
         fi
 }
@@ -57,9 +81,26 @@ dhcp_ip() {
 
 case $1 in
 sta)
-        sta_mt7628 > /etc/config/wireless;;
+		ifconfig ra0 down
+		rmmod mt7628
+		insmod /lib/module/mt7628sta.ko
+		if [ $? == 0 ];then
+			ifconfig rai0 up
+			sta_mt7628 $2 $3 > /etc/config/wireless
+			wifi
+		fi
+		dhcp_ip
+		;;
 ap)
-        ap_mt7628 > /etc/config/wireless;;
+		ifconfig rai0 down
+		rmmod mt7628sta
+		insmod /lib/module/mt7628.ko
+		if [ $? == 0 ];then
+			ap_mt7628 > /etc/config/wireless
+			ifconfig ra0 up
+			wifi
+		fi
+		;;
 dhcp)
 		dhcp_ip;;
 Exit)
