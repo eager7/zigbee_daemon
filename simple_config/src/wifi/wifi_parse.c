@@ -52,64 +52,7 @@ static wifi_info_t wifi_info;
 /****************************************************************************/
 /***        Local    Functions                                            ***/
 /****************************************************************************/
-static int wifi_ap_to_station()
-{
-    DBG_vPrintln(DBG_WIFI, "wifi_ap_to_station");
 
-    system("ifconfig ra0 down");
-    system("rmmod mt7628");
-    system("insmod /lib/modules/3.10.14/mt7628sta.ko");
-    system("ifconfig rai0 up");
-    system("iwlist rai0 scanning");
-
-    return 0;
-}
-
-static int wifi_station_to_ap()
-{
-    system("ifconfig rai0 down");
-    system("rmmod mt7628sta");
-    system("insmod /lib/modules/3.10.14/mt7628.ko");
-    system("/etc/init.d/wireless.sh ap");
-    system("ifconfig ra0 up");
-    system("wifi");
-
-    return 0;
-}
-
-
-static int wifi_connect_ssid(const char *ssid, const char *key)
-{
-    char cmd_ssid_info[MIBF] = {0};
-    snprintf(cmd_ssid_info, sizeof(cmd_ssid_info), "iwpriv rai0 get_site_survey | grep %s | awk '{print $4}'", ssid);
-
-    FILE *fp;
-    char result[MIBF] = {0};
-    fp = popen(cmd_ssid_info, "r");
-    fgets(result, sizeof(result), fp);
-    DBG_vPrintln(DBG_WIFI, "get ssid encryption info:%s", result);
-    pclose(fp);
-
-    system("/etc/init.d/wireless.sh sta");
-    if(strstr(result, "WPA2PSK")){
-        system("echo \"        option encryption    psk2\" >> /etc/config/wireless");
-    } else if(strstr(result, "NONE")){
-        system("echo \"        option encryption    none\"  >> /etc/config/wireless");
-    } else if(strstr(result, "WPA1PSK")){
-        system("echo \"        option encryption    psk\"  >> /etc/config/wireless");
-    }
-
-    memset(result, 0, sizeof(result));
-    snprintf(result, sizeof(result), "echo \"        option ssid %s\"  >> /etc/config/wireless", ssid);
-    system(result);
-    memset(result, 0, sizeof(result));
-    snprintf(result, sizeof(result), "echo \"        option key %s\"  >> /etc/config/wireless", key);
-    system(result);
-
-    system("wifi");//reset wifi
-    system("/etc/init.d/wireless.sh dhcp");
-    return 0;
-}
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
@@ -126,7 +69,7 @@ int wifi_thread_init()
     struct sockaddr_in server_address;
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_address.sin_port = htons(PORT_AP);
+    server_address.sin_port = htons(SOCKET_SERVER_PORT);
 
     int on = 1;
     if(setsockopt(wifi_info.socket_host, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0){
@@ -190,11 +133,12 @@ int wifi_receive_cmd()
         if(json_object_object_get_ex(json_message, "key", &json_key)){
             DBG_vPrintln(DBG_WIFI, "get key:%s", json_object_get_string(json_key));
         }
-        wifi_ap_to_station();
-        wifi_connect_ssid(json_object_get_string(json_ssid), json_object_get_string(json_key));
+        char cmd_system[MIBF] = {0};
+        snprintf(cmd_system, sizeof(cmd_system), "/etc/init.d/wireless.sh sta %s %s", json_object_get_string(json_ssid), json_object_get_string(json_key));
+        system(cmd_system);
     } else if(0x8011 == cmd){
         DBG_vPrintln(DBG_WIFI, "set wifi from station to ap");
-        wifi_station_to_ap();
+        system("/etc/init.d/wireless.sh ap");
     }
 
     json_object_put(json_message);

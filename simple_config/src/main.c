@@ -39,7 +39,7 @@
 /****************************************************************************/
 volatile sig_atomic_t bRunning = 1;
 int verbosity = 7;
-int daemonize = 0;
+int daemonize = 1;
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -128,9 +128,11 @@ int main(int argc, char *argv[])
     signal(SIGINT,  vQuitSignalHandler);/* Install signal handlers */
     signal(SIGTERM, vQuitSignalHandler);
 
-    wifi_thread_init();
-    wifi_receive_cmd();
-
+    while(bRunning){
+        wifi_thread_init();
+        wifi_receive_cmd();
+        sleep(1);
+    }
 
     DBG_vPrintln(DBG_MAIN, "Main thread will exiting\n");
 

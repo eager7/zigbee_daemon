@@ -11,6 +11,7 @@ include_directories(
 		./
         utils
         wifi
+		comm
         )
 include_directories(/usr/include/sys)
 #link_directories(./lib)
@@ -20,6 +21,7 @@ set(SOURCE_FILES
 		utils/list.c
 		utils/mthread.c
         wifi/wifi_parse.c
+		comm/zigbee_discovery.c
         )
 
 #add_library(libsrp.a STATIC)

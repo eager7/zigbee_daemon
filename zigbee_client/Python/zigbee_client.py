@@ -79,7 +79,7 @@ def SocketSend(msg):
     except Exception, e:
         mLog(E, e)
 
-def SettingWifiNetwork():
+def SettingWifiNetwork(state):
     global sock_wifi
     #addr, port = GatewayDiscovery()
     
@@ -91,7 +91,10 @@ def SettingWifiNetwork():
 	mLog(W, e)
     else:
 	mLog(D, "Connect With Server Successful")
-	sock_wifi.send("{\"type\":17,\"ssid\":\"Tenda_25B200\",\"key\":\"12345678\"}")
+	if state == 0:
+		sock_wifi.send("{\"type\":17,\"ssid\":\"Tenda_25B200\",\"key\":\"12345678\"}")
+	elif state == 1:
+		sock_wifi.send("{\"type\":32785}")
 		
 def GetHostVersion():
     command = type + str(E_SS_COMMAND_GET_VERSION) + ',"sequence":0}'
@@ -576,10 +579,10 @@ def main():
             DoorLockSetStatus()
         elif command == '80':
             mLog(D, "Setting Wifi")
-            SettingWifiNetwork()
+            SettingWifiNetwork(0)
         elif command == '81':
             mLog(D, "Reset Network")
-            DoorLockSetStatus()
+            SettingWifiNetwork(1)
         elif command == 'q':
             mLog(W, 'exit program')
             running = False

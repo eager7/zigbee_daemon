@@ -20,9 +20,11 @@ SRC_ROOT := $(shell pwd)
 SOURCE := $(wildcard $(SRC_ROOT)/*.c)
 SOURCE += $(wildcard $(SRC_ROOT)/utils/*.c)
 SOURCE += $(wildcard $(SRC_ROOT)/wifi/*.c)
+SOURCE += $(wildcard $(SRC_ROOT)/comm/*.c)
 
 CFLAGS += -I./utils
 CFLAGS += -I./wifi
+CFLAGS += -I./comm
 
 PROJ_DFLAGS := -D_REENTRANT
 PROJ_LIBS ?= -L./lib
@@ -55,5 +57,5 @@ test:
 	@echo $(SOURCE)
 	
 clean:
-	$(RM) $(TARGET) $(OBJS) $(DEPS) *.d* $(SRC_ROOT)/utils/*.d* $(SRC_ROOT)/wifi/*.d* 
+	$(RM) $(TARGET) $(OBJS) $(DEPS) *.d* $(SRC_ROOT)/utils/*.d* $(SRC_ROOT)/wifi/*.d* $(SRC_ROOT)/comm/*.d*
  
