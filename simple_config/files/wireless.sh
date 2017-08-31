@@ -5,20 +5,20 @@ sta_mt7628() {
 		ssid=$1
 		key=$2
 		iwlist rai0 scanning > /dev/null
-		iwpriv rai0 get_site_survey | grep $ssid
+		iwpriv rai0 get_site_survey | grep $ssid > /dev/null
 		if [ $? != 0 ];then
 			echo "there is no this ap:$ssid"
 			exit 2
 		fi
-		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep NONE
+		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep NONE > /dev/null
 		if [ $? == 0 ];then
 			encrypt='NONE'
 		fi
-		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep WPA2PSK
+		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep WPA2PSK > /dev/null
 		if [ $? == 0 ];then
 			encrypt='psk2'
 		fi
-		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep WPAPSK
+		iwpriv rai0 get_site_survey | grep $ssid | awk '{print $4}' | grep WPAPSK > /dev/null
 		if [ $? == 0 ];then
 			encrypt='psk'
 		fi

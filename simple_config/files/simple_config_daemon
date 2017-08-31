@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 NXP Semiconductor
+
+START=91
+
+PROG=simple_config
+
+
+start () {
+	ln -s lock /var/run/simple_config.lock || exit 0
+	if [ -x /bin/simple_config ]; then
+		$PROG
+		ES=$?
+		[ "$VERBOSE" != no ] && echo $ES
+		return $ES
+	fi
+}
+
+
+stop () {
+	ps | grep simple_config | grep D | awk '{print $1}'  | xargs kill -9
+	rm -rf /var/run/simple_config.lock
+}
+
+status () {
+	ps | grep simple_config | grep D
+}

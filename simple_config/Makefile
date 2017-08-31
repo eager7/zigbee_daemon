@@ -31,7 +31,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(TARGET) $(1)/bin/
 	$(INSTALL_DIR) $(1)/etc/init.d/
-	#$(INSTALL_BIN) ./files/zigbee_daemon $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/simple_config_daemon $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/wireless.sh $(1)/etc/init.d/
 endef
 
@@ -39,7 +39,7 @@ define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 # check if we are on real system
 echo "Enabling rc.d symlink for simple_config"
-#[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/simple_config enable || true
+[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/simple_config_daemon enable || true
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
