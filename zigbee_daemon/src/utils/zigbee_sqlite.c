@@ -317,7 +317,7 @@ teSQ_Status eZigbeeSqliteDelDoorLockUser(uint8 u8UserID)
 {
     char SqlCommand[MDBF] = {0};
     snprintf(SqlCommand, sizeof(SqlCommand),
-             "DELETE FROM "TABLE_USER"WHERE"USER_ID"=%d", u8UserID);
+             "DELETE FROM "TABLE_USER"WHERE "USER_ID"=%d", u8UserID);
     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
 
     char *pcErrReturn;

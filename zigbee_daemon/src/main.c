@@ -154,7 +154,7 @@ static void vGetOption(int argc, char *argv[])
                     vPrintUsage(argv);
                 }
                 break;
-            }
+            }//case
             case 's':
                 pSerialDevice = optarg;
             break;
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
                            &psZigbeeAdd);
             eEndDeviceInitialize(psZigbeeAdd);
         }
-    }
+    }//end dl_list_for_each
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
 
     //if(){
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
                     eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
                 }
             }
-        }
+        }//dl_list_for_each
         //eSocketDoorAlarmReport(0);
     }
     iButtonFinished();
