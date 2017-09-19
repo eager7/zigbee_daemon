@@ -591,7 +591,7 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
         uint16    u16ClusterID;
         uint16    u16AttributeID;
         uint8     u8AttributeStatus;
-        teZCL_ZCLAttributeType     eType;
+        uint8     u8Type;
         uint16    u16SizeOfAttributesInBytes;
         tuZcbAttributeData uData;
     } PACKED *psMessage = (struct _tsAttributeReport *)pvMessage;
@@ -599,12 +599,16 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
     psMessage->u16ShortAddress  = ntohs(psMessage->u16ShortAddress);
     psMessage->u16ClusterID     = ntohs(psMessage->u16ClusterID);
     psMessage->u16AttributeID   = ntohs(psMessage->u16AttributeID);
-    
-    DBG_vPrintln( DBG_ZCB, "Attribute report from 0x%04X - Endpoint %d, cluster 0x%04X, attribute 0x%04X.\n",
+   // psMessage->eType   = ntohs(psMessage->eType);
+
+    DBG_vPrintln( DBG_ZCB, "Attribute report from 0x%04X - Endpoint %d, cluster 0x%04X, attribute 0x%04X, status %d, type 0x%x, len %d.\n",
                 psMessage->u16ShortAddress,
                 psMessage->u8Endpoint,
                 psMessage->u16ClusterID,
-                psMessage->u16AttributeID
+                psMessage->u16AttributeID,
+                psMessage->u8AttributeStatus,
+                psMessage->u8Type,
+                psMessage->u16SizeOfAttributesInBytes
             );
 
     tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByShortAddress(psMessage->u16ShortAddress);
@@ -612,16 +616,65 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
         WAR_vPrintln(T_TRUE, "Can't find this node in network.\n");
         return;
     }
-    if(NULL == psZigbeeNode->Method.preDeviceAttributeUpdate){
-        WAR_vPrintln(T_TRUE, "Can't find the update func in node.\n");
-        return;
+    tuZcbAttributeData uAttributeData;
+    switch(psMessage->u8Type)
+    {
+        case(E_ZCL_GINT8):
+        case(E_ZCL_UINT8):
+        case(E_ZCL_INT8):
+        case(E_ZCL_ENUM8):
+        case(E_ZCL_BMAP8):
+        case(E_ZCL_BOOL):
+        case(E_ZCL_OSTRING):
+        case(E_ZCL_CSTRING):
+            uAttributeData.u8Data = psMessage->uData.u8Data;
+            break;
+
+        case(E_ZCL_LOSTRING):
+        case(E_ZCL_LCSTRING):
+        case(E_ZCL_STRUCT):
+        case(E_ZCL_INT16):
+        case(E_ZCL_UINT16):
+        case(E_ZCL_ENUM16):
+        case(E_ZCL_CLUSTER_ID):
+        case(E_ZCL_ATTRIBUTE_ID):
+            INF_vPrintln(DBG_ZCB, "data %d\n", ntohs(psMessage->uData.u16Data));
+            uAttributeData.u16Data = ntohs(psMessage->uData.u16Data);
+            break;
+
+        case(E_ZCL_UINT24):
+        case(E_ZCL_UINT32):
+        case(E_ZCL_TOD):
+        case(E_ZCL_DATE):
+        case(E_ZCL_UTCT):
+        case(E_ZCL_BACNET_OID):
+            uAttributeData.u32Data = ntohl(psMessage->uData.u32Data);
+            break;
+
+        case(E_ZCL_UINT40):
+        case(E_ZCL_UINT48):
+        case(E_ZCL_UINT56):
+        case(E_ZCL_UINT64):
+        case(E_ZCL_IEEE_ADDR):
+            uAttributeData.u64Data = be64toh(psMessage->uData.u64Data);
+            break;
+
+        default:
+            ERR_vPrintln(T_TRUE,  "Unknown attribute data type (%d) received from node 0x%04X", psMessage->u8Type, psMessage->u16ShortAddress);
+            break;
     }
+
     eLockLock(&psZigbeeNode->mutex);
-    psZigbeeNode->Method.preDeviceAttributeUpdate(&psZigbeeNode->sNode,
-                                                  psMessage->u16ClusterID,
-                                                  psMessage->u16AttributeID,
-                                                  psMessage->eType,
-                                                  psMessage->uData);
+    switch(psMessage->u16ClusterID){
+        case E_ZB_CLUSTERID_POWER:
+            INF_vPrintln(DBG_ZCB, "update door lock power to %d\n", uAttributeData.u16Data);
+            psZigbeeNode->sNode.sAttributeValue.u16Battery = uAttributeData.u16Data;
+            eSocketPowerConfigurationReport((uint8)(psZigbeeNode->sNode.sAttributeValue.u16Battery*100/30));
+
+            break;
+        default:
+            break;
+    }
     eLockunLock(&psZigbeeNode->mutex);
 
     return ;

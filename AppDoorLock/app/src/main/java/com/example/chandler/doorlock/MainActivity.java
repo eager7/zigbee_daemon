@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity
                     }break;
                     case (0x02):{
                         textHello.setText(msg.obj.toString());
-                        mToast("操作失败",Toast.LENGTH_SHORT, getApplicationContext() );
+                        mToast("操作失败"+msg.obj.toString(),Toast.LENGTH_SHORT, getApplicationContext() );
                     }break;
                     case (0x0f):{
                         textHello.setText(msg.obj.toString());
@@ -536,6 +536,9 @@ public class MainActivity extends AppCompatActivity
                         }else if(0x00F7 == iCmd){//删除用户
                             Log.i("PCT", stringRecv);
                             msgSocket.obj = "del user:" + "删除了用户"+jsonObject.getInt("id");
+                        }else if(0x0018 == iCmd){
+                            Log.i("PCT", stringRecv);
+                            msgSocket.obj = "上报电量为：" + jsonObject.getInt("power");
                         }
                         handlerSocketRev.sendMessage(msgSocket);
                     }catch (JSONException e){

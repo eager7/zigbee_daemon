@@ -1089,10 +1089,6 @@ teSS_Status eSocketServer_Destroy(void)
     return E_SS_OK;
 }
 
-/****************************************************************************/
-/***        END OF FILE                                                   ***/
-/****************************************************************************/
-
 teSS_Status eSocketDoorLockReport(uint8 u8UserID, uint8 u8Mode){
     json_object *psJsonResult = json_object_new_object();
     json_object_object_add(psJsonResult, JSON_TYPE, json_object_new_int(E_SS_COMMAND_DOOR_LOCK_OPEN_REPORT));
@@ -1174,3 +1170,26 @@ teSS_Status eSocketDoorUserDelReport(uint8 u8UserID)
 
     return E_SS_OK;
 }
+
+teSS_Status eSocketPowerConfigurationReport(uint8 u8Power)
+{
+    json_object *psJsonResult = json_object_new_object();
+    json_object_object_add(psJsonResult, JSON_TYPE, json_object_new_int(E_SS_COMMAND_POWER_CONFIGURATION_REPORT));
+    json_object_object_add(psJsonResult, JSON_SEQUENCE, json_object_new_int(0));
+    json_object_object_add(psJsonResult, JSON_POWER, json_object_new_int(u8Power));
+
+    DBG_vPrintln(DBG_SOCKET, "psJsonResult %s, length is %d\n",
+                 json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
+    int i;
+    for (i = 0; i < NUMBER_SOCKET_CLIENT && ClientSocket[i].iSocketClient != -1; ++i) {
+        send(ClientSocket[i].iSocketClient, json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0);
+    }
+
+    json_object_put(psJsonResult);
+
+    return E_SS_OK;
+}
+
+/****************************************************************************/
+/***        END OF FILE                                                   ***/
+/****************************************************************************/

@@ -22,6 +22,7 @@
 #include <zigbee_node.h>
 #include "door_lock_controller.h"
 #include "zigbee_devices.h"
+#include "zigbee_socket.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -29,7 +30,11 @@
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
-
+static teZbStatus eHandleAttributeUpdate(tsZigbeeBase *psZigbeeNode,
+                                         uint16 u16ClusterID,
+                                         uint16 u16AttributeID,
+                                         teZCL_ZCLAttributeType eType,
+                                         tuZcbAttributeData uData);
 /****************************************************************************/
 /***        Exported Variables                                            ***/
 /****************************************************************************/
@@ -53,6 +58,7 @@ teZbStatus eDoorLockControllerInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preDeviceGetScene             = eZigbeeDeviceGetSence;
     psZigbeeNode->Method.preDeviceClearGroup           = eZigbeeDeviceClearGroup;
     psZigbeeNode->Method.preDeviceRemoveNetwork        = eZigbeeDeviceRemoveNetwork;
+    psZigbeeNode->Method.preDeviceAttributeUpdate      = eHandleAttributeUpdate;
 
     json_object *psJsonDevice = json_object_new_object();
     json_object *psArrayEndpoint = json_object_new_array();
@@ -83,3 +89,66 @@ teZbStatus eDoorLockControllerInitialize(tsZigbeeNodes *psZigbeeNode)
 /***        Local Functions                                               ***/
 /****************************************************************************/
 
+static teZbStatus eHandleAttributeUpdate(tsZigbeeBase *psZigbeeNode,
+                                                    uint16 u16ClusterID,
+                                                    uint16 u16AttributeID,
+                                                    teZCL_ZCLAttributeType eType,
+                                                    tuZcbAttributeData uData)
+{
+    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
+    if(E_ZB_CLUSTERID_POWER == u16ClusterID){
+        tuZcbAttributeData uDoorLock;
+        switch(eType)
+        {
+            case(E_ZCL_GINT8):
+            case(E_ZCL_UINT8):
+            case(E_ZCL_INT8):
+            case(E_ZCL_ENUM8):
+            case(E_ZCL_BMAP8):
+            case(E_ZCL_BOOL):
+            case(E_ZCL_OSTRING):
+            case(E_ZCL_CSTRING):
+                uDoorLock.u8Data = uData.u8Data;
+                break;
+
+            case(E_ZCL_LOSTRING):
+            case(E_ZCL_LCSTRING):
+            case(E_ZCL_STRUCT):
+            case(E_ZCL_INT16):
+            case(E_ZCL_UINT16):
+            case(E_ZCL_ENUM16):
+            case(E_ZCL_CLUSTER_ID):
+            case(E_ZCL_ATTRIBUTE_ID):
+                uDoorLock.u16Data = ntohs(uData.u16Data);
+                break;
+
+            case(E_ZCL_UINT24):
+            case(E_ZCL_UINT32):
+            case(E_ZCL_TOD):
+            case(E_ZCL_DATE):
+            case(E_ZCL_UTCT):
+            case(E_ZCL_BACNET_OID):
+                uDoorLock.u32Data = ntohl(uData.u32Data);
+                break;
+
+            case(E_ZCL_UINT40):
+            case(E_ZCL_UINT48):
+            case(E_ZCL_UINT56):
+            case(E_ZCL_UINT64):
+            case(E_ZCL_IEEE_ADDR):
+                uDoorLock.u64Data = be64toh(uData.u64Data);
+                break;
+
+            default:
+                ERR_vPrintln(T_TRUE,  "Unknown attribute data type (%d) received from node 0x%04X", eType, psZigbeeNode->u16ShortAddress);
+                break;
+        }
+        if(E_CLD_PWRCFG_ATTR_ID_MAINS_VOLTAGE == u16AttributeID){
+            INF_vPrintln(DBG_DEVICES, "update door lock power to %d\n", uDoorLock.u16Data);
+            psZigbeeNode->sAttributeValue.u16Battery= uDoorLock.u16Data;
+                //TODO:Send msg to cloud
+                eSocketPowerConfigurationReport((uint8)(uDoorLock.u16Data/30));
+        }
+    }
+    return E_ZB_ERROR;
+}

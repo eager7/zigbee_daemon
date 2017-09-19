@@ -46,6 +46,7 @@ extern "C" {
 #define JSON_SEQUENCE "sequence"
 #define JSON_INFO "information"
 #define JSON_MAC "mac"
+#define JSON_POWER "power"
 #define JSON_VERSION "version"
 #define JSON_TIME "time"
 #define JSON_TIME_CREATION "time_creation"
@@ -108,6 +109,7 @@ typedef enum
     E_SS_COMMAND_LEAVE_NETWORK              = 0x0015,
     E_SS_COMMAND_SEARCH_DEVICE              = 0x0016,
     E_SS_COMMAND_COORDINATOR_UPGRADE        = 0x0017,
+    E_SS_COMMAND_POWER_CONFIGURATION_REPORT = 0x0018,
 
     /* ZLL */
     E_SS_COMMAND_LIGHT_SET_ON_OFF           = 0x0020,
@@ -205,10 +207,12 @@ typedef struct _tsSocketHandleMap
 teSS_Status eSocketServer_Init(void);
 teSS_Status eSocketServer_Destroy(void);
 
+teSS_Status eSocketPowerConfigurationReport(uint8 u8Power);
 teSS_Status eSocketDoorLockReport(uint8 u8UserID, uint8 u8Mode);
 teSS_Status eSocketDoorAlarmReport(uint8 u8Alarm);
 teSS_Status eSocketDoorUserAddReport(uint8 u8UserID, uint8 u8Type, uint8 u8Perm);
 teSS_Status eSocketDoorUserDelReport(uint8 u8UserID);
+
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
