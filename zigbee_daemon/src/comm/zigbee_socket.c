@@ -793,7 +793,7 @@ static teSS_Status eSocketHandleDoorLockAddPassword(int iSocketFd, struct json_o
         return E_SS_OK;
     }
     ERR_vPrintln(T_TRUE, "Parameters Error");
-    
+
     return E_SS_INCORRECT_PARAMETERS;
 }
 
