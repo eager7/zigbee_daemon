@@ -1101,7 +1101,6 @@ teSS_Status eSocketDoorLockReport(uint8 u8UserID, uint8 u8Mode){
                  json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)));
     int i;
     for (i = 0; i < NUMBER_SOCKET_CLIENT && ClientSocket[i].iSocketClient != -1; ++i) {
-        INF_vPrintln(DBG_SOCKET, "eSocketDoorLockReport:%d", u8Mode);
         send(ClientSocket[i].iSocketClient, json_object_to_json_string(psJsonResult), (int)strlen(json_object_to_json_string(psJsonResult)),0);
     }
 

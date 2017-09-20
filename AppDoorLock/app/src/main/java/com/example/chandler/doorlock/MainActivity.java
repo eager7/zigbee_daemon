@@ -504,12 +504,12 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void run() {
             super.run();
-            while(true){
-                try {
-                    socketHost = new Socket(stringAddress, iPort);
-                    socketHost.setReuseAddress(true);
-                    InputStream receiver = socketHost.getInputStream();
-
+            
+            try {
+                socketHost = new Socket(stringAddress, iPort);
+                socketHost.setReuseAddress(true);
+                InputStream receiver = socketHost.getInputStream();
+                while(true) {
                     byte[] buffer = new byte[1024];
                     receiver.read(buffer);
                     String stringRecv = new String(buffer).trim();
@@ -520,50 +520,51 @@ public class MainActivity extends AppCompatActivity
                         msgSocket.what = 0x01;
                         JSONObject jsonObject = new JSONObject(stringRecv);
                         int iCmd = jsonObject.getInt("type");
-                        Log.i("PCT", "Command:"+iCmd);
-                        if(0x00F4 == iCmd){//报警上报
+                        Log.i("PCT", "Command:" + iCmd);
+                        if (0x00F4 == iCmd) {//报警上报
                             Log.i("PCT", stringRecv);
                             msgSocket.obj = "alarm:" + "有人撬门";
 
-                        }else if(0x00F5 == iCmd){//开门上报
+                        } else if (0x00F5 == iCmd) {//开门上报
                             Log.i("PCT", stringRecv);
-                            msgSocket.obj = "report:" + "用户"+jsonObject.getInt("id")+"开门";
+                            msgSocket.obj = "report:" + "用户" + jsonObject.getInt("id") + "开门";
 
-                        }else if(0x00F6 == iCmd){//添加新用户
+                        } else if (0x00F6 == iCmd) {//添加新用户
                             Log.i("PCT", stringRecv);
-                            msgSocket.obj = "new user:" + "添加了新用户"+jsonObject.getInt("id");
+                            msgSocket.obj = "new user:" + "添加了新用户" + jsonObject.getInt("id");
 
-                        }else if(0x00F7 == iCmd){//删除用户
+                        } else if (0x00F7 == iCmd) {//删除用户
                             Log.i("PCT", stringRecv);
-                            msgSocket.obj = "del user:" + "删除了用户"+jsonObject.getInt("id");
-                        }else if(0x0018 == iCmd){
+                            msgSocket.obj = "del user:" + "删除了用户" + jsonObject.getInt("id");
+                        } else if (0x0018 == iCmd) {
                             Log.i("PCT", stringRecv);
                             msgSocket.obj = "上报电量为：" + jsonObject.getInt("power");
                         }
                         handlerSocketRev.sendMessage(msgSocket);
-                    }catch (JSONException e){
+                    } catch (JSONException e) {
                         e.printStackTrace();
                         msgSocket.what = 0x02;
                         msgSocket.obj = "Json格式有误";
                         handlerSocketRev.sendMessage(msgSocket);
                     }
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Message errsmg = new Message();
-                    errsmg.what = 0x02;
-                    errsmg.obj = e.toString();
-                    handlerSocketRev.sendMessage(errsmg);
-                }finally {
-                    try{
-                        if(socketHost != null)
-                            socketHost.close();
-                    }catch (IOException ee){
-                        ee.printStackTrace();
-                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Message errsmg = new Message();
+                errsmg.what = 0x02;
+                errsmg.obj = e.toString();
+                handlerSocketRev.sendMessage(errsmg);
+            }finally {
+                try{
+                    if(socketHost != null)
+                        socketHost.close();
+                }catch (IOException ee){
+                    ee.printStackTrace();
                 }
             }
         }
+
+
     }
     private class WifiSettingThread extends Thread{
         String stringCommand;

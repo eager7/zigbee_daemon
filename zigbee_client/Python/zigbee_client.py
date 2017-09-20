@@ -519,7 +519,7 @@ def main():
         q. exit
         '''
         command = raw_input("input your command:")
-        if  command == '0':
+        if  command  == '0':
             mLog(D, 'Search Host')
             SocketInit()
         elif command == '1':
@@ -563,6 +563,7 @@ def main():
             GetDeviceLists()
         elif command == '6':
             mLog(D, "Search Devices")
+            SearchDevices()
         elif command == '7':
             mLog(D, "Receive Messages")
             ReceiveMessages()
