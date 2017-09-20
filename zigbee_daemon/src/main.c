@@ -48,7 +48,7 @@ int verbosity = 7;
 int daemonize = 1;
 uint32 u32BaudRate = 115200;
 uint32 u32Channel = E_CHANNEL_DEFAULT;
-char *pSerialDevice = "/dev/ttyUSB0";
+char *pSerialDevice = "/dev/ttyS0";
 char *pZigbeeSqlitePath = "./ZigbeeDaemon.DB";
 
 tsDeviceIDMap asDeviceIDMap[] = 
@@ -273,6 +273,11 @@ int main(int argc, char *argv[])
     signal(SIGINT,  vQuitSignalHandler);/* Install signal handlers */
     signal(SIGTERM, vQuitSignalHandler);
     mLogInitSetPid("[TB]");
+    //if(){
+    //Init Button
+    DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
+    iButtonInitialize();
+    //}
 
     DBG_vPrintln(DBG_MAIN, "Init The Program with dev = %s, baud = %d\n", pSerialDevice, u32BaudRate);
     CHECK_RESULT(eZCB_Init(pSerialDevice, u32BaudRate), E_ZB_OK, -1);
@@ -312,11 +317,7 @@ int main(int argc, char *argv[])
     }//end dl_list_for_each
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
 
-    //if(){
-        //Init Button
-    DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
-    iButtonInitialize();
-    //}
+
     /** Check temporary password per 10 seconds */
     while(bRunning){
         sleep(10);
