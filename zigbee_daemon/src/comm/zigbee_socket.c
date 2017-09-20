@@ -786,17 +786,20 @@ static teSS_Status eSocketHandleDoorLockAddPassword(int iSocketFd, struct json_o
         CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLockPassword, E_SS_ERROR);
         if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLockPassword(&psZigbeeNode->sNode, &sPayload)) {
             ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetDoorLock error\n");
+            vResponseJsonString(iSocketFd, E_SS_ERROR, "add new password failed");
             return E_SS_ERROR;
         }
         vResponseJsonString(iSocketFd, E_SS_OK, "Success");
         return E_SS_OK;
     }
+    ERR_vPrintln(T_TRUE, "Parameters Error");
+    
     return E_SS_INCORRECT_PARAMETERS;
 }
 
 static teSS_Status eSocketHandleDoorLockDelPassword(int iSocketFd, struct json_object *psJsonMessage)
 {
-    INF_vPrintln(DBG_SOCKET, "Client request add a password into door lock\n");
+    INF_vPrintln(DBG_SOCKET, "Client request del a password from door lock\n");
     json_object *psJsonAddr, *psJsonID = NULL;
     if(json_object_object_get_ex(psJsonMessage,JSON_MAC, &psJsonAddr)&&
        json_object_object_get_ex(psJsonMessage,JSON_ID, &psJsonID))

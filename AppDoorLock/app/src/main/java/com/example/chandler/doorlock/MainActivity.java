@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity
     private String stringAddress;
     Handler handlerSocketRev = null;
     mAdapter madapter;
-
+    private int iPasswordId = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -254,7 +254,11 @@ public class MainActivity extends AppCompatActivity
                     stringPassword+="#";
                     textHello.setText("临时密码为："+stringPassword);
                     madapter.add(new Data(iIndex++, "临时密码为："+stringPassword));
-                    String stringAddPassword = "{\"type\":240,\"sequence\":0,\"mac\":0,\"id\":1," +
+                    iPasswordId = iPasswordId +1;
+                    if(iPasswordId==5){
+                        iPasswordId = 0;
+                    }
+                    String stringAddPassword = "{\"type\":240,\"sequence\":0,\"mac\":0,\"id\":"+ Integer.toString(iPasswordId) +"," +
                             "\"available\":1,\"time_start\":0,\"time_end\":1510629973,\"length\":8," +
                             "\"password\":\""+stringPassword+"\"}";
                     new SocketSendThread(stringAddPassword, 0x8000).start();
@@ -504,7 +508,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void run() {
             super.run();
-            
+
             try {
                 socketHost = new Socket(stringAddress, iPort);
                 socketHost.setReuseAddress(true);
