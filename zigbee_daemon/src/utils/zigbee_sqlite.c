@@ -255,6 +255,27 @@ teSQ_Status eZigbeeSqliteUpdateDeviceOnline(uint64 u64IEEEAddress, uint8 u8Devic
     return eSQ_Status;
 }
 
+teSQ_Status eZigbeeSqliteUpdateDeviceAddress(uint64 u64IEEEAddress, uint16 u16ShortAddress)
+{
+    char *pcErrReturn;
+    char SqlCommand[MDBF] = {0};
+    teSQ_Status eSQ_Status = E_SQ_OK;
+
+    snprintf(SqlCommand, sizeof(SqlCommand), "Update "
+                     TABLE_DEVICE" SET "
+                     DEVICE_ADDR"=%d"
+                     " WHERE "DEVICE_MAC"=%llu",
+             u16ShortAddress, u64IEEEAddress);
+    DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+    if(SQLITE_OK != sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn)){
+        ERR_vPrintln(T_TRUE, "sqlite3_exec (%s)\n", pcErrReturn);
+        sqlite3_free(pcErrReturn);
+        eSQ_Status = E_SQ_ERROR;
+    }
+
+    return eSQ_Status;
+}
+
 teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddress, uint16 u16DeviceID, char *psDeviceName,
                                       uint8 u8Capability, const char *psInformation)
 {
@@ -277,7 +298,21 @@ teSQ_Status eZigbeeSqliteAddNewDevice(uint64 u64MacAddress, uint16 u16ShortAddre
     char *pcErrReturn;
     int ret = sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn);
     if((SQLITE_OK != ret)&&(SQLITE_CONSTRAINT == ret)) {/** 设备已添加过数据库 */
-        eZigbeeSqliteUpdateDeviceOnline(u64MacAddress, 1);
+
+        snprintf(SqlCommand, sizeof(SqlCommand), "Update "
+                         TABLE_DEVICE" SET "
+                         DEVICE_NAME"='%s',"
+                         DEVICE_ADDR"=%d,"
+                         DEVICE_ONLINE"=1,"
+                         DEVICE_ID"=%d"
+                         " WHERE "DEVICE_MAC"=%llu",
+                 psDeviceName, u16ShortAddress, u16DeviceID, u64MacAddress);
+        DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
+        if(SQLITE_OK != sqlite3_exec(sZigbeeSqlite.psZgbeeDB, SqlCommand, NULL, NULL, &pcErrReturn)){
+            ERR_vPrintln(T_TRUE, "sqlite3_exec (%s)\n", pcErrReturn);
+            sqlite3_free(pcErrReturn);
+            return E_SQ_ERROR;
+        }
     } else if(SQLITE_OK != ret){
         sqlite3_free(pcErrReturn);
         ERR_vPrintln(T_TRUE, "sqlite error: (%s)\n", sqlite3_errmsg(sZigbeeSqlite.psZgbeeDB));

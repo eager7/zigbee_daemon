@@ -27,6 +27,7 @@
 #include <string.h>
 #include <zigbee_node.h>
 #include <door_lock.h>
+#include "door_lock_controller.h"
 
 #include "zigbee_control_bridge.h"
 #include "zigbee_socket.h"
@@ -173,7 +174,8 @@ static void vZCB_AddNodeIntoNetwork(uint16 u16ShortAddress, uint64 u64IEEEAddres
     }
 
     eZigbeeAddNode(u16ShortAddress, u64IEEEAddress, 0x0000, u8MacCapability, &psZigbeeNodeTemp);
-    if(u8MacCapability & E_ZB_MAC_CAPABILITY_FFD){ //router, we need get its' device id
+    eDoorLockControllerInitialize(psZigbeeNodeTemp);
+    /*if(u8MacCapability & E_ZB_MAC_CAPABILITY_FFD){ //router, we need get its' device id
         if(0 == psZigbeeNodeTemp->sNode.u16DeviceID){ //unfinished node
             DBG_vPrintln(DBG_ZCB, "eZCB_MatchDescriptorRequest\n");
             usleep(1000);
@@ -184,7 +186,7 @@ static void vZCB_AddNodeIntoNetwork(uint16 u16ShortAddress, uint64 u64IEEEAddres
         }
     } else { //enddevice, no need device id
         vZCB_InitZigbeeNodeInfo(psZigbeeNodeTemp, E_ZBD_END_DEVICE_DEVICE);
-    }
+    }*/
 }
 /**
  * 处理设备节点的cluster列表，列表中的cluster就是设备支持的cluster，在控制
