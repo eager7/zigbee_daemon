@@ -16,6 +16,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="@+id/layout_root"
         app:layout_constraintRight_toRightOf="@+id/layout_root"
+        app:layout_constraintBottom_toBottomOf="@+id/layout_root"
         />
 
     <Button
@@ -25,6 +26,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="@+id/layout_root"
         app:layout_constraintRight_toRightOf="@+id/layout_root"
+        app:layout_constraintBottom_toBottomOf="@+id/layout_root"
         />
     <Button
         android:id="@+id/dev_btn"
@@ -33,6 +35,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintLeft_toLeftOf="@+id/layout_root"
         app:layout_constraintRight_toRightOf="@+id/layout_root"
+        app:layout_constraintBottom_toBottomOf="@+id/layout_root"
         />
     <TextView
         android:id="@+id/hello"
@@ -48,7 +51,9 @@
         android:id="@+id/list_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="@+id/layout_root"
+        android:stackFromBottom="true"
+        android:transcriptMode="alwaysScroll"
+        app:layout_constraintBottom_toBottomOf="@+id/layout_root"
         app:layout_constraintRight_toRightOf="@+id/layout_root"
         app:layout_constraintLeft_toLeftOf="@+id/layout_root"
         android:layout_marginTop="50dp"

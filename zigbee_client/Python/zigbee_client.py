@@ -73,6 +73,10 @@ def SocketReceive():
         return sock_zigbee.recv(1024)
     except Exception, e:
         mLog(E, e)
+def ReceiveMessages():
+    while True:
+        message = SocketReceive()
+        print message
 def SocketSend(msg):
     try:
         sock_zigbee.send(msg)
@@ -85,16 +89,16 @@ def SettingWifiNetwork(state):
     
     try:
         print "SettingWifiNetwork"
-	sock_wifi = socket.socket()
-	sock_wifi.connect(("10.128.0.101", 7787))
+        sock_wifi = socket.socket()
+        sock_wifi.connect(("10.128.0.101", 7787))
     except Exception, e:
-	mLog(W, e)
+        mLog(W, e)
     else:
-	mLog(D, "Connect With Server Successful")
-	if state == 0:
-		sock_wifi.send("{\"type\":17,\"ssid\":\"Tenda_25B200\",\"key\":\"12345678\"}")
-	elif state == 1:
-		sock_wifi.send("{\"type\":32785}")
+        mLog(D, "Connect With Server Successful")
+    if state == 0:
+        sock_wifi.send("{\"type\":17,\"ssid\":\"Tenda_25B200\",\"key\":\"12345678\"}")
+    elif state == 1:
+        sock_wifi.send("{\"type\":32785}")
 		
 def GetHostVersion():
     command = type + str(E_SS_COMMAND_GET_VERSION) + ',"sequence":0}'
@@ -496,21 +500,22 @@ def main():
     while running:
         print'''
         Choose your operator:
-	0. Search Host
+        0. Search Host
         1. Get Host Version
         2. Get Host Mac
         3. Open Network
         4. Get Channel Number
         5. Get Devices List
         6. Search Devices
+        7. Receive Messages
         11.Add Temporary Password
         12.Del Temporary Password
         13.Get Temporary Password
         14.Get Door Records
         15.Get Users
         16.Lock UnLock Door
-	80.Setting Wifi
-	81.Reset Network
+        80.Setting Wifi
+        81.Reset Network
         q. exit
         '''
         command = raw_input("input your command:")
@@ -558,7 +563,9 @@ def main():
             GetDeviceLists()
         elif command == '6':
             mLog(D, "Search Devices")
-            SearchDevices()
+        elif command == '7':
+            mLog(D, "Receive Messages")
+            ReceiveMessages()
         elif command == '11':
             mLog(D, "Add Temporary Password")
             DoorLockAddPassword()
