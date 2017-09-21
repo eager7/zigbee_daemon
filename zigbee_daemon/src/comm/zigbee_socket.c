@@ -34,6 +34,7 @@
 #include <zigbee_sqlite.h>
 #include "utils.h"
 #include "zigbee_socket.h"
+#include "zigbee_devices.h"
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -745,8 +746,7 @@ static teSS_Status eSocketHandleSetDoorLockState(int iSocketFd, struct json_obje
 
         tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         CHECK_POINTER(psZigbeeNode, E_SS_ERROR);
-        CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLock, E_SS_ERROR);
-        if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLock(&psZigbeeNode->sNode, (teCLD_DoorLock_CommandID)u8Operator))
+        if(E_ZB_OK != eZCB_DoorLockDeviceOperator(&psZigbeeNode->sNode, (teCLD_DoorLock_CommandID)u8Operator))
         {
             ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetDoorLock error\n");
             return E_SS_ERROR;
@@ -783,8 +783,7 @@ static teSS_Status eSocketHandleDoorLockAddPassword(int iSocketFd, struct json_o
 
         tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         CHECK_POINTER(psZigbeeNode, E_SS_ERROR);
-        CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLockPassword, E_SS_ERROR);
-        if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLockPassword(&psZigbeeNode->sNode, &sPayload)) {
+        if(E_ZB_OK != eZigbeeDeviceSetDoorLockPassword(&psZigbeeNode->sNode, &sPayload)) {
             ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetDoorLock error\n");
             vResponseJsonString(iSocketFd, E_SS_ERROR, "add new password failed");
             return E_SS_ERROR;
@@ -812,8 +811,7 @@ static teSS_Status eSocketHandleDoorLockDelPassword(int iSocketFd, struct json_o
 
         tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64DeviceAddress);
         CHECK_POINTER(psZigbeeNode, E_SS_ERROR);
-        CHECK_POINTER(psZigbeeNode->Method.preDeviceSetDoorLockPassword, E_SS_ERROR);
-        if(E_ZB_OK != psZigbeeNode->Method.preDeviceSetDoorLockPassword(&psZigbeeNode->sNode, &sPayload)) {
+        if(E_ZB_OK != eZigbeeDeviceSetDoorLockPassword(&psZigbeeNode->sNode, &sPayload)) {
             ERR_vPrintln(T_TRUE, "ZigbeeNode->Method.preDeviceSetDoorLock error\n");
             return E_SS_ERROR;
         }

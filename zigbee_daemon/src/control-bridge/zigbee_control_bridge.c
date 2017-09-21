@@ -28,7 +28,7 @@
 #include <zigbee_node.h>
 #include <door_lock.h>
 #include "door_lock_controller.h"
-
+#include "zigbee_devices.h"
 #include "zigbee_control_bridge.h"
 #include "zigbee_socket.h"
 /****************************************************************************/
@@ -433,9 +433,11 @@ static void vZCB_HandleDeviceAnnounce(void *pvUser, uint16 u16Length, void *pvMe
                    0x0000,
                    psMessage->u8MacCapability,
                    &psZigbeeNodeTemp);
-    eZigbeeSqliteAddNewDevice(psMessage->u64IEEEAddress, psMessage->u16ShortAddress,
-                              0x0000, "unknown", psMessage->u8MacCapability, NULL);
-
+    snprintf(psZigbeeNodeTemp->sNode.auDeviceName,
+             sizeof(psZigbeeNodeTemp->sNode.auDeviceName), "%s-%04X", "Device", psZigbeeNodeTemp->sNode.u16ShortAddress);
+    eZigbeeSqliteAddNewDevice(psZigbeeNodeTemp->sNode.u64IEEEAddress, psZigbeeNodeTemp->sNode.u16ShortAddress,
+                              0x0000, psZigbeeNodeTemp->sNode.auDeviceName, psZigbeeNodeTemp->sNode.u8MacCapability, NULL);
+    //eZCB_DeviceRecognition(psZigbeeNodeTemp->sNode.u64IEEEAddress);
     return;
 }
 

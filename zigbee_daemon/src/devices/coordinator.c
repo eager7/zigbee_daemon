@@ -110,27 +110,6 @@ static teZbStatus eHandleCoordinatorAttributeUpdate(tsZigbeeBase *psZigbeeNode,
     return E_ZB_ERROR;
 }
 
-static teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload *psDoorLockPayload)
-{
-    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
-
-    if(psDoorLockPayload->u8AvailableNum == 0){
-        eZigbeeSqliteDelDoorLockPassword(psDoorLockPayload->u8PasswordID);
-        eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_FALSE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
-    } else {
-        //TODO:Store Password into SQL
-        teSQ_Status tStatus = eZigbeeSqliteAddDoorLockPassword(psDoorLockPayload->u8PasswordID, 0, psDoorLockPayload->u8AvailableNum,
-                                         psDoorLockPayload->u32TimeStart, psDoorLockPayload->u32TimeEnd, psDoorLockPayload->u8PasswordLen,
-                                         psDoorLockPayload->psPassword);
-        if(tStatus != E_SQ_OK){
-            ERR_vPrintln(T_TRUE, "add new password failed");
-            return E_ZB_ERROR;
-        }
-        //eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_TRUE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
-    }
-    return E_ZB_OK;
-}
-
 static teZbStatus eZigbeeCoordinatorSearchDevices()
 {
     static int iStart= 0;
@@ -154,9 +133,6 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preCoordinatorGetChannel       = eZigbee_GetChannel;
     psZigbeeNode->Method.preZCB_ResetNetwork            = eZigbeeDeviceResetNetwork;
     psZigbeeNode->Method.preRecognitionDevice           = eZCB_DeviceRecognition;
-
-    psZigbeeNode->Method.preDeviceSetDoorLock           = eZCB_DoorLockDeviceOperator;
-    psZigbeeNode->Method.preDeviceSetDoorLockPassword   = eZigbeeDeviceSetDoorLockPassword;
 
     json_object *psJsonDevice = json_object_new_object();
     json_object *psArrayEndpoint = json_object_new_array();
@@ -182,8 +158,9 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
 
     //TODO:将还未失效的临时密码发送给协调器
     sleep(1);
+    //set the state of door locked
     eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);
-    eZigbeeCoordinatorSearchDevices();
+    //eZigbeeCoordinatorSearchDevices();
     return E_ZB_OK;
 }
 

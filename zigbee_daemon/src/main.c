@@ -309,14 +309,15 @@ int main(int argc, char *argv[])
                      psZigbeeItem->u16DeviceID, psZigbeeItem->auDeviceName, psZigbeeItem->u64IEEEAddress,
                      psZigbeeItem->u16ShortAddress, psZigbeeItem->u8DeviceOnline, psZigbeeItem->u8MacCapability);
         /** use u8DeviceOnline to avoid inited repetitive */
-        if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
+        //if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
+        if(psZigbeeItem->u8DeviceOnline == 0){
             tsZigbeeNodes *psZigbeeAdd = NULL;
             eZigbeeAddNode(psZigbeeItem->u16ShortAddress,
                            psZigbeeItem->u64IEEEAddress,
                            psZigbeeItem->u16DeviceID,
                            psZigbeeItem->u8MacCapability,
                            &psZigbeeAdd);
-            eEndDeviceInitialize(psZigbeeAdd);
+            //eEndDeviceInitialize(psZigbeeAdd);
         }
     }//end dl_list_for_each
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);

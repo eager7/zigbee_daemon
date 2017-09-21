@@ -220,6 +220,27 @@ teZbStatus eEndDeviceInitialize(tsZigbeeNodes *psZigbeeNode)
 }
 
 
+teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload *psDoorLockPayload)
+{
+    CHECK_POINTER(psZigbeeNode, E_ZB_ERROR);
+
+    if(psDoorLockPayload->u8AvailableNum == 0){
+        eZigbeeSqliteDelDoorLockPassword(psDoorLockPayload->u8PasswordID);
+        eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_FALSE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
+    } else {
+        //TODO:Store Password into SQL
+        teSQ_Status tStatus = eZigbeeSqliteAddDoorLockPassword(psDoorLockPayload->u8PasswordID, 0, psDoorLockPayload->u8AvailableNum,
+                                         psDoorLockPayload->u32TimeStart, psDoorLockPayload->u32TimeEnd, psDoorLockPayload->u8PasswordLen,
+                                         psDoorLockPayload->psPassword);
+        if(tStatus != E_SQ_OK){
+            ERR_vPrintln(T_TRUE, "add new password failed");
+            return E_ZB_ERROR;
+        }
+        //eZCB_SetDoorLockPassword(psZigbeeNode, psDoorLockPayload->u8PasswordID, T_TRUE, psDoorLockPayload->u8PasswordLen, psDoorLockPayload->psPassword);
+    }
+    return E_ZB_OK;
+}
+
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

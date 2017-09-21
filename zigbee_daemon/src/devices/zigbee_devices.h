@@ -76,6 +76,8 @@ teZbStatus eTemperatureSensorInitialize(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eLightSensorInitialize(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eSimpleSensorInitialize(tsZigbeeNodes *psZigbeeNode);
 teZbStatus eEndDeviceInitialize(tsZigbeeNodes *psZigbeeNode);
+teZbStatus eZigbeeDeviceSetDoorLockPassword(tsZigbeeBase *psZigbeeNode, tsCLD_DoorLock_Payload *psDoorLockPayload);
+
 
 teZbStatus eZigbee_SetPermitJoining(uint8 u8time );
 teZbStatus eZigbee_GetChannel(uint8 *pu8Channel );

@@ -9,7 +9,7 @@ PROG=zigbee_daemon
 start () {
 	ln -s lock /var/run/zigbee_daemon.lock || exit 0
 	if [ -x /bin/zigbee_daemon ]; then
-		$PROG -s /dev/ttyS0 -B 115200 -D /etc/config/Zigbee.DB -v 3
+		$PROG -s /dev/ttyS0 -B 115200 -D /etc/config/Zigbee.DB -v 3 -g
 		ES=$?
 		[ "$VERBOSE" != no ] && echo $ES
 		return $ES
