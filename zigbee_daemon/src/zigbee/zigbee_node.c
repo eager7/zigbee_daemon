@@ -418,8 +418,7 @@ teZbStatus eZigbeeGetEndpoints(tsZigbeeBase *psZigbee_Node, teZigbee_ClusterID e
 tsZigbeeNodes *psZigbeeFindNodeByShortAddress(uint16 u16ShortAddress)
 {    
     eLockLock(&sControlBridge.mutex);
-    tsZigbeeNodes *psZigbeeRet = NULL;
-    tsZigbeeNodes *psZigbeeTemp;
+    tsZigbeeNodes *psZigbeeRet = NULL, *psZigbeeTemp = NULL;
     dl_list_for_each(psZigbeeTemp, &sControlBridge.list, tsZigbeeNodes, list){  //Search List
         if(u16ShortAddress == psZigbeeTemp->sNode.u16ShortAddress){
             psZigbeeRet = psZigbeeTemp;

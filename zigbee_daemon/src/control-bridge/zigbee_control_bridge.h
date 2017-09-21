@@ -40,7 +40,7 @@ extern "C" {
 /* Default network configuration */
 #define CONFIG_DEFAULT_START_MODE        E_START_COORDINATOR
 #define CONFIG_DEFAULT_PAN_ID            0x1234567812345678ll
-
+#define CONFIG_DEFAULT_ENDPOINT          0x01
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
@@ -418,6 +418,19 @@ teZbStatus eZCB_ResetNetwork(tsZigbeeBase *psZigbeeNode);
 teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, uint8 u8PasswordId, uint8 u8Command,
                                     uint8 u8PasswordLen,
                                     const char *psPassword);
+/*****************************************************************************
+** Prototype    : eZCB_DeviceRecognition
+** Description  :
+** Input        : u64MacAddress
+** Output       : none
+** Return Value : Success, return E_ZB_OK, otherwise, return E_ZB_ERROR
+
+** History      :
+** Date         : 2017/9/21
+** Author       : PCT
+*****************************************************************************/
+teZbStatus eZCB_DeviceRecognition(uint64 u64MacAddress);
+
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/

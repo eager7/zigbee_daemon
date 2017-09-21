@@ -114,6 +114,7 @@ typedef struct {uint8 R,G,B;}tsRGB;
 typedef teZbStatus (*tpreCoordinatorReset)(tsZigbeeBase *psZigbeeNode);
 typedef teZbStatus (*tpreCoordinatorPermitJoin)(uint8 time);
 typedef teZbStatus (*tpreCoordinatorSearchDevices)(void);
+typedef teZbStatus (*tpreCoordinatorRecognitionDevice)(uint64 u64MacAddress);
 typedef teZbStatus (*tpreCoordinatorGetChannel)(uint8 *pu8Channel);
 typedef teZbStatus (*tpreDeviceRemoveNetwork)(tsZigbeeBase *psZigbeeNode, uint8 u8Rejoin, uint8 u8RemoveChildren);
 typedef teZbStatus (*tpreDeviceAddBind)(tsZigbeeBase *psSrcZigbeeNode, tsZigbeeBase *psDesZigbeeNode, uint16 u16ClusterID);
@@ -154,6 +155,7 @@ typedef struct
     tpreCoordinatorReset            preCoordinatorReset;
     tpreCoordinatorPermitJoin       preCoordinatorPermitJoin;
     tpreCoordinatorSearchDevices    preCoordinatorSearchDevices;
+    tpreCoordinatorRecognitionDevice preRecognitionDevice;
     tpreCoordinatorGetChannel       preCoordinatorGetChannel;
     tpreDeviceRemoveNetwork         preDeviceRemoveNetwork;
     tpreDeviceAddBind               preDeviceAddBind;

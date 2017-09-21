@@ -153,6 +153,7 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
     psZigbeeNode->Method.preCoordinatorSearchDevices    = eZigbeeCoordinatorSearchDevices;
     psZigbeeNode->Method.preCoordinatorGetChannel       = eZigbee_GetChannel;
     psZigbeeNode->Method.preZCB_ResetNetwork            = eZigbeeDeviceResetNetwork;
+    psZigbeeNode->Method.preRecognitionDevice           = eZCB_DeviceRecognition;
 
     psZigbeeNode->Method.preDeviceSetDoorLock           = eZCB_DoorLockDeviceOperator;
     psZigbeeNode->Method.preDeviceSetDoorLockPassword   = eZigbeeDeviceSetDoorLockPassword;

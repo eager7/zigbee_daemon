@@ -46,6 +46,7 @@ const char *pVersion = "1.0";
 volatile sig_atomic_t bRunning = 1;
 int verbosity = 7;
 int daemonize = 1;
+int gpio_flag = 0;
 uint32 u32BaudRate = 115200;
 uint32 u32Channel = E_CHANNEL_DEFAULT;
 char *pSerialDevice = "/dev/ttyS0";
@@ -124,10 +125,11 @@ static void vGetOption(int argc, char *argv[])
         {"baud",                    required_argument,  NULL, 'B'},
         {"channel",                 required_argument,  NULL, 'c'},
         {"database",                required_argument,  NULL, 'D'},
+        {"gpio",                    no_argument,        NULL, 'g'},
         { NULL, 0, NULL, 0}
     };
 
-    while ((opt = getopt_long(argc, argv, "s:hfv:B:c:D:", long_options, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "s:hfv:B:c:D:g", long_options, &option_index)) != -1)
     {
         switch (opt) 
         {
@@ -136,6 +138,9 @@ static void vGetOption(int argc, char *argv[])
             break;
             case 'f':
                 daemonize = 0;
+            break;
+            case 'g':
+                gpio_flag = 1;
             break;
             case 'v':
                 verbosity = atoi(optarg);
@@ -273,11 +278,6 @@ int main(int argc, char *argv[])
     signal(SIGINT,  vQuitSignalHandler);/* Install signal handlers */
     signal(SIGTERM, vQuitSignalHandler);
     mLogInitSetPid("[TB]");
-    //if(){
-    //Init Button
-    DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
-    iButtonInitialize();
-    //}
 
     DBG_vPrintln(DBG_MAIN, "Init The Program with dev = %s, baud = %d\n", pSerialDevice, u32BaudRate);
     CHECK_RESULT(eZCB_Init(pSerialDevice, u32BaudRate), E_ZB_OK, -1);
@@ -292,9 +292,13 @@ int main(int argc, char *argv[])
             DBG_vPrintln(DBG_MAIN, "eZCB_EstablishComm Success\n");
             break;
         }
-        sleep(1);
+        sleep(2);
     }
-
+    if(gpio_flag){
+        //Init Button
+        DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
+        iButtonInitialize();
+    }
     /** Initialize End Device */
     tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
     memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));

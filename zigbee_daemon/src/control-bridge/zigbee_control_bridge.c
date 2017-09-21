@@ -174,8 +174,7 @@ static void vZCB_AddNodeIntoNetwork(uint16 u16ShortAddress, uint64 u64IEEEAddres
     }
 
     eZigbeeAddNode(u16ShortAddress, u64IEEEAddress, 0x0000, u8MacCapability, &psZigbeeNodeTemp);
-    eDoorLockControllerInitialize(psZigbeeNodeTemp);
-    /*if(u8MacCapability & E_ZB_MAC_CAPABILITY_FFD){ //router, we need get its' device id
+    if(u8MacCapability & E_ZB_MAC_CAPABILITY_FFD){ //router, we need get its' device id
         if(0 == psZigbeeNodeTemp->sNode.u16DeviceID){ //unfinished node
             DBG_vPrintln(DBG_ZCB, "eZCB_MatchDescriptorRequest\n");
             usleep(1000);
@@ -186,7 +185,7 @@ static void vZCB_AddNodeIntoNetwork(uint16 u16ShortAddress, uint64 u64IEEEAddres
         }
     } else { //enddevice, no need device id
         vZCB_InitZigbeeNodeInfo(psZigbeeNodeTemp, E_ZBD_END_DEVICE_DEVICE);
-    }*/
+    }
 }
 /**
  * 处理设备节点的cluster列表，列表中的cluster就是设备支持的cluster，在控制
@@ -420,9 +419,23 @@ static void vZCB_HandleDeviceAnnounce(void *pvUser, uint16 u16Length, void *pvMe
     
     DBG_vPrintln(DBG_ZCB, "Device Joined, Address 0x%04X (0x%016llX). Mac Capability Mask 0x%02X\n",
                 psMessage->u16ShortAddress,(unsigned long long int)psMessage->u64IEEEAddress,psMessage->u8MacCapability);
-    
-    vZCB_AddNodeIntoNetwork(psMessage->u16ShortAddress, psMessage->u64IEEEAddress, psMessage->u8MacCapability);
-        
+
+    tsZigbeeNodes *psZigbeeNodeTemp = NULL;
+    psZigbeeNodeTemp = psZigbeeFindNodeByShortAddress(psMessage->u16ShortAddress);
+
+    if ((NULL != psZigbeeNodeTemp)&&(0 != psZigbeeNodeTemp->sNode.u16DeviceID) ){//New Nodes
+        DBG_vPrintln(DBG_ZCB, "The Node:0x%04x already in the network\n", psZigbeeNodeTemp->sNode.u16ShortAddress);
+        eZigbeeSqliteUpdateDeviceOnline(psMessage->u64IEEEAddress, 1);
+        return;
+    }
+    eZigbeeAddNode(psMessage->u16ShortAddress,
+                   psMessage->u64IEEEAddress,
+                   0x0000,
+                   psMessage->u8MacCapability,
+                   &psZigbeeNodeTemp);
+    eZigbeeSqliteAddNewDevice(psMessage->u64IEEEAddress, psMessage->u16ShortAddress,
+                              0x0000, "unknown", psMessage->u8MacCapability, NULL);
+
     return;
 }
 
@@ -2126,5 +2139,19 @@ teZbStatus eZCB_SetDoorLockPassword(tsZigbeeBase *psZigbeeNode, uint8 u8Password
                                  sizeof(struct _tDoorLockSetPassword),
                                  &sDoorLockSetPassword,
                                  NULL), E_SL_OK, E_ZB_COMMS_FAILED);
+    return E_ZB_OK;
+}
+
+teZbStatus eZCB_DeviceRecognition(uint64 u64MacAddress)
+{
+    tsZigbeeNodes *psZigbeeNode = psZigbeeFindNodeByIEEEAddress(u64MacAddress);
+    if(NULL == psZigbeeNode){
+        ERR_vPrintln(T_TRUE, "Can't find this node in network");
+        return E_ZB_ERROR;
+    }
+    if (eZCB_SimpleDescriptorRequest(&psZigbeeNode->sNode, CONFIG_DEFAULT_ENDPOINT) != E_ZB_OK){
+        ERR_vPrintln(T_TRUE, "Failed to read endpoint simple descriptor - requeue\n");
+        return E_ZB_ERROR;
+    }
     return E_ZB_OK;
 }
