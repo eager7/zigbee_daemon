@@ -295,11 +295,7 @@ int main(int argc, char *argv[])
         }
         sleep(2);
     }
-    if(gpio_flag){
-        //Init Button
-        DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
-        iButtonInitialize();
-    }
+
     /** Initialize End Device */
     tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
     memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
@@ -322,7 +318,12 @@ int main(int argc, char *argv[])
         }
     }//end dl_list_for_each
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
-
+    if(gpio_flag){
+        //Init Button
+        sleep(3);
+        DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
+        iButtonInitialize();
+    }
 
     /** Check temporary password per 10 seconds */
     while(bRunning){

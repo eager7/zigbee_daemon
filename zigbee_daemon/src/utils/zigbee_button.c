@@ -95,6 +95,7 @@ int iButtonInitialize()
 {
     int val = 0;
     const char *device_cmd = "/etc/init.d/button_mknod.sh";
+    signal(SIGUSR2, vButtonSignalHandler);
     if(access(DEV,F_OK) < 0){
         system(device_cmd);
     }
@@ -154,7 +155,6 @@ int iButtonInitialize()
         close(iButtonFd);
         return -1;
     }
-    signal(SIGUSR2, vButtonSignalHandler);
 
     return 0;
 }
