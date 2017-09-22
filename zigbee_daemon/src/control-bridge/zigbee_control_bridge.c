@@ -767,6 +767,8 @@ static void vZCB_HandleDoorLockStateReport(void *pvUser, uint16 u16Length, void 
     eZigbeeSqliteAddDoorLockRecord((teDoorLockUserType) psMessage->u8UserType, psMessage->u8UserID,
                                    (uint32) time((time_t *) NULL), NULL);
     eSocketDoorLockReport(psMessage->u8UserID, (uint8)((psMessage->u8UserType == E_RECORD_TYPE_LOCAL_OPEN_NON_NORMAL)?1:0));
+    sleep(1);
+    eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);
 
     return ;
 }
@@ -2033,7 +2035,8 @@ teZbStatus eZCB_DoorLockDeviceOperator(tsZigbeeBase *psZigbeeNode, teCLD_DoorLoc
     tsNodeEndpoint  *psDestinationEndpoint;
     uint8         u8SequenceNo;
 
-    struct {
+    DBG_vPrintln( DBG_ZCB, "eZCB_DoorLockDeviceOperator:%d", eCommand);
+                  struct {
         uint8     u8TargetAddressMode;
         uint16    u16TargetAddress;
         uint8     u8SourceEndpoint;
