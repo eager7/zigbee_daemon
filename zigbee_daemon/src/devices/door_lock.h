@@ -74,7 +74,7 @@ typedef struct {
 
 typedef struct {
     uint8  u8PasswordId;
-    uint8  u8Worked;
+    uint8  u8Worked;        //0,not enable;1,enable;2,disable
     uint8  u8AvailableNum;
     uint8  u8UseNum;
     uint32 u32TimeCreation;

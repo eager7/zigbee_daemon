@@ -767,6 +767,7 @@ static void vZCB_HandleDoorLockStateReport(void *pvUser, uint16 u16Length, void 
     eZigbeeSqliteAddDoorLockRecord((teDoorLockUserType) psMessage->u8UserType, psMessage->u8UserID,
                                    (uint32) time((time_t *) NULL), NULL);
     eSocketDoorLockReport(psMessage->u8UserID, (uint8)((psMessage->u8UserType == E_RECORD_TYPE_LOCAL_OPEN_NON_NORMAL)?1:0));
+
     return ;
 }
 

@@ -420,7 +420,7 @@ teSQ_Status eZigbeeSqliteAddDoorLockRecord(teDoorLockUserType eType, uint8 u8Use
                      RECORD_TYPE","
                      RECORD_USER","
                      RECORD_TIME","
-                     PASSWORD_DATA") VALUES(%d,%d,%d,%s)",
+                     PASSWORD_DATA") VALUES(%d,%d,%d,'%s')",
              eType, u8UserID, u32Time, psPassword);
     DBG_vPrintln(DBG_SQLITE, "Sqite's Command: %s\n", SqlCommand);
 

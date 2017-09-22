@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <json-c/json.h>
+#include <zigbee_node.h>
 #include "zigbee_zcl.h"
 #include "zigbee_node.h"
 #include "door_lock_controller.h"
@@ -156,7 +157,6 @@ teZbStatus eControlBridgeInitialize(tsZigbeeNodes *psZigbeeNode)
                               psZigbeeNode->sNode.u8MacCapability, json_object_get_string(psJsonDevice));
     json_object_put(psJsonDevice);
 
-    //TODO:将还未失效的临时密码发送给协调器
     sleep(1);
     //set the state of door locked
     eZCB_DoorLockDeviceOperator(&sControlBridge.sNode, E_CLD_DOOR_LOCK_DEVICE_CMD_LOCK);

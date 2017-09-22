@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <syslog.h>
 #include <fcntl.h>
+#include <door_lock.h>
 #include "door_lock.h"
 #include "zigbee_devices.h"
 #include "coordinator.h"
@@ -336,10 +337,14 @@ int main(int argc, char *argv[])
                     eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 1, psTemp->u8UseNum);
                     eZCB_SetDoorLockPassword(NULL,psTemp->u8PasswordId,T_TRUE,psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
                 }
-            } else {
+            } else if(psTemp->u8Worked == 1){
                 if((psTemp->u8AvailableNum == 0) || (psTemp->u32TimeEnd < u32TimeNow)){
                     eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
+                    //eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 2, psTemp->u8UseNum);
+                    eZigbeeSqliteDelDoorLockPassword(psTemp->u8PasswordId);
                 }
+            } else if(psTemp->u8Worked == 2){
+                DBG_vPrintln(DBG_MAIN, "Invalid password\n");
             }
         }//dl_list_for_each
         //eSocketDoorAlarmReport(0);
