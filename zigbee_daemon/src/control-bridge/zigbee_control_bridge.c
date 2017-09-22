@@ -2155,6 +2155,7 @@ teZbStatus eZCB_DeviceRecognition(uint64 u64MacAddress)
         ERR_vPrintln(T_TRUE, "Can't find this node in network");
         return E_ZB_ERROR;
     }
+
     if (eZCB_SimpleDescriptorRequest(&psZigbeeNode->sNode, CONFIG_DEFAULT_ENDPOINT) != E_ZB_OK){
         ERR_vPrintln(T_TRUE, "Failed to read endpoint simple descriptor - requeue\n");
         return E_ZB_ERROR;

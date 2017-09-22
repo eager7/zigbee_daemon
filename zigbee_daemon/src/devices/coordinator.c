@@ -120,6 +120,7 @@ static teZbStatus eZigbeeCoordinatorSearchDevices()
         iStart++;
         sleep(1);
     }
+
     return E_ZB_OK;
 }
 /****************************************************************************/
