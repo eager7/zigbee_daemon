@@ -108,6 +108,7 @@ static void vPrintUsage(char *argv[])
 
     fprintf(stderr, "  Zigbee Network options:\n");
     fprintf(stderr, "    -c --channel       <channel>           802.15.4 channel to run on. Default %d.\n", u32Channel);
+    fprintf(stderr, "    -g --gpio          <button gpio>       Button and led for gatway. Default off.\n");
     exit(0);
 }
 
@@ -183,13 +184,13 @@ static void vGetOption(int argc, char *argv[])
                 }
                 eChannel = (teChannel)u32Channel;
                 break;
-            }
+            }//case 'c':
             case 0:
             break;
             default: /* '?' */
             vPrintUsage(argv);
-        }
-    }
+        }//switch (opt)
+    }//while
 }
 /**
  * Receive signal of ctrl + c, and exit the progress safely
@@ -204,6 +205,7 @@ static void vQuitSignalHandler (int sig)
 
 /**
  * Fork a new progress and replaced current progress, then the progress turn to background
+ * cmd:the program's name
  * */
 static void vDaemonizeInit(const char *cmd)
 {
@@ -296,7 +298,7 @@ int main(int argc, char *argv[])
         sleep(2);
     }
 
-    /** Initialize End Device */
+    /** Initialize Device */
     tsZigbeeBase psZigbeeNode, *psZigbeeItem = NULL;
     memset(&psZigbeeNode, 0, sizeof(psZigbeeNode));
     eZigbeeSqliteRetrieveDevicesList(&psZigbeeNode);
@@ -309,26 +311,20 @@ int main(int argc, char *argv[])
         //if((!(psZigbeeItem->u8MacCapability & E_ZB_MAC_CAPABILITY_FFD))&&(psZigbeeItem->u8DeviceOnline == 0)){
         if(psZigbeeItem->u8DeviceOnline == 0){
             tsZigbeeNodes *psZigbeeAdd = NULL;
-            eZigbeeAddNode(psZigbeeItem->u16ShortAddress,
-                           psZigbeeItem->u64IEEEAddress,
-                           psZigbeeItem->u16DeviceID,
-                           psZigbeeItem->u8MacCapability,
-                           &psZigbeeAdd);
+            eZigbeeAddNode(psZigbeeItem->u16ShortAddress, psZigbeeItem->u64IEEEAddress,
+                           psZigbeeItem->u16DeviceID, psZigbeeItem->u8MacCapability, &psZigbeeAdd);
             //eEndDeviceInitialize(psZigbeeAdd);
         }
     }//end dl_list_for_each
     eZigbeeSqliteRetrieveDevicesListFree(&psZigbeeNode);
     if(gpio_flag){
-        //Init Button
-        sleep(3);
         DBG_vPrintln(DBG_MAIN, "Initialize the button function...\n");
+        sleep(3);
         iButtonInitialize();
     }
 
     /** Check temporary password per 10 seconds */
     while(bRunning){
-        sleep(10);
-
         uint32 u32TimeNow = (uint32)time((time_t*)NULL);
         tsTemporaryPassword sPasswordHeader, *psTemp;
         eZigbeeSqliteDoorLockRetrievePasswordList(&sPasswordHeader);
@@ -341,22 +337,17 @@ int main(int argc, char *argv[])
             } else if(psTemp->u8Worked == 1){
                 if((psTemp->u8AvailableNum == 0) || (psTemp->u32TimeEnd < u32TimeNow)){
                     eZCB_SetDoorLockPassword(NULL, psTemp->u8PasswordId, T_FALSE, psTemp->u8PasswordLen, (const char*)psTemp->auPassword);
-                    //eZigbeeSqliteUpdateDoorLockPassword(psTemp->u8PasswordId, psTemp->u8AvailableNum, 2, psTemp->u8UseNum);
                     eZigbeeSqliteDelDoorLockPassword(psTemp->u8PasswordId);
                 }
-            } else if(psTemp->u8Worked == 2){
-                DBG_vPrintln(DBG_MAIN, "Invalid password\n");
             }
         }//dl_list_for_each
-        //eSocketDoorAlarmReport(0);
+        sleep(10);
     }
     iButtonFinished();
     eZCB_Finish();
     eZigbeeSqliteFinished();
     eSocketServer_Destroy();
     eZigbeeDiscoveryFinished();
-    //eZigbeeCloudFinished();
-
     DBG_vPrintln(DBG_MAIN, "Main thread will exiting\n");
 
     return 0;
