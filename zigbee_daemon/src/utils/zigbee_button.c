@@ -58,14 +58,6 @@ static void vButtonSignalHandler (int sig)
                 switch(btn.value){
                     case BUTTON_SW2:{
                         DBG_vPrintln(DBG_BUTTON, "Got key2\n");
-
-                    }break;
-                    case BUTTON_SW3:{
-                        DBG_vPrintln(DBG_BUTTON, "Got key3\n");
-
-                    }break;
-                    case BUTTON_SW4:{
-                        DBG_vPrintln(DBG_BUTTON, "Got key4\n");
                         ralink_gpio_led_info led_info;
                         led_info.gpio = LED_ZIGBEE;
                         led_info.on = 1;
@@ -77,6 +69,14 @@ static void vButtonSignalHandler (int sig)
                         eZigbee_SetPermitJoining(10);
                         //sleep(60);
                         //eZigbee_SetPermitJoining(0);
+                    }break;
+                    case BUTTON_SW3:{
+                        DBG_vPrintln(DBG_BUTTON, "Got key3\n");
+
+                    }break;
+                    case BUTTON_SW4:{
+                        DBG_vPrintln(DBG_BUTTON, "Got key4\n");
+
                     }break;
                         default:break;
                 }
