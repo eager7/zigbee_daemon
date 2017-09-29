@@ -66,7 +66,7 @@ static void vButtonSignalHandler (int sig)
                         led_info.rests = 0;
                         led_info.times = 120;
                         ioctl(iButtonFd, RALINK_GPIO_LED_SET, &led_info);
-                        eZigbee_SetPermitJoining(10);
+                        eZigbee_SetPermitJoining(60);
                         //sleep(60);
                         //eZigbee_SetPermitJoining(0);
                     }break;
