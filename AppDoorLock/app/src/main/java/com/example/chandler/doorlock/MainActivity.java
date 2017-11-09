@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity
             key_wifi.setVisibility(View.VISIBLE);
             set_wifi.setVisibility(View.VISIBLE);
 
-            WifiManager wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             DhcpInfo di = wifiManager.getDhcpInfo();
             long getewayIpL=di.gateway;
