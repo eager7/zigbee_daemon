@@ -686,7 +686,7 @@ static void vZCB_HandleAttributeReport(void *pvUser, uint16 u16Length, void *pvM
         case E_ZB_CLUSTERID_POWER:
             INF_vPrintln(DBG_ZCB, "update door lock power to %d\n", uAttributeData.u16Data);
             psZigbeeNode->sNode.sAttributeValue.u16Battery = uAttributeData.u16Data;
-            eSocketPowerConfigurationReport((uint8)(psZigbeeNode->sNode.sAttributeValue.u16Battery*100/30));
+            eSocketPowerConfigurationReport((uint8)(psZigbeeNode->sNode.sAttributeValue.u16Battery/10));
 
             break;
         default:
