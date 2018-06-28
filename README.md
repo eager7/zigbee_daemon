@@ -1,4 +1,4 @@
-topband zigbee daemon
+zigbee daemon
 ----------------------
 zigbee的网关程序，测试代码和升级程序，默认运行在OpenWrt系统上。
 对应的协调器程序版本为**JN-AN-1223-ZigBee-IoT-Gateway-Control-Bridge-v1008**
